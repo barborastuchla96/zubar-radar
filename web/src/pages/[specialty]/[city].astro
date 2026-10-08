@@ -5,7 +5,7 @@ import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
 import { cityProviders, sponsored } from '../../lib/db';
-import { SPECIALTIES, cityUrl, specialty } from '../../lib/site';
+import { SPECIALTIES, cityUrl, isPragueSlug, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -24,7 +24,8 @@ const description = `${rows.length} ordinací (${spec.plural.toLowerCase()}) v o
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 ---
 <Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug}>
-  <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › {city}</div>
+  <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> ›
+    {isPragueSlug(Astro.params.city!) && <><a href={cityUrl(spec.slug, 'praha')}>Praha</a> › </>}{city}</div>
   <h1>{spec.plural} – {city}</h1>
   <p class="muted">
     {rows.length} ordinací

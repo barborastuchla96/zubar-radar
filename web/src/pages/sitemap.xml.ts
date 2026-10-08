@@ -4,7 +4,7 @@ import { SPECIALTIES, cityUrl, providerUrl } from '../lib/site';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site!.toString().replace(/\/$/, '');
-  const urls = ['/', ...SPECIALTIES.map((s) => `/${s.slug}`)];
+  const urls = ['/', ...SPECIALTIES.flatMap((s) => [`/${s.slug}`, cityUrl(s.slug, 'praha')])];
   for (const e of await sitemapEntries()) {
     urls.push(e.kind === 'city' ? cityUrl(e.specialty!, e.slug) : providerUrl({ id: Number(e.slug), name: e.name }));
   }

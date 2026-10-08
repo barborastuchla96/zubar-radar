@@ -4,7 +4,16 @@ export const SITE_NAME = 'Bere pacienty?';
 export const TAGLINE = 'Kteří lékaři a zubaři právě přijímají nové pacienty';
 
 /** Launch city: featured on the homepage. */
-export const FEATURED_CITY = { slug: 'brno', name: 'Brno', lat: 49.1951, lng: 16.6068 };
+export const FEATURED_CITY = { slug: 'praha', name: 'Praha' };
+
+/**
+ * The register files Prague practices under districts ("Praha 6" -> praha-6),
+ * plus a few under plain "Praha". /<specialty>/praha is a hub over all of them.
+ */
+export const isPragueSlug = (slug: string) => slug === 'praha' || /^praha-\d+$/.test(slug);
+const districtNo = (slug: string) => Number(slug.split('-')[1] ?? 0);
+export const byDistrict = (a: { city_slug: string }, b: { city_slug: string }) =>
+  districtNo(a.city_slug) - districtNo(b.city_slug);
 
 export interface SpecialtyInfo {
   slug: string;

@@ -2,17 +2,18 @@
 import Base from '../layouts/Base.astro';
 import AdSlot from '../components/AdSlot.astro';
 import { cities } from '../lib/db';
-import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl } from '../lib/site';
+import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, isPragueSlug } from '../lib/site';
 
 // Provider counts for the launch city, per specialty.
 const featured = await Promise.all(
   SPECIALTIES.map(async (s) => {
     const all = await cities(s.slug, 1);
-    const c = all.find((x) => x.city_slug === FEATURED_CITY.slug);
-    return { s, n: c?.n ?? 0, accepting: c?.accepting ?? 0 };
+    const inCity = all.filter((x) =>
+      FEATURED_CITY.slug === 'praha' ? isPragueSlug(x.city_slug) : x.city_slug === FEATURED_CITY.slug);
+    return { s, n: inCity.reduce((t, c) => t + c.n, 0), accepting: inCity.reduce((t, c) => t + c.accepting, 0) };
   }),
 );
-const topDentistCities = (await cities('zubar', 3, 12)).filter((c) => c.city_slug !== FEATURED_CITY.slug);
+const topDentistCities = (await cities('zubar', 3, 40)).filter((c) => !isPragueSlug(c.city_slug)).slice(0, 12);
 Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 ---
 <Base title={`${SITE_NAME} – ${TAGLINE}`} description="Najděte zubaře, praktického či dětského lékaře nebo gynekologa, který přijímá nové pacienty. Ověřeno lidmi, kteří tam volali.">

@@ -160,3 +160,17 @@ export async function sponsored(specialty: string, citySlug: string, limit = 2):
      ORDER BY random()
      LIMIT ${limit}`;
 }
+
+const PRAGUE_SLUG = '^praha(-[0-9]+)?$';
+
+/** Practices in all of Prague that are (or may be) taking patients, freshest first. */
+export async function pragueAccepting(specialty: string, limit = 24): Promise<ProviderRow[]> {
+  return sql<ProviderRow[]>`
+    SELECT ${PROVIDER_COLS}
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
+      JOIN provider_status s ON s.provider_id = p.id AND s.status IN ('accepting', 'waitlist')
+     WHERE p.active AND p.city_slug ~ ${PRAGUE_SLUG}
+     ORDER BY ${STATUS_ORDER}, s.last_signal_at DESC
+     LIMIT ${limit}`;
+}
