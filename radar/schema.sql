@@ -138,6 +138,7 @@ CREATE OR REPLACE VIEW provider_status AS
 WITH weighted AS (
     SELECT provider_id,
            observed_at,
+           source,
            signal_source_weight(source)
              * power(0.5, extract(epoch FROM now() - observed_at) / 86400.0 / 30.0) AS w,
            CASE status WHEN 'accepting' THEN 1.0 WHEN 'waitlist' THEN 0.3 ELSE -1.0 END AS v
@@ -148,7 +149,8 @@ WITH weighted AS (
     SELECT provider_id,
            sum(w)                AS confidence,
            sum(w * v) / sum(w)   AS score,
-           max(observed_at)      AS last_signal_at
+           max(observed_at)      AS last_signal_at,
+           (array_agg(source ORDER BY observed_at DESC))[1] AS last_source
     FROM weighted
     GROUP BY provider_id
 ), clinic AS (
@@ -169,7 +171,8 @@ SELECT agg.provider_id,
            WHEN score >=  0.5    THEN 'accepting'
            WHEN score <= -0.5    THEN 'not_accepting'
            ELSE 'mixed'
-       END AS status
+       END AS status,
+       last_source
 FROM agg LEFT JOIN clinic USING (provider_id);
 
 -- Distance in km between two points (earthdistance returns metres).

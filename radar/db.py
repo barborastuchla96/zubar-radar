@@ -118,3 +118,56 @@ def near(
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(sql, {"spec": specialty, "lat": lat, "lng": lng, "m": km * 1000, "limit": limit})
         return cur.fetchall()
+
+
+def crawl_targets(
+    conn: psycopg.Connection, city_regex: str, specialties: list[str] | None = None, limit: int | None = None
+) -> dict[str, list[int]]:
+    """Normalized clinic website URL -> ids of active providers listing it."""
+    from .crawler import normalize_site
+
+    rows = conn.execute(
+        """
+        SELECT DISTINCT p.id, p.web
+          FROM providers p JOIN provider_specialties ps ON ps.provider_id = p.id
+         WHERE p.active AND p.web IS NOT NULL AND p.city_slug ~ %s
+           AND (%s::text[] IS NULL OR ps.specialty_slug = ANY(%s::text[]))
+         ORDER BY p.id
+        """,
+        (city_regex, specialties, specialties),
+    ).fetchall()
+    sites: dict[str, list[int]] = {}
+    for pid, web in rows:
+        url = normalize_site(web)
+        if url and (url in sites or limit is None or len(sites) < limit):
+            sites.setdefault(url, []).append(pid)
+    return sites
+
+
+RECHECK_DAYS = 6
+
+
+def record_crawl(conn: psycopg.Connection, results) -> int:
+    """Store crawl verdicts as web_crawl signals. Skips repeats of an unchanged
+    verdict within RECHECK_DAYS so weekly runs don't pile up duplicates."""
+    written = 0
+    with conn.transaction():
+        for r in results:
+            v = r.verdict
+            if not v or not v.status:
+                continue
+            note = f"„{v.snippet[:300]}“ — {r.page_url}"[:500]
+            for pid in r.provider_ids:
+                cur = conn.execute(
+                    """
+                    INSERT INTO availability_signals (provider_id, source, status, scope, note)
+                    SELECT %(pid)s, 'web_crawl', %(status)s, %(scope)s, %(note)s
+                     WHERE NOT EXISTS (
+                           SELECT 1 FROM availability_signals
+                            WHERE provider_id = %(pid)s AND source = 'web_crawl' AND status = %(status)s
+                              AND observed_at > now() - make_interval(days => %(days)s))
+                    """,
+                    {"pid": pid, "status": v.status, "scope": v.scope, "note": note, "days": RECHECK_DAYS},
+                )
+                written += cur.rowcount
+    return written

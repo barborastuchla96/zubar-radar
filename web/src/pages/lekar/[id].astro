@@ -5,7 +5,7 @@ import ReportForm from '../../components/ReportForm.astro';
 import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
-import { alternatives, provider } from '../../lib/db';
+import { alternatives, latestCrawlNote, provider } from '../../lib/db';
 import { STATUS_LABEL, address, ago, cityUrl, providerUrl, specialty, telHref, webHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
@@ -20,6 +20,7 @@ const specs = (p.specialties ?? []).map(specialty).filter((s) => s != null);
 const main = specs[0];
 const alts = main ? await alternatives(p, main.slug) : [];
 const when = ago(p.last_signal_at);
+const crawl = p.last_source === 'web_crawl' ? await latestCrawlNote(p.id) : undefined;
 const web = p.web ? webHref(p.web) : null;
 const result = Astro.url.searchParams.get('r');
 const status = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
@@ -36,8 +37,15 @@ Astro.response.headers.set('Cache-Control', 'private, no-cache');
   <h1>{p.name}</h1>
   <p style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
     <StatusBadge status={p.status} />
-    <span class="muted small">{when ? `poslední hlášení ${when}` : status.hint}</span>
+    <span class="muted small">{when ? (crawl ? `podle webu ordinace, ${when}` : `poslední hlášení ${when}`) : status.hint}</span>
   </p>
+  {crawl && (
+    <p class="small muted">
+      Na webu ordinace jsme našli: {crawl.note.split(' — ')[0]}
+      {' '}<a href={crawl.note.split(' — ')[1]} rel="nofollow noopener" target="_blank">zdroj</a>.
+      Weby nemusí být aktuální, ověřte si to telefonem a dejte vědět ostatním.
+    </p>
+  )}
 
   <div class="two-col">
     <div>

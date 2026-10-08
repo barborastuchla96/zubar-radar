@@ -52,12 +52,13 @@ scp nrpzs.csv root@YOUR_SERVER_IP:/opt/zubar-radar/data/nrpzs.csv
 ssh root@YOUR_SERVER_IP 'cd /opt/zubar-radar/deploy && docker compose run --rm importer import /data/nrpzs.csv'
 ```
 
-## 4. Automatic jobs (set up by setup-server.sh)
+## 4. Automatic jobs (set up by setup-server.sh, or `./deploy/cron.sh` to update them)
 
 | When | What | Log |
 |---|---|---|
 | Daily at 03:17 | `backup.sh`: database dump into `backups/`, last 14 days kept | `/var/log/berepacienty/backup.log` |
 | 2nd of each month at 04:23 | `import-monthly.sh`: downloads `NRPZS_URL` and imports it | `/var/log/berepacienty/import.log` |
+| Sundays at 05:11 | `crawl`: checks Prague clinic websites for new-patient notices | `/var/log/berepacienty/crawl.log` |
 
 For the monthly import, put the direct CSV download link (from nrpzs.uzis.cz or data.gov.cz) into
 `NRPZS_URL` in `deploy/.env`. Until you do, the job does nothing and logs a message saying so.
@@ -66,6 +67,17 @@ For the monthly import, put the direct CSV download link (from nrpzs.uzis.cz or 
 for example a Hetzner Storage Box via `rsync`, or any S3 bucket via `rclone`, by adding that to the
 crontab after `backup.sh`. To restore:
 `docker compose exec -T db pg_restore -U radar -d radar --clean < backups/radar-YYYY-MM-DD.dump`.
+
+## Clinic website checker
+
+`docker compose run --rm importer crawl --dry-run` checks the clinic websites of all Prague
+practices and prints what it finds, without writing anything. Drop `--dry-run` to save the
+findings. They're stored as low-weight `web_crawl` signals and shown on the site as
+"podle webu ordinace" (based on the clinic's website). Options: `--specialty zubar`,
+`--limit 50`, `--city '^brno$'`, or `--city .` for the whole country.
+
+The checker identifies itself as `BerePacientyBot`, honours robots.txt, waits between requests
+to the same site, and refuses private network addresses.
 
 ## Everyday commands (run in `deploy/`)
 

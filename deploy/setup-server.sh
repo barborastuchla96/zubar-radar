@@ -31,12 +31,9 @@ else
   echo "    deploy/.env exists, leaving it alone."
 fi
 
-echo "==> Cron: daily backup 03:17, monthly import on the 2nd at 04:23"
-mkdir -p "$REPO_DIR/backups" "$REPO_DIR/data" /var/log/berepacienty
-cat > /etc/cron.d/berepacienty <<CRON
-17 3 * * * root $REPO_DIR/deploy/backup.sh >> /var/log/berepacienty/backup.log 2>&1
-23 4 2 * * root $REPO_DIR/deploy/import-monthly.sh >> /var/log/berepacienty/import.log 2>&1
-CRON
+echo "==> Cron: daily backup, monthly import, weekly website check"
+mkdir -p "$REPO_DIR/backups" "$REPO_DIR/data"
+./cron.sh
 
 echo
 echo "Done. Next:"

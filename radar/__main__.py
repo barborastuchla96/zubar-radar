@@ -1,4 +1,4 @@
-"""CLI: python -m radar {initdb,inspect,import,near,report,sponsor}"""
+"""CLI: python -m radar {initdb,inspect,import,near,report,sponsor,crawl}"""
 
 from __future__ import annotations
 
@@ -149,6 +149,42 @@ def cmd_sponsor(args) -> None:
                 print(f"#{r[0]:<4} {r[2]}/{r[3]:<20} {r[4]} → {r[5]}  {r[1]}")
 
 
+def cmd_crawl(args) -> None:
+    """Check clinic websites for "přijímáme / nepřijímáme nové pacienty"."""
+    import psycopg
+    from . import crawler
+    from .db import crawl_targets, record_crawl
+
+    with psycopg.connect(_dsn(args)) as conn:
+        sites = crawl_targets(conn, args.city, args.specialty, args.limit)
+    n_prov = sum(len(v) for v in sites.values())
+    print(f"checking {len(sites)} websites ({n_prov} practices), {args.workers} at a time…", flush=True)
+
+    stats: Counter[str] = Counter()
+    done = 0
+
+    def progress(r):
+        nonlocal done
+        done += 1
+        v = r.verdict
+        key = r.error and "error" or (v.status if v and v.status else ("conflicting" if v and v.conflicting else "nothing"))
+        stats[key] += 1
+        if key in ("accepting", "not_accepting", "waitlist", "conflicting") or (args.verbose and r.error):
+            detail = r.error or f"[{v.scope}] {v.snippet[:110]}"
+            print(f"  {key:<13} {r.page_url or r.url}\n                {detail}", flush=True)
+        elif done % 50 == 0:
+            print(f"  … {done}/{len(sites)}", flush=True)
+
+    results = crawler.crawl(sites, workers=args.workers, progress=progress)
+    print("\nsummary: " + ", ".join(f"{k} {stats[k]}" for k in
+          ("accepting", "waitlist", "not_accepting", "conflicting", "nothing", "error")))
+    if args.dry_run:
+        print("dry run: nothing written")
+        return
+    with psycopg.connect(_dsn(args)) as conn:
+        print(f"wrote {record_crawl(conn, results)} web_crawl signals")
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="radar", description="Zubař radar data tools")
     ap.add_argument("--dsn", help="Postgres DSN (default: $DATABASE_URL)")
@@ -198,6 +234,15 @@ def main(argv: list[str] | None = None) -> None:
     pe = sp.add_parser("end")
     pe.add_argument("id", type=int)
     p.set_defaults(func=cmd_sponsor)
+
+    p = sub.add_parser("crawl", help="check clinic websites for new-patient notices")
+    p.add_argument("--city", default=r"^praha(-[0-9]+)?$", help="regex on city slug (default: all of Prague; '.' = everywhere)")
+    p.add_argument("--specialty", action="append", help="limit to a specialty (repeatable)")
+    p.add_argument("--limit", type=int, help="max websites to check")
+    p.add_argument("--workers", type=int, default=8)
+    p.add_argument("--dry-run", action="store_true", help="print findings, write nothing")
+    p.add_argument("--verbose", action="store_true", help="also print fetch errors")
+    p.set_defaults(func=cmd_crawl)
 
     args = ap.parse_args(argv)
     args.func(args)

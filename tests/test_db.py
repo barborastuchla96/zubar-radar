@@ -121,3 +121,23 @@ def test_sponsor_cli(conn, capsys, monkeypatch):
     assert capsys.readouterr().out.strip() == "ended"
     with pytest.raises(SystemExit, match="no provider"):
         main(["sponsor", "add", "999999", "--specialty", "zubar", "--end", "2099-01-01"])
+
+
+def test_crawl_targets_and_record(conn):
+    from radar.crawler import SiteResult, Verdict
+    db.import_providers(conn, providers())
+    a, b = pid(conn, "1001"), pid(conn, "1002")
+    conn.execute("UPDATE providers SET web = 'www.zubar-test.cz' WHERE id = %s", (a,))
+    conn.execute("UPDATE providers SET web = 'http://WWW.zubar-test.cz' WHERE id = %s", (b,))
+    sites = db.crawl_targets(conn, "^brno$")
+    assert sites == {"http://www.zubar-test.cz/": [a, b]}
+    assert db.crawl_targets(conn, "^brno$", ["pediatr"]) == {}
+
+    res = [SiteResult("http://www.zubar-test.cz/", Verdict("accepting", "all", "přijímáme nové pacienty"),
+                      "http://www.zubar-test.cz/", provider_ids=[a, b])]
+    assert db.record_crawl(conn, res) == 2
+    assert db.record_crawl(conn, res) == 0          # same verdict within a week: no duplicates
+    res[0].verdict = Verdict("not_accepting", "all", "nepřijímáme")
+    assert db.record_crawl(conn, res) == 2          # a changed verdict is recorded
+    note = conn.execute("SELECT note FROM availability_signals WHERE provider_id=%s ORDER BY id LIMIT 1", (a,)).fetchone()[0]
+    assert note.startswith("„přijímáme nové pacienty“ — http://www.zubar-test.cz/")

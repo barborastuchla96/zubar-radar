@@ -25,6 +25,7 @@ export interface ProviderRow {
   facility_type: string | null;
   status: Status;
   last_signal_at: Date | null;
+  last_source: 'clinic' | 'region' | 'user' | 'web_crawl' | null;
   specialties: string[];
 }
 
@@ -35,7 +36,7 @@ const STATUS_ORDER = sql`CASE coalesce(s.status, 'unknown')
 const PROVIDER_COLS = sql`
   p.id, p.name, p.street, p.house_no, p.city, p.city_slug, p.postcode, p.district, p.region,
   p.lat, p.lng, p.phone, p.email, p.web, p.facility_type,
-  coalesce(s.status, 'unknown') AS status, s.last_signal_at,
+  coalesce(s.status, 'unknown') AS status, s.last_signal_at, s.last_source,
   (SELECT array_agg(specialty_slug ORDER BY specialty_slug)
      FROM provider_specialties WHERE provider_id = p.id) AS specialties`;
 
@@ -173,4 +174,13 @@ export async function pragueAccepting(specialty: string, limit = 24): Promise<Pr
      WHERE p.active AND p.city_slug ~ ${PRAGUE_SLUG}
      ORDER BY ${STATUS_ORDER}, s.last_signal_at DESC
      LIMIT ${limit}`;
+}
+
+/** The latest note from the website checker, e.g. „přijímáme nové pacienty“ — URL. */
+export async function latestCrawlNote(providerId: number): Promise<{ note: string; observed_at: Date } | undefined> {
+  const [row] = await sql<{ note: string; observed_at: Date }[]>`
+    SELECT note, observed_at FROM availability_signals
+     WHERE provider_id = ${providerId} AND source = 'web_crawl' AND note IS NOT NULL
+     ORDER BY observed_at DESC LIMIT 1`;
+  return row;
 }
