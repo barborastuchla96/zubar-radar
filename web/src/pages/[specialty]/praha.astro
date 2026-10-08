@@ -5,7 +5,7 @@ import Base from '../../layouts/Base.astro';
 import ProviderCard from '../../components/ProviderCard.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import { cities, pragueAccepting } from '../../lib/db';
-import { SPECIALTIES, bere, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
+import { SPECIALTIES, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -14,7 +14,7 @@ const districts = (await cities(spec.slug, 1)).filter((c) => isPragueSlug(c.city
 const total = districts.reduce((t, c) => t + c.n, 0);
 const acceptingTotal = districts.reduce((t, c) => t + c.accepting, 0);
 const accepting = await pragueAccepting(spec.slug);
-const title = `${spec.plural} Praha – kdo bere nové pacienty`;
+const title = `${spec.plural} Praha – kdo přijímá nové pacienty`;
 const description = `${spec.plural} v Praze podle městských částí: ${ordinaci(total)}. ` +
   (acceptingTotal ? `Podle hlášení ${prijima(acceptingTotal)} nové pacienty. ` : '') +
   'Ověřeno lidmi, kteří tam volali.';
@@ -28,11 +28,11 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
     {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
   </p>
 
-  <h2>Kde teď berou</h2>
+  <h2>Kde teď přijímají</h2>
   {accepting.length > 0 ? (
     <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
   ) : (
-    <p class="card">Zatím tu nemáme žádné hlášení, že by někdo bral. Vyberte svou část Prahy a pomozte:
+    <p class="card">Zatím tu nemáme žádné hlášení, že by někdo přijímal. Vyberte svou část Prahy a pomozte:
       po telefonátu do ordinace stačí jedno kliknutí.</p>
   )}
 
@@ -43,7 +43,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
     {districts.map((d) => (
       <a class="card spec-tile" href={cityUrl(spec.slug, d.city_slug)}>
         <strong>{d.city}</strong>
-        <span class="small muted">{ordinaci(d.n)}{d.accepting > 0 && <> · <span style="color:var(--ok)">{bere(d.accepting)}</span></>}</span>
+        <span class="small muted">{ordinaci(d.n)}{d.accepting > 0 && <> · <span style="color:var(--ok)">{prijima(d.accepting)}</span></>}</span>
       </a>
     ))}
   </div>

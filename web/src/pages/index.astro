@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import AdSlot from '../components/AdSlot.astro';
 import { cities } from '../lib/db';
-import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, bere, cityUrl, isPragueSlug, ordinaci } from '../lib/site';
+import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, isPragueSlug, ordinaci, prijima } from '../lib/site';
 
 // Provider counts for the launch city, per specialty.
 const featured = await Promise.all(
@@ -39,7 +39,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
       <a class="card spec-tile" href={cityUrl(s.slug, FEATURED_CITY.slug)}>
         <span class="icon" aria-hidden="true">{s.icon}</span>
         <strong>{s.plural}</strong>
-        <span class="small muted">{ordinaci(n)}{accepting > 0 && <> · <span style="color:var(--ok)">{bere(accepting)}</span></>}</span>
+        <span class="small muted">{ordinaci(n)}{accepting > 0 && <> · <span style="color:var(--ok)">{prijima(accepting)}</span></>}</span>
       </a>
     ))}
   </div>
@@ -49,7 +49,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   <h2>Jak to funguje</h2>
   <div class="grid grid-2">
     <div class="card"><strong>1. Najděte ordinaci</strong><p class="small muted">Seznam vychází z Národního registru poskytovatelů zdravotních služeb, takže by v něm neměl nikdo chybět.</p></div>
-    <div class="card"><strong>2. Podívejte se na stav</strong><p class="small muted">Zelená znamená, že podle čerstvých hlášení berou. Starší hlášení postupně ztrácejí váhu.</p></div>
+    <div class="card"><strong>2. Podívejte se na stav</strong><p class="small muted">Zelená znamená, že podle čerstvých hlášení přijímají. Starší hlášení postupně ztrácejí váhu.</p></div>
     <div class="card"><strong>3. Zavolejte a dejte vědět</strong><p class="small muted">Jedno kliknutí po telefonátu ušetří dalším lidem hodiny obvolávání.</p></div>
   </div>
 

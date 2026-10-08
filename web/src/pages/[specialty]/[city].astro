@@ -17,7 +17,7 @@ const sponsors = await sponsored(spec.slug, Astro.params.city!);
 const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed: 0 } as Record<string, number>;
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const known = rows.length - counts.unknown;
-const title = `${spec.plural} ${city} – kdo bere nové pacienty`;
+const title = `${spec.plural} ${city} – kdo přijímá nové pacienty`;
 const description = `${spec.plural} – ${city}: ${ordinaci(rows.length)}. ` +
   (counts.accepting ? `Podle hlášení ${prijima(counts.accepting)} nové pacienty. ` : '') +
   'Ověřeno lidmi, kteří tam volali.';
@@ -35,7 +35,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 
   <div class="filters" role="group" aria-label="Filtr">
     <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
-    <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Berou ({counts.accepting + counts.waitlist})</button>
+    <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Přijímají ({counts.accepting + counts.waitlist})</button>
     <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Neověřené ({counts.unknown + counts.mixed})</button>
   </div>
 

@@ -11,9 +11,9 @@ export const FEATURED_CITY = { slug: 'praha', name: 'Praha' };
  * plus a few under plain "Praha". /<specialty>/praha is a hub over all of them.
  */
 export const isPragueSlug = (slug: string) => slug === 'praha' || /^praha-\d+$/.test(slug);
-const districtNo = (slug: string) => Number(slug.split('-')[1] ?? 0);
-export const byDistrict = (a: { city_slug: string }, b: { city_slug: string }) =>
-  districtNo(a.city_slug) - districtNo(b.city_slug);
+/** Czech alphabetical order with numbers compared as numbers: Brno, Čáslav…; Praha 2 before Praha 10. */
+export const placeCompare = new Intl.Collator('cs', { numeric: true, sensitivity: 'base' }).compare;
+export const byDistrict = (a: { city: string }, b: { city: string }) => placeCompare(a.city, b.city);
 
 export interface SpecialtyInfo {
   slug: string;
@@ -42,16 +42,14 @@ export function plural(n: number, one: string, few: string, many: string): strin
 const num = (n: number) => n.toLocaleString('cs');
 /** "1 ordinace", "3 ordinace", "331 ordinací" */
 export const ordinaci = (n: number) => `${num(n)} ${plural(n, 'ordinace', 'ordinace', 'ordinací')}`;
-/** "1 bere", "3 berou", "12 bere" */
-export const bere = (n: number) => `${num(n)} ${plural(n, 'bere', 'berou', 'bere')}`;
 /** "1 přijímá", "3 přijímají", "12 přijímá" */
 export const prijima = (n: number) => `${num(n)} ${plural(n, 'přijímá', 'přijímají', 'přijímá')}`;
 
 export const STATUS_LABEL: Record<string, { label: string; hint: string }> = {
-  accepting:     { label: 'Bere nové pacienty', hint: 'Podle posledních hlášení přijímá.' },
+  accepting:     { label: 'Přijímá nové pacienty', hint: 'Podle posledních hlášení přijímá.' },
   waitlist:      { label: 'Pořadník',           hint: 'Zapisuje do pořadníku.' },
   mixed:         { label: 'Nejasné',            hint: 'Hlášení si odporují.' },
-  not_accepting: { label: 'Nebere',             hint: 'Podle posledních hlášení nepřijímá.' },
+  not_accepting: { label: 'Nepřijímá',          hint: 'Podle posledních hlášení nepřijímá.' },
   unknown:       { label: 'Nevíme',             hint: 'Zatím nikdo nenahlásil. Víte víc?' },
 };
 

@@ -25,7 +25,7 @@ const web = p.web ? webHref(p.web) : null;
 const result = Astro.url.searchParams.get('r');
 const status = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
 const desc = `${p.name}, ${address(p)}. ${specs.map((s) => s.singular).join(', ')}. ` +
-  `Bere nové pacienty? ${status.label}${when ? ` (${crawl ? 'podle webu ordinace' : 'ověřeno'} ${when})` : ''}.`;
+  `Přijímá nové pacienty? ${status.label}${when ? ` (${crawl ? 'podle webu ordinace' : 'ověřeno'} ${when})` : ''}.`;
 Astro.response.headers.set('Cache-Control', 'private, no-cache');
 ---
 <Base title={`${p.name} – přijímá nové pacienty?`} description={desc} activeSpecialty={main?.slug}>
