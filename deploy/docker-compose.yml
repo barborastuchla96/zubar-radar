@@ -34,6 +34,8 @@ services:
       ADS_PROVIDER: ${ADS_PROVIDER:-none}
       ANALYTICS_SRC: ${ANALYTICS_SRC:-}
       ANALYTICS_ID: ${ANALYTICS_ID:-}
+      SEZNAM_WMT: ${SEZNAM_WMT:-}
+      GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
     depends_on:
       db:
         condition: service_healthy

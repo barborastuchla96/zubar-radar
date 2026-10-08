@@ -5,6 +5,9 @@ import { SITE_NAME, SPECIALTIES, adsProvider, analytics } from '../lib/site';
 const cmp = import.meta.glob<string>('../ads/cmp-head.html', { query: '?raw', import: 'default', eager: true })['../ads/cmp-head.html'];
 const cmpHtml = adsProvider() === 'sklik' ? cmp : undefined;
 const stats = analytics();
+// Search-engine ownership checks, set in deploy/.env (no rebuild needed, just restart).
+const seznamWmt = process.env.SEZNAM_WMT;
+const googleVerification = process.env.GOOGLE_SITE_VERIFICATION;
 
 interface Props {
   title: string;
@@ -29,6 +32,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="cs_CZ" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {seznamWmt && <meta name="seznam-wmt" content={seznamWmt} />}
+    {googleVerification && <meta name="google-site-verification" content={googleVerification} />}
     {cmpHtml && <Fragment set:html={cmpHtml} />}
     {stats && <script is:inline defer src={stats.src} data-website-id={stats.id}></script>}
     <slot name="head" />
