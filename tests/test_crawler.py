@@ -142,3 +142,9 @@ def test_crawl_groups_and_maps_providers(site):
     by_url = {r.url: r for r in results}
     assert by_url[site + "/"].provider_ids == [1, 2] and by_url[site + "/"].verdict.status == "accepting"
     assert by_url[site + "/kontakt"].verdict.status is None
+
+
+def test_snippet_keeps_original_diacritics():
+    v = classify("Vítejte.\nOd září opět PŘIJÍMÁME nové pacienty, prosíme volejte.\nTel. 123")
+    assert v.status == "accepting"
+    assert "Od září opět PŘIJÍMÁME nové pacienty" in v.snippet

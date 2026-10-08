@@ -158,6 +158,15 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
                 continue
             note = f"„{v.snippet[:300]}“ — {r.page_url}"[:500]
             for pid in r.provider_ids:
+                # Same verdict seen recently: just refresh its quote (e.g. after a wording fix).
+                conn.execute(
+                    """
+                    UPDATE availability_signals SET note = %(note)s, scope = %(scope)s
+                     WHERE provider_id = %(pid)s AND source = 'web_crawl' AND status = %(status)s
+                       AND observed_at > now() - make_interval(days => %(days)s)
+                    """,
+                    {"pid": pid, "status": v.status, "scope": v.scope, "note": note, "days": RECHECK_DAYS},
+                )
                 cur = conn.execute(
                     """
                     INSERT INTO availability_signals (provider_id, source, status, scope, note)

@@ -33,6 +33,20 @@ export const SPECIALTIES: SpecialtyInfo[] = [
 
 export const specialty = (slug: string) => SPECIALTIES.find((s) => s.slug === slug);
 
+// Czech plural forms: 1 → one, 2–4 → few, 0 and 5+ → many.
+const pr = new Intl.PluralRules('cs');
+export function plural(n: number, one: string, few: string, many: string): string {
+  const cat = pr.select(n);
+  return cat === 'one' ? one : cat === 'few' ? few : many;
+}
+const num = (n: number) => n.toLocaleString('cs');
+/** "1 ordinace", "3 ordinace", "331 ordinací" */
+export const ordinaci = (n: number) => `${num(n)} ${plural(n, 'ordinace', 'ordinace', 'ordinací')}`;
+/** "1 bere", "3 berou", "12 bere" */
+export const bere = (n: number) => `${num(n)} ${plural(n, 'bere', 'berou', 'bere')}`;
+/** "1 přijímá", "3 přijímají", "12 přijímá" */
+export const prijima = (n: number) => `${num(n)} ${plural(n, 'přijímá', 'přijímají', 'přijímá')}`;
+
 export const STATUS_LABEL: Record<string, { label: string; hint: string }> = {
   accepting:     { label: 'Bere nové pacienty', hint: 'Podle posledních hlášení přijímá.' },
   waitlist:      { label: 'Pořadník',           hint: 'Zapisuje do pořadníku.' },

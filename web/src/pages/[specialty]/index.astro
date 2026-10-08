@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { cities } from '../../lib/db';
-import { cityUrl, specialty } from '../../lib/site';
+import { cityUrl, ordinaci, plural, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -20,7 +20,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
 <Base title={`${spec.plural} – kdo bere nové pacienty | podle měst`} description={`${spec.plural} podle měst a krajů. U každé ordinace vidíte, zda přijímá nové pacienty.`} activeSpecialty={spec.slug}>
   <div class="crumbs"><a href="/">Úvod</a> › {spec.plural}</div>
   <h1>{spec.plural} podle měst</h1>
-  <p class="muted">{all.reduce((s, c) => s + c.n, 0).toLocaleString('cs')} ordinací v {all.length.toLocaleString('cs')} obcích.</p>
+  <p class="muted">{ordinaci(all.reduce((s, c) => s + c.n, 0))} v {all.length.toLocaleString('cs')} {plural(all.length, 'obci', 'obcích', 'obcích')}.</p>
   {regions.map(([region, list]) => (
     <section>
       <h2>{region}</h2>

@@ -58,8 +58,28 @@ POSITIVE = [
 
 
 def normalize(text: str) -> str:
-    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
-    return re.sub(r"[ \t\r\f\v]+", " ", text.lower())
+    return _normalize_with_map(text)[0]
+
+
+def _normalize_with_map(text: str) -> tuple[str, list[int]]:
+    """Lower-case ASCII version of text, plus, for every output character, the
+    index of the original character it came from (so snippets can be quoted
+    from the original text with diacritics)."""
+    out: list[str] = []
+    src: list[int] = []
+    prev_space = False
+    for i, ch in enumerate(text):
+        a = unicodedata.normalize("NFKD", ch).encode("ascii", "ignore").decode().lower()
+        for c in a:
+            if c in " \t\r\f\v":
+                if prev_space:
+                    continue
+                c, prev_space = " ", True
+            else:
+                prev_space = False
+            out.append(c)
+            src.append(i)
+    return "".join(out), src
 
 
 @dataclass
@@ -70,8 +90,14 @@ class Verdict:
     conflicting: bool = False
 
 
-def _snippet(text: str, m: re.Match, pad: int = 50) -> str:
-    s = text[max(0, m.start() - pad): m.end() + pad].replace("\n", " ")
+def _snippet(text: str, m: re.Match, pad: int = 50, original: str | None = None,
+             src: list[int] | None = None) -> str:
+    """Text around a match, taken from the original (with diacritics) when given."""
+    a, b = max(0, m.start() - pad), min(len(text), m.end() + pad)
+    if original is not None and src:
+        s = original[src[a]: src[b - 1] + 1]
+    else:
+        s = text[a:b]
     return re.sub(r"\s+", " ", s).strip()
 
 
@@ -87,7 +113,7 @@ def _scope(window: str) -> str:
 
 def classify(raw_text: str) -> Verdict:
     """Decide what a page says about taking new patients."""
-    text = normalize(raw_text)
+    text, src = _normalize_with_map(raw_text)
     neg = next((m for p in NEGATIVE for m in p.finditer(text)), None)
     wait = next((m for p in WAITLIST for m in p.finditer(text)), None)
     # Blank out negative matches so "nepřijímáme" text can't also count as positive.
@@ -100,9 +126,9 @@ def classify(raw_text: str) -> Verdict:
     if not found:
         return Verdict(None)
     if neg and pos:
-        return Verdict(None, snippet=_snippet(text, neg), conflicting=True)
+        return Verdict(None, snippet=_snippet(text, neg, original=raw_text, src=src), conflicting=True)
     status, m = found[0]
-    return Verdict(status, _scope(_snippet(text, m, 80)), _snippet(text, m))
+    return Verdict(status, _scope(_snippet(text, m, 80)), _snippet(text, m, original=raw_text, src=src))
 
 
 # --------------------------------------------------------------------------

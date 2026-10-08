@@ -5,7 +5,7 @@ import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
 import { cityProviders, sponsored } from '../../lib/db';
-import { SPECIALTIES, cityUrl, isPragueSlug, specialty } from '../../lib/site';
+import { SPECIALTIES, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -18,8 +18,8 @@ const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed:
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const known = rows.length - counts.unknown;
 const title = `${spec.plural} ${city} – kdo bere nové pacienty`;
-const description = `${rows.length} ordinací (${spec.plural.toLowerCase()}) v obci ${city}. ` +
-  (counts.accepting ? `${counts.accepting} podle hlášení přijímá nové pacienty. ` : '') +
+const description = `${spec.plural} – ${city}: ${ordinaci(rows.length)}. ` +
+  (counts.accepting ? `Podle hlášení ${prijima(counts.accepting)} nové pacienty. ` : '') +
   'Ověřeno lidmi, kteří tam volali.';
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 ---
@@ -28,8 +28,8 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
     {isPragueSlug(Astro.params.city!) && <><a href={cityUrl(spec.slug, 'praha')}>Praha</a> › </>}{city}</div>
   <h1>{spec.plural} – {city}</h1>
   <p class="muted">
-    {rows.length} ordinací
-    {counts.accepting > 0 && <> · <strong style="color:var(--ok)">{counts.accepting} bere nové pacienty</strong></>}
+    {ordinaci(rows.length)}
+    {counts.accepting > 0 && <> · <strong style="color:var(--ok)">{prijima(counts.accepting)} nové pacienty</strong></>}
     {known === 0 && <> · zatím bez hlášení – <strong>buďte první, kdo dá vědět</strong></>}
   </p>
 

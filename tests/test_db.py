@@ -136,8 +136,11 @@ def test_crawl_targets_and_record(conn):
     res = [SiteResult("http://www.zubar-test.cz/", Verdict("accepting", "all", "přijímáme nové pacienty"),
                       "http://www.zubar-test.cz/", provider_ids=[a, b])]
     assert db.record_crawl(conn, res) == 2
-    assert db.record_crawl(conn, res) == 0          # same verdict within a week: no duplicates
+    res[0].verdict = Verdict("accepting", "all", "Přijímáme nové pacienty")
+    assert db.record_crawl(conn, res) == 0          # same verdict within a week: no duplicates…
+    assert conn.execute("SELECT note FROM availability_signals WHERE provider_id=%s", (a,)).fetchone()[0].startswith(
+        "„Přijímáme nové pacienty“")               # …but the quote is refreshed
     res[0].verdict = Verdict("not_accepting", "all", "nepřijímáme")
     assert db.record_crawl(conn, res) == 2          # a changed verdict is recorded
     note = conn.execute("SELECT note FROM availability_signals WHERE provider_id=%s ORDER BY id LIMIT 1", (a,)).fetchone()[0]
-    assert note.startswith("„přijímáme nové pacienty“ — http://www.zubar-test.cz/")
+    assert note.startswith("„Přijímáme nové pacienty“ — http://www.zubar-test.cz/")
