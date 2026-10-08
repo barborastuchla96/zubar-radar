@@ -35,10 +35,13 @@ nano deploy/.env                # set DOMAIN, ACME_EMAIL (NRPZS_URL: see step 4)
 Open `https://yourdomain.cz`. Caddy gets the HTTPS certificate on the first visit.
 If the page doesn't load, DNS usually isn't ready yet (see step 1).
 
-The repo is private, so the server needs read access to it. The simplest way is a GitHub
-**deploy key**: run `ssh-keygen -t ed25519` on the server and add the contents of
-`~/.ssh/id_ed25519.pub` under the repo's Settings → Deploy keys. Then clone with
+The repo is public, so the plain `https://` clone above needs no keys. If you ever make it
+private, add a **deploy key** instead: run `ssh-keygen -t ed25519` on the server, add
+`~/.ssh/id_ed25519.pub` under the repo's Settings → Deploy keys, and clone with
 `git@github.com:barborastuchla96/zubar-radar.git`.
+
+Because the code is public, never commit `deploy/.env`, the NRPZS CSV or backups. `.gitignore`
+already excludes them, but check `git status` before you commit.
 
 ## 3. Load the data
 
