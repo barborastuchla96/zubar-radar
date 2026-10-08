@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import ProviderCard from '../components/ProviderCard.astro';
+import Map from '../components/Map.astro';
+import { nearby } from '../lib/db';
+import { SPECIALTIES, specialty } from '../lib/site';
+
+const q = Astro.url.searchParams;
+const spec = specialty(q.get('s') ?? '') ?? SPECIALTIES[0];
+const lat = Number(q.get('lat')), lng = Number(q.get('lng'));
+const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat > 48 && lat < 51.5 && lng > 12 && lng < 19.5;
+const km = Math.min(Math.max(Number(q.get('km')) || 5, 1), 30);
+const rows = valid ? await nearby(spec.slug, lat, lng, km) : [];
+---
+<Base title={`${spec.plural} v okolí`} description={`${spec.plural} ve vašem okolí, kteří přijímají nové pacienty.`} noindex activeSpecialty={spec.slug}>
+  <h1>{spec.plural} do {km} km od vás</h1>
+  {!valid && <p class="notice bad">Poloha chybí nebo je mimo Česko. <a href="/">Zkuste to znovu</a> nebo vyberte město.</p>}
+  {valid && rows.length === 0 && (
+    <p>Nic jsme nenašli. <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}`}>Zkusit větší okruh</a>.</p>
+  )}
+  {rows.length > 0 && (
+    <>
+      <p class="muted">Seřazeno: nejdřív ti, kdo podle hlášení berou, pak podle vzdálenosti.
+        {km < 30 && <> <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}`}>Rozšířit na {Math.min(km * 2, 30)} km</a></>}
+      </p>
+      <Map providers={rows} />
+      <div class="grid grid-2">{rows.map((p) => <ProviderCard p={p} />)}</div>
+    </>
+  )}
+</Base>

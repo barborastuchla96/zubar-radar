@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import AdSlot from '../components/AdSlot.astro';
+import { cities } from '../lib/db';
+import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl } from '../lib/site';
+
+// Provider counts for the launch city, per specialty.
+const featured = await Promise.all(
+  SPECIALTIES.map(async (s) => {
+    const all = await cities(s.slug, 1);
+    const c = all.find((x) => x.city_slug === FEATURED_CITY.slug);
+    return { s, n: c?.n ?? 0, accepting: c?.accepting ?? 0 };
+  }),
+);
+const topDentistCities = (await cities('zubar', 3, 12)).filter((c) => c.city_slug !== FEATURED_CITY.slug);
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+---
+<Base title={`${SITE_NAME} – ${TAGLINE}`} description="Najděte zubaře, praktického či dětského lékaře nebo gynekologa, který přijímá nové pacienty. Ověřeno lidmi, kteří tam volali.">
+  <section class="hero">
+    <h1>Hledáte zubaře nebo lékaře,<br />který vás vezme?</h1>
+    <p>
+      Všechny ordinace z oficiálního registru na jednom místě. U každé vidíte, jestli podle
+      posledních hlášení <strong>přijímá nové pacienty</strong> a kdy to někdo naposledy ověřil.
+    </p>
+    <form method="get" action="/blizko" class="filters" id="near-form">
+      <select name="s" aria-label="Obor" style="width:auto">
+        {SPECIALTIES.map((s) => <option value={s.slug}>{s.singular}</option>)}
+      </select>
+      <input type="hidden" name="lat" /><input type="hidden" name="lng" />
+      <button class="btn" type="submit" id="near-btn">📍 Najít v mém okolí</button>
+    </form>
+    <p class="small muted" id="near-msg" hidden></p>
+  </section>
+
+  <h2>{FEATURED_CITY.name}</h2>
+  <div class="grid grid-cards">
+    {featured.map(({ s, n, accepting }) => (
+      <a class="card spec-tile" href={cityUrl(s.slug, FEATURED_CITY.slug)}>
+        <span class="icon" aria-hidden="true">{s.icon}</span>
+        <strong>{s.plural}</strong>
+        <span class="small muted">{n} ordinací{accepting > 0 && <> · <span style="color:var(--ok)">{accepting} bere</span></>}</span>
+      </a>
+    ))}
+  </div>
+
+  <AdSlot slot="home-mid" />
+
+  <h2>Jak to funguje</h2>
+  <div class="grid grid-2">
+    <div class="card"><strong>1. Najděte ordinaci</strong><p class="small muted">Seznam vychází z Národního registru poskytovatelů zdravotních služeb, takže v něm nechybí nikdo.</p></div>
+    <div class="card"><strong>2. Podívejte se na stav</strong><p class="small muted">Zelená = podle čerstvých hlášení berou. Starší hlášení postupně ztrácí váhu.</p></div>
+    <div class="card"><strong>3. Zavolejte a dejte vědět</strong><p class="small muted">Jedno kliknutí po telefonátu ušetří dalším lidem hodiny obvolávání.</p></div>
+  </div>
+
+  <h2>Zubaři v dalších městech</h2>
+  <p>
+    {topDentistCities.map((c, i) => (
+      <>{i > 0 && ' · '}<a href={cityUrl('zubar', c.city_slug)}>{c.city}</a></>
+    ))}
+    {' · '}<a href="/zubar">všechna města →</a>
+  </p>
+</Base>
+
+<script>
+  const form = document.getElementById('near-form') as HTMLFormElement;
+  const msg = document.getElementById('near-msg')!;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!navigator.geolocation) { msg.hidden = false; msg.textContent = 'Váš prohlížeč polohu nepodporuje.'; return; }
+    msg.hidden = false; msg.textContent = 'Zjišťuji polohu…';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        (form.elements.namedItem('lat') as HTMLInputElement).value = pos.coords.latitude.toFixed(4);
+        (form.elements.namedItem('lng') as HTMLInputElement).value = pos.coords.longitude.toFixed(4);
+        form.submit();
+      },
+      () => { msg.textContent = 'Polohu se nepodařilo zjistit. Vyberte město níže.'; },
+      { timeout: 10000, maximumAge: 600000 },
+    );
+  });
+</script>

@@ -1,0 +1,23 @@
+---
+import StatusBadge from './StatusBadge.astro';
+import { address, ago, providerUrl, telHref } from '../lib/site';
+import type { ProviderRow } from '../lib/db';
+
+interface Props { p: ProviderRow & { km?: number } }
+const { p } = Astro.props;
+const when = ago(p.last_signal_at);
+---
+<article class="card provider" data-status={p.status}>
+  <h3><a href={providerUrl(p)}>{p.name}</a></h3>
+  <div class="meta">
+    <StatusBadge status={p.status} />
+    {when && <span>ověřeno {when}</span>}
+    {p.km != null && <span>{p.km.toLocaleString('cs')} km</span>}
+  </div>
+  <div class="small muted">{address(p)}</div>
+  <div class="small">
+    {p.phone && <a href={telHref(p.phone)}>{p.phone}</a>}
+    {p.phone && ' · '}
+    <a href={`${providerUrl(p)}#nahlasit`}>Nahlásit, jak to dopadlo</a>
+  </div>
+</article>

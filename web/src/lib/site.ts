@@ -1,0 +1,70 @@
+// Copy, labels and helpers. Everything user-facing is Czech.
+
+export const SITE_NAME = 'Bere pacienty?';
+export const TAGLINE = 'Kteří lékaři a zubaři právě přijímají nové pacienty';
+
+/** Launch city: featured on the homepage. */
+export const FEATURED_CITY = { slug: 'brno', name: 'Brno', lat: 49.1951, lng: 16.6068 };
+
+export interface SpecialtyInfo {
+  slug: string;
+  singular: string;     // "Zubař"
+  plural: string;       // "Zubaři"
+  short: string;        // nav label
+  icon: string;
+}
+
+export const SPECIALTIES: SpecialtyInfo[] = [
+  { slug: 'zubar', singular: 'Zubař', plural: 'Zubaři', short: 'Zubař', icon: '🦷' },
+  { slug: 'praktik', singular: 'Praktický lékař', plural: 'Praktičtí lékaři', short: 'Praktik', icon: '🩺' },
+  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Pediatr', icon: '🧸' },
+  { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekolog', icon: '🌸' },
+  { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Hygiena', icon: '✨' },
+];
+
+export const specialty = (slug: string) => SPECIALTIES.find((s) => s.slug === slug);
+
+export const STATUS_LABEL: Record<string, { label: string; hint: string }> = {
+  accepting:     { label: 'Bere nové pacienty', hint: 'Podle posledních hlášení přijímá.' },
+  waitlist:      { label: 'Pořadník',           hint: 'Zapisuje do pořadníku.' },
+  mixed:         { label: 'Nejasné',            hint: 'Hlášení si odporují.' },
+  not_accepting: { label: 'Nebere',             hint: 'Podle posledních hlášení nepřijímá.' },
+  unknown:       { label: 'Nevíme',             hint: 'Zatím nikdo nenahlásil. Víte víc?' },
+};
+
+const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });
+
+/** "dnes", "včera", "před 5 dny", "před 2 měsíci". */
+export function ago(d: Date | string | null): string | null {
+  if (!d) return null;
+  const days = Math.round((new Date(d).getTime() - Date.now()) / 86_400_000);
+  if (days > -1) return 'dnes';
+  if (days > -45) return rtf.format(days, 'day');
+  return rtf.format(Math.round(days / 30), 'month');
+}
+
+export function slugify(s: string): string {
+  return s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+export const providerUrl = (p: { id: number; name: string }) => `/lekar/${p.id}-${slugify(p.name)}`;
+export const cityUrl = (spec: string, city: string) => `/${spec}/${city}`;
+
+export function address(p: { street: string | null; house_no: string | null; city: string | null; postcode?: string | null }) {
+  const street = [p.street, p.house_no].filter(Boolean).join(' ');
+  const pc = p.postcode ? p.postcode.replace(/^(\d{3})(\d{2})$/, '$1 $2') : null;
+  return [street, [pc, p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+}
+
+/** Normalise phone for tel: links ("+420 773 255 275" -> "+420773255275"). */
+export const telHref = (phone: string) => 'tel:' + phone.replace(/[^\d+]/g, '');
+
+export function webHref(web: string): string | null {
+  const w = web.trim();
+  if (!w) return null;
+  const url = /^https?:\/\//i.test(w) ? w : `https://${w}`;
+  try { return new URL(url).toString(); } catch { return null; }
+}
+
+export const adsEnabled = (import.meta.env.PUBLIC_ADS_ENABLED ?? '0') === '1';

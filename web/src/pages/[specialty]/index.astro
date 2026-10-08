@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import { cities } from '../../lib/db';
+import { cityUrl, specialty } from '../../lib/site';
+
+const spec = specialty(Astro.params.specialty ?? '');
+if (!spec) return Astro.rewrite('/404');
+
+const all = await cities(spec.slug, 1);
+const byRegion = new Map<string, typeof all>();
+for (const c of all) {
+  const r = c.region ?? 'Ostatní';
+  if (!byRegion.has(r)) byRegion.set(r, []);
+  byRegion.get(r)!.push(c);
+}
+const regions = [...byRegion.entries()].sort((a, b) => a[0].localeCompare(b[0], 'cs'));
+for (const [, list] of regions) list.sort((a, b) => b.n - a.n || a.city.localeCompare(b.city, 'cs'));
+Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
+---
+<Base title={`${spec.plural} – kdo bere nové pacienty | podle měst`} description={`${spec.plural} podle měst a krajů. U každé ordinace vidíte, zda přijímá nové pacienty.`} activeSpecialty={spec.slug}>
+  <div class="crumbs"><a href="/">Úvod</a> › {spec.plural}</div>
+  <h1>{spec.plural} podle měst</h1>
+  <p class="muted">{all.reduce((s, c) => s + c.n, 0).toLocaleString('cs')} ordinací v {all.length.toLocaleString('cs')} obcích.</p>
+  {regions.map(([region, list]) => (
+    <section>
+      <h2>{region}</h2>
+      <p>
+        {list.map((c, i) => (
+          <>{i > 0 && ' · '}<a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a> <span class="small muted">({c.n})</span></>
+        ))}
+      </p>
+    </section>
+  ))}
+</Base>

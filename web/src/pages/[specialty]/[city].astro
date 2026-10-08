@@ -1,0 +1,68 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProviderCard from '../../components/ProviderCard.astro';
+import Map from '../../components/Map.astro';
+import AdSlot from '../../components/AdSlot.astro';
+import { cityProviders } from '../../lib/db';
+import { SPECIALTIES, cityUrl, specialty } from '../../lib/site';
+
+const spec = specialty(Astro.params.specialty ?? '');
+if (!spec) return Astro.rewrite('/404');
+const rows = await cityProviders(spec.slug, Astro.params.city ?? '');
+if (rows.length === 0) return Astro.rewrite('/404');
+
+const city = rows[0].city!;
+const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed: 0 } as Record<string, number>;
+for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
+const known = rows.length - counts.unknown;
+const title = `${spec.plural} ${city} – kdo bere nové pacienty`;
+const description = `${rows.length} ordinací (${spec.plural.toLowerCase()}) v obci ${city}. ` +
+  (counts.accepting ? `${counts.accepting} podle hlášení přijímá nové pacienty. ` : '') +
+  'Ověřeno lidmi, kteří tam volali.';
+Astro.response.headers.set('Cache-Control', 'public, max-age=120');
+---
+<Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug}>
+  <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › {city}</div>
+  <h1>{spec.plural} – {city}</h1>
+  <p class="muted">
+    {rows.length} ordinací
+    {counts.accepting > 0 && <> · <strong style="color:var(--ok)">{counts.accepting} bere nové pacienty</strong></>}
+    {known === 0 && <> · zatím bez hlášení – <strong>buďte první, kdo dá vědět</strong></>}
+  </p>
+
+  <div class="filters" role="group" aria-label="Filtr">
+    <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
+    <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Berou ({counts.accepting + counts.waitlist})</button>
+    <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Neověřené ({counts.unknown + counts.mixed})</button>
+  </div>
+
+  <Map providers={rows} />
+
+  <div class="grid grid-2" id="list">
+    {rows.slice(0, 6).map((p) => <ProviderCard p={p} />)}
+  </div>
+  <AdSlot slot={`city-${spec.slug}`} />
+  <div class="grid grid-2" id="list-rest">
+    {rows.slice(6).map((p) => <ProviderCard p={p} />)}
+  </div>
+  <p class="notice ok" id="empty" hidden>V tomto filtru nic není.</p>
+
+  <h2>Další obory – {city}</h2>
+  <p>{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s, i) => <>{i > 0 && ' · '}<a href={cityUrl(s.slug, Astro.params.city!)}>{s.plural}</a></>)}</p>
+</Base>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>('.chip[data-filter]');
+  const cards = document.querySelectorAll<HTMLElement>('article.provider');
+  const groups: Record<string, string[]> = { accepting: ['accepting', 'waitlist'], unknown: ['unknown', 'mixed'] };
+  chips.forEach((chip) => chip.addEventListener('click', () => {
+    chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+    const f = chip.dataset.filter!;
+    let shown = 0;
+    cards.forEach((card) => {
+      const ok = f === 'all' || groups[f].includes(card.dataset.status!);
+      card.hidden = !ok; if (ok) shown++;
+    });
+    document.getElementById('empty')!.hidden = shown > 0;
+  }));
+</script>

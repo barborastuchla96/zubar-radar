@@ -1,0 +1,7 @@
+MistoPoskytovaniId,ZdravotnickeZarizeniId,NazevCely,DruhZarizeni,Obec,Psc,Ulice,CisloDomovniOrientacni,Okres,Kraj,PoskytovatelTelefon,PoskytovatelEmail,PoskytovatelWeb,Ico,OborPece,FormaPece,Lat,Lng
+1001,ZZ1,Zubní ordinace Testovací s.r.o.,Samostatná ordinace,Brno,602 00,Česká,12,Brno-město,Jihomoravský kraj,+420 500 000 001,,,11111111,"zubní lékařství, ortodoncie",ambulantní péče,49.1951,16.6068
+1002,ZZ2,MUDr. Fiktivní Praktik,Samostatná ordinace,Brno,602 00,Kounicova,5,Brno-město,Jihomoravský kraj,,,,22222222,všeobecné praktické lékařství,ambulantní péče,49.2010,16.6000
+1003,ZZ3,Nemocnice Nezajímavá,Nemocnice,Brno,625 00,Jihlavská,20,Brno-město,Jihomoravský kraj,,,,33333333,"kardiologie, neurologie",lůžková péče,49.1750,16.5680
+1004,ZZ4,Dětská ordinace Vymyšlená,Samostatná ordinace,Ústí nad Labem,400 01,Hlavní,1,Ústí nad Labem,Ústecký kraj,,,,44444444,praktické lékařství pro děti a dorost,ambulantní péče,14.0320,50.6600
+1005,ZZ5,Zubař Bez GPS,Samostatná ordinace,Praha 6,160 00,Dejvická,3,Hlavní město Praha,Hlavní město Praha,,,,55555555,Zubní lékařství,ambulantní péče,,
+1001,ZZ1,Zubní ordinace Testovací s.r.o.,Samostatná ordinace,Brno,602 00,Česká,12,Brno-město,Jihomoravský kraj,+420 500 000 001,,,11111111,dentální hygiena,ambulantní péče,49.1951,16.6068

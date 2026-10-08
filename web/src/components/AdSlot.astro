@@ -1,0 +1,9 @@
+---
+// Placeholder ad slot. Renders nothing until PUBLIC_ADS_ENABLED=1, so the
+// site never loads ad scripts before a consent banner (CMP) is in place.
+// Swap the inner markup for a Sklik / AdSense / direct-sold unit later.
+import { adsEnabled } from '../lib/site';
+interface Props { slot: string }
+const { slot } = Astro.props;
+---
+{adsEnabled && <aside class="ad" data-ad-slot={slot}>{slot}</aside>}

@@ -1,0 +1,68 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import ReportForm from '../../components/ReportForm.astro';
+import ProviderCard from '../../components/ProviderCard.astro';
+import Map from '../../components/Map.astro';
+import AdSlot from '../../components/AdSlot.astro';
+import { alternatives, provider } from '../../lib/db';
+import { STATUS_LABEL, address, ago, cityUrl, providerUrl, specialty, telHref, webHref } from '../../lib/site';
+
+const id = Number((Astro.params.id ?? '').split('-')[0]);
+const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
+if (!p) return Astro.rewrite('/404');
+
+// One canonical URL per provider (/lekar/123-name). Old or mistyped slugs redirect.
+const canonical = providerUrl(p);
+if (Astro.url.pathname !== canonical) return Astro.redirect(canonical + Astro.url.search, 301);
+
+const specs = (p.specialties ?? []).map(specialty).filter((s) => s != null);
+const main = specs[0];
+const alts = main ? await alternatives(p, main.slug) : [];
+const when = ago(p.last_signal_at);
+const web = p.web ? webHref(p.web) : null;
+const result = Astro.url.searchParams.get('r');
+const status = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
+const desc = `${p.name}, ${address(p)}. ${specs.map((s) => s.singular).join(', ')}. ` +
+  `Přijímá nové pacienty? ${status.label}${when ? ` (ověřeno ${when})` : ''}.`;
+Astro.response.headers.set('Cache-Control', 'private, no-cache');
+---
+<Base title={`${p.name} – přijímá nové pacienty?`} description={desc} activeSpecialty={main?.slug}>
+  <div class="crumbs">
+    <a href="/">Úvod</a>
+    {main && <> › <a href={`/${main.slug}`}>{main.plural}</a></>}
+    {main && p.city_slug && <> › <a href={cityUrl(main.slug, p.city_slug)}>{p.city}</a></>}
+  </div>
+  <h1>{p.name}</h1>
+  <p style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+    <StatusBadge status={p.status} />
+    <span class="muted small">{when ? `poslední hlášení ${when}` : status.hint}</span>
+  </p>
+
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <dl class="facts">
+          <dt>Adresa</dt><dd>{address(p)}</dd>
+          {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)}>{p.phone}</a></dd></>}
+          {p.email && <><dt>E-mail</dt><dd><a href={`mailto:${p.email}`}>{p.email}</a></dd></>}
+          {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{p.web}</a></dd></>}
+          <dt>Obory</dt><dd>{specs.map((s) => s.singular).join(', ')}</dd>
+          {p.facility_type && <><dt>Typ</dt><dd>{p.facility_type}</dd></>}
+        </dl>
+      </div>
+      <Map providers={[p]} />
+      <p class="small muted">Je tu chyba, nebo jste z této ordinace? <a href="/pro-ordinace">Upravte si údaje zdarma</a>.</p>
+    </div>
+    <ReportForm providerId={p.id} {result} />
+  </div>
+
+  <AdSlot slot="provider" />
+
+  {alts.length > 0 && main && (
+    <section>
+      <h2>Další {main.plural.toLowerCase()} poblíž</h2>
+      <div class="grid grid-2">{alts.map((a) => <ProviderCard p={a} />)}</div>
+    </section>
+  )}
+</Base>

@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import { SITE_NAME, SPECIALTIES } from '../lib/site';
+
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  activeSpecialty?: string;
+}
+const { title, description, noindex = false, activeSpecialty } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex,follow" />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="cs_CZ" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a href="/" class="logo">Bere <span>pacienty?</span></a>
+        <nav class="nav" aria-label="Obory">
+          {SPECIALTIES.map((s) => (
+            <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}>{s.short}</a>
+          ))}
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="wrap">
+        <slot />
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          <strong>{SITE_NAME}</strong> není oficiální služba. Seznam poskytovatelů vychází z
+          Národního registru poskytovatelů zdravotních služeb (ÚZIS ČR); informace o přijímání
+          nových pacientů pochází od uživatelů a ordinací a nemusí být aktuální.
+          Před návštěvou vždy volejte ordinaci.
+        </p>
+        <p>
+          Nemůžete najít lékaře? Vaše zdravotní pojišťovna má ze zákona povinnost vám pomoci
+          lékaře zajistit.
+        </p>
+        <p><a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a></p>
+      </div>
+    </footer>
+  </body>
+</html>

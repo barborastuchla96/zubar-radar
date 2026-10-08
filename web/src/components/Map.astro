@@ -1,0 +1,46 @@
+---
+// Leaflet map of providers. Tiles: OpenStreetMap (fine for launch traffic;
+// switch to Mapy.com or a paid tile host before you get big).
+import type { ProviderRow } from '../lib/db';
+import { providerUrl, STATUS_LABEL } from '../lib/site';
+
+interface Props { providers: ProviderRow[] }
+const points = Astro.props.providers
+  .filter((p) => p.lat != null && p.lng != null)
+  .map((p) => ({ lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status,
+                 label: (STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown).label }));
+---
+{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} role="region" aria-label="Mapa ordinací"></div>}
+
+<script>
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+
+  const COLORS: Record<string, string> = {
+    accepting: '#1f9d55', waitlist: '#d39b18', mixed: '#d39b18', not_accepting: '#c7393d', unknown: '#8a949c',
+  };
+  const el = document.getElementById('map');
+  if (el) {
+    const pts = JSON.parse(el.dataset.points ?? '[]');
+    const map = L.map(el, { scrollWheelZoom: false });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap',
+    }).addTo(map);
+    const group = L.featureGroup();
+    for (const p of pts) {
+      const m = L.circleMarker([p.lat, p.lng], {
+        radius: p.status === 'unknown' ? 6 : 8, color: '#fff', weight: 1.5,
+        fillColor: COLORS[p.status] ?? COLORS.unknown, fillOpacity: .95,
+      });
+      const a = document.createElement('a');
+      a.href = p.url; a.textContent = p.name;
+      const div = document.createElement('div');
+      div.append(a, document.createElement('br'), p.label);
+      m.bindPopup(div);
+      group.addLayer(m);
+    }
+    group.addTo(map);
+    if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], 15);
+    else map.fitBounds(group.getBounds(), { padding: [20, 20], maxZoom: 15 });
+  }
+</script>

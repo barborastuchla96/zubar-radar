@@ -1,0 +1,23 @@
+{
+  "name": "zubar-radar-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "start": "node ./dist/server/entry.mjs",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.7",
+    "astro": "^7.3.7",
+    "leaflet": "^1.9.4",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/leaflet": "1.9",
+    "@types/node": "^22.20.5",
+    "typescript": "^6.0.3"
+  }
+}

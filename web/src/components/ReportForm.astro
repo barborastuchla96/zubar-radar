@@ -1,0 +1,51 @@
+---
+import { formToken } from '../lib/report';
+
+interface Props { providerId: number; result?: string | null }
+const { providerId, result } = Astro.props;
+const today = new Date().toISOString().slice(0, 10);
+const min = new Date(Date.now() - 60 * 86_400_000).toISOString().slice(0, 10);
+const MESSAGES: Record<string, [string, string]> = {
+  ok: ['ok', 'Díky! Vaše hlášení pomůže dalším lidem.'],
+  duplicate: ['bad', 'Tuhle ordinaci jste dnes už hlásili. Díky!'],
+  too_many: ['bad', 'Dnes už jste toho nahlásili hodně, zkuste to prosím zítra.'],
+  invalid: ['bad', 'Něco se nepovedlo. Zkontrolujte prosím formulář.'],
+};
+const msg = result ? MESSAGES[result] : null;
+---
+<section id="nahlasit" class="card">
+  <h2 style="margin-top:0">Volali jste sem? Dejte vědět ostatním</h2>
+  {msg && <p class={`notice ${msg[0]}`} role="status">{msg[1]}</p>}
+  <form class="report" method="post" action="/api/report">
+    <input type="hidden" name="provider_id" value={providerId} />
+    <input type="hidden" name="t" value={formToken()} />
+    <div class="hp" aria-hidden="true">
+      <label>Web <input type="text" name="web" tabindex="-1" autocomplete="off" /></label>
+    </div>
+    <fieldset>
+      <legend>Jak to dopadlo?</legend>
+      <label class="opt"><input type="radio" name="status" value="accepting" required /> Vzali mě / berou nové pacienty</label>
+      <label class="opt"><input type="radio" name="status" value="waitlist" /> Zapsali mě do pořadníku</label>
+      <label class="opt"><input type="radio" name="status" value="not_accepting" /> Nové pacienty neberou</label>
+    </fieldset>
+    <fieldset>
+      <legend>Pro koho?</legend>
+      <select name="scope">
+        <option value="all">Nevím / pro všechny</option>
+        <option value="adults">Dospělé</option>
+        <option value="children">Děti</option>
+      </select>
+    </fieldset>
+    <fieldset>
+      <legend><label for="report-date">Kdy jste to zjistili?</label></legend>
+      <input id="report-date" type="date" name="date" value={today} min={min} max={today} required />
+    </fieldset>
+    <fieldset>
+      <legend><label for="report-note">Poznámka (nepovinné)</label></legend>
+      <textarea id="report-note" name="note" rows="2" maxlength="300"
+        placeholder="Např. „berou jen děti z Líšně“. Nepište prosím jména ani zdravotní údaje."></textarea>
+    </fieldset>
+    <div><button class="btn" type="submit">Odeslat hlášení</button></div>
+    <p class="small muted">Neukládáme vaši IP adresu ani jméno, jen anonymní otisk proti spamu.</p>
+  </form>
+</section>

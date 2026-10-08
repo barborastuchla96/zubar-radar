@@ -1,0 +1,147 @@
+import postgres from 'postgres';
+
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error('DATABASE_URL is not set');
+
+export const sql = postgres(url, { max: 5, idle_timeout: 30 });
+
+export type Status = 'accepting' | 'not_accepting' | 'waitlist' | 'mixed' | 'unknown';
+
+export interface ProviderRow {
+  id: number;
+  name: string;
+  street: string | null;
+  house_no: string | null;
+  city: string | null;
+  city_slug: string | null;
+  postcode: string | null;
+  district: string | null;
+  region: string | null;
+  lat: number | null;
+  lng: number | null;
+  phone: string | null;
+  email: string | null;
+  web: string | null;
+  facility_type: string | null;
+  status: Status;
+  last_signal_at: Date | null;
+  specialties: string[];
+}
+
+const STATUS_ORDER = sql`CASE coalesce(s.status, 'unknown')
+  WHEN 'accepting' THEN 0 WHEN 'waitlist' THEN 1 WHEN 'mixed' THEN 2
+  WHEN 'unknown' THEN 3 ELSE 4 END`;
+
+const PROVIDER_COLS = sql`
+  p.id, p.name, p.street, p.house_no, p.city, p.city_slug, p.postcode, p.district, p.region,
+  p.lat, p.lng, p.phone, p.email, p.web, p.facility_type,
+  coalesce(s.status, 'unknown') AS status, s.last_signal_at,
+  (SELECT array_agg(specialty_slug ORDER BY specialty_slug)
+     FROM provider_specialties WHERE provider_id = p.id) AS specialties`;
+
+export async function specialtyExists(slug: string): Promise<boolean> {
+  const r = await sql`SELECT 1 FROM specialties WHERE slug = ${slug}`;
+  return r.length > 0;
+}
+
+/** Providers of one specialty in one city (or Prague district), best status first. */
+export async function cityProviders(specialty: string, citySlug: string): Promise<ProviderRow[]> {
+  return sql<ProviderRow[]>`
+    SELECT ${PROVIDER_COLS}
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
+      LEFT JOIN provider_status s ON s.provider_id = p.id
+     WHERE p.active AND p.city_slug = ${citySlug}
+     ORDER BY ${STATUS_ORDER}, s.last_signal_at DESC NULLS LAST, p.name`;
+}
+
+export async function provider(id: number): Promise<ProviderRow | undefined> {
+  const [row] = await sql<ProviderRow[]>`
+    SELECT ${PROVIDER_COLS}
+      FROM providers p LEFT JOIN provider_status s ON s.provider_id = p.id
+     WHERE p.id = ${id} AND p.active`;
+  return row;
+}
+
+export async function nearby(
+  specialty: string, lat: number, lng: number, km: number, limit = 30,
+): Promise<(ProviderRow & { km: number })[]> {
+  const m = km * 1000;
+  return sql<(ProviderRow & { km: number })[]>`
+    SELECT ${PROVIDER_COLS},
+           round((earth_distance(ll_to_earth(${lat}, ${lng}), ll_to_earth(p.lat, p.lng)) / 1000)::numeric, 1)::float AS km
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
+      LEFT JOIN provider_status s ON s.provider_id = p.id
+     WHERE p.active AND p.lat IS NOT NULL
+       AND earth_box(ll_to_earth(${lat}, ${lng}), ${m}) @> ll_to_earth(p.lat, p.lng)
+       AND earth_distance(ll_to_earth(${lat}, ${lng}), ll_to_earth(p.lat, p.lng)) <= ${m}
+     ORDER BY ${STATUS_ORDER}, km
+     LIMIT ${limit}`;
+}
+
+/** Other providers of the same specialty close to a given one (for the provider page). */
+export async function alternatives(p: ProviderRow, specialty: string, limit = 5) {
+  if (p.lat == null || p.lng == null) return [];
+  const rows = await nearby(specialty, p.lat, p.lng, 5, limit + 1);
+  return rows.filter((r) => r.id !== p.id).slice(0, limit);
+}
+
+export interface CityCount { city_slug: string; city: string; region: string | null; n: number; accepting: number }
+
+/** Cities ranked by number of providers for a specialty. */
+export async function cities(specialty: string, minProviders = 1, limit = 10000): Promise<CityCount[]> {
+  return sql<CityCount[]>`
+    SELECT p.city_slug, min(p.city) AS city, min(p.region) AS region, count(*)::int AS n,
+           count(*) FILTER (WHERE s.status = 'accepting')::int AS accepting
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
+      LEFT JOIN provider_status s ON s.provider_id = p.id
+     WHERE p.active AND p.city_slug IS NOT NULL
+     GROUP BY p.city_slug
+    HAVING count(*) >= ${minProviders}
+     ORDER BY count(*) DESC, min(p.city)
+     LIMIT ${limit}`;
+}
+
+export interface ReportInput {
+  providerId: number;
+  status: 'accepting' | 'not_accepting' | 'waitlist';
+  scope: 'adults' | 'children' | 'all';
+  observedAt: Date;
+  note: string | null;
+  reporterHash: string;
+}
+
+export type ReportResult = 'ok' | 'duplicate' | 'too_many' | 'no_provider';
+
+/** Insert a user report, with per-provider and per-day limits per reporter. */
+export async function addReport(r: ReportInput): Promise<ReportResult> {
+  return sql.begin(async (tx) => {
+    // Serialize reports from the same reporter so the limits can't be raced.
+    await tx`SELECT pg_advisory_xact_lock(hashtext(${r.reporterHash}))`;
+    const [exists] = await tx`SELECT 1 FROM providers WHERE id = ${r.providerId} AND active`;
+    if (!exists) return 'no_provider';
+    const [{ same, today }] = await tx`
+      SELECT count(*) FILTER (WHERE provider_id = ${r.providerId})::int AS same,
+             count(*)::int AS today
+        FROM availability_signals
+       WHERE reporter_hash = ${r.reporterHash} AND created_at > now() - interval '24 hours'`;
+    if (same > 0) return 'duplicate';
+    if (today >= 10) return 'too_many';
+    await tx`
+      INSERT INTO availability_signals (provider_id, source, status, scope, observed_at, note, reporter_hash)
+      VALUES (${r.providerId}, 'user', ${r.status}, ${r.scope}, ${r.observedAt}, ${r.note}, ${r.reporterHash})`;
+    return 'ok';
+  });
+}
+
+export async function sitemapEntries() {
+  return sql<{ kind: 'city' | 'provider'; specialty: string | null; slug: string; name: string }[]>`
+    SELECT 'city' AS kind, ps.specialty_slug AS specialty, p.city_slug AS slug, '' AS name
+      FROM providers p JOIN provider_specialties ps ON ps.provider_id = p.id
+     WHERE p.active AND p.city_slug IS NOT NULL
+     GROUP BY ps.specialty_slug, p.city_slug HAVING count(*) >= 3
+    UNION ALL
+    SELECT 'provider', NULL, p.id::text, p.name FROM providers p WHERE p.active`;
+}
