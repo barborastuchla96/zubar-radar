@@ -118,3 +118,6 @@ dl.facts dd { margin: 0; overflow-wrap: anywhere; }
   .nav a { flex: none; }
   #map.single { height: 200px; }
 }
+
+.provider.sponsored { border-color: color-mix(in srgb, var(--brand) 45%, var(--border)); }
+.sponsor-label { text-transform: uppercase; letter-spacing: .05em; font-size: .7rem; }

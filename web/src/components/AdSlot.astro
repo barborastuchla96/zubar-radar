@@ -1,9 +1,12 @@
 ---
-// Placeholder ad slot. Renders nothing until PUBLIC_ADS_ENABLED=1, so the
-// site never loads ad scripts before a consent banner (CMP) is in place.
-// Swap the inner markup for a Sklik / AdSense / direct-sold unit later.
-import { adsEnabled } from '../lib/site';
-interface Props { slot: string }
-const { slot } = Astro.props;
+// Network ad slot. Renders only with ADS_PROVIDER=sklik and a snippet file
+// in src/ads/<slot>.html (pasted from the Sklik admin). Network ads rely on
+// the CMP in src/ads/cmp-head.html for consent; see src/ads/README.md.
+import { adsProvider } from '../lib/site';
+
+const snippets = import.meta.glob<string>('../ads/*.html', { query: '?raw', import: 'default', eager: true });
+interface Props { name: string }
+const { name } = Astro.props;
+const html = adsProvider() === 'sklik' ? snippets[`../ads/${name}.html`] : undefined;
 ---
-{adsEnabled && <aside class="ad" data-ad-slot={slot}>{slot}</aside>}
+{html && <aside class="ad" data-ad-slot={name}><Fragment set:html={html} /></aside>}

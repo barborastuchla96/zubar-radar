@@ -104,3 +104,20 @@ def test_near_ranks_accepting_first(conn):
     assert [r["id"] for r in rows] == [praktik, zubar]  # accepting beats closer-but-unknown
     assert rows[1]["km"] == 0
     assert db.near(conn, "zubar", 50.08, 14.42, km=5) == []  # Prague: only the no-GPS one
+
+
+def test_sponsor_cli(conn, capsys, monkeypatch):
+    from radar.__main__ import main
+    db.import_providers(conn, providers())
+    p = pid(conn, "1001")
+    monkeypatch.setenv("DATABASE_URL", DSN)
+    main(["sponsor", "add", str(p), "--specialty", "zubar", "--tagline", "Volné termíny", "--end", "2099-01-01"])
+    assert "/zubar/brno until 2099-01-01" in capsys.readouterr().out
+    main(["sponsor", "list"])
+    assert "zubar/brno" in capsys.readouterr().out
+    sid = conn.execute("SELECT id FROM sponsored_listings").fetchone()[0]
+    main(["sponsor", "end", str(sid)])
+    main(["sponsor", "list"])
+    assert capsys.readouterr().out.strip() == "ended"
+    with pytest.raises(SystemExit, match="no provider"):
+        main(["sponsor", "add", "999999", "--specialty", "zubar", "--end", "2099-01-01"])

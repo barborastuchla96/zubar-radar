@@ -3,3 +3,6 @@ __pycache__/
 *.csv
 !tests/fixtures/*.csv
 .env
+data/
+backups/
+deploy/.env

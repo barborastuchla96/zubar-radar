@@ -145,3 +145,18 @@ export async function sitemapEntries() {
     UNION ALL
     SELECT 'provider', NULL, p.id::text, p.name FROM providers p WHERE p.active`;
 }
+
+export interface SponsoredRow extends ProviderRow { tagline: string | null }
+
+/** Active directly-sold sponsored listings for one specialty + city page. */
+export async function sponsored(specialty: string, citySlug: string, limit = 2): Promise<SponsoredRow[]> {
+  return sql<SponsoredRow[]>`
+    SELECT ${PROVIDER_COLS}, sl.tagline
+      FROM sponsored_listings sl
+      JOIN providers p ON p.id = sl.provider_id AND p.active
+      LEFT JOIN provider_status s ON s.provider_id = p.id
+     WHERE sl.specialty_slug = ${specialty} AND sl.city_slug = ${citySlug}
+       AND current_date BETWEEN sl.starts_on AND sl.ends_on
+     ORDER BY random()
+     LIMIT ${limit}`;
+}

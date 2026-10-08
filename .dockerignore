@@ -1,0 +1,4 @@
+**
+!radar/**
+!deploy/Dockerfile.importer
+**/__pycache__

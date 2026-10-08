@@ -177,3 +177,21 @@ CREATE OR REPLACE FUNCTION distance_km(lat1 float8, lng1 float8, lat2 float8, ln
 RETURNS float8 LANGUAGE sql IMMUTABLE AS $$
     SELECT earth_distance(ll_to_earth(lat1, lng1), ll_to_earth(lat2, lng2)) / 1000.0
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Sponsored listings sold directly to clinics. First-party, no cookies or
+-- tracking, so they need no consent banner. Always labelled "Reklama".
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sponsored_listings (
+    id             bigserial PRIMARY KEY,
+    provider_id    bigint NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+    specialty_slug text   NOT NULL REFERENCES specialties(slug),
+    city_slug      text   NOT NULL,
+    tagline        text   CHECK (length(tagline) <= 140),
+    starts_on      date   NOT NULL DEFAULT current_date,
+    ends_on        date   NOT NULL,
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    CHECK (ends_on >= starts_on)
+);
+CREATE INDEX IF NOT EXISTS sponsored_listings_page_idx
+    ON sponsored_listings (specialty_slug, city_slug, ends_on);

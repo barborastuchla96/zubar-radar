@@ -1,6 +1,10 @@
 ---
 import '../styles/global.css';
-import { SITE_NAME, SPECIALTIES } from '../lib/site';
+import { SITE_NAME, SPECIALTIES, adsProvider, analytics } from '../lib/site';
+
+const cmp = import.meta.glob<string>('../ads/cmp-head.html', { query: '?raw', import: 'default', eager: true })['../ads/cmp-head.html'];
+const cmpHtml = adsProvider() === 'sklik' ? cmp : undefined;
+const stats = analytics();
 
 interface Props {
   title: string;
@@ -18,13 +22,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {!noindex && <link rel="canonical" href={canonical} />}
     {noindex && <meta name="robots" content="noindex,follow" />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="cs_CZ" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {cmpHtml && <Fragment set:html={cmpHtml} />}
+    {stats && <script is:inline defer src={stats.src} data-website-id={stats.id}></script>}
     <slot name="head" />
   </head>
   <body>
@@ -55,7 +61,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           Nemůžete najít lékaře? Vaše zdravotní pojišťovna má ze zákona povinnost vám pomoci
           lékaře zajistit.
         </p>
-        <p><a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a></p>
+        <p><a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a> · <a href="/cookies">Cookies</a></p>
       </div>
     </footer>
   </body>

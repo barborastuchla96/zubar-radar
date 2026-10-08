@@ -67,4 +67,15 @@ export function webHref(web: string): string | null {
   try { return new URL(url).toString(); } catch { return null; }
 }
 
-export const adsEnabled = (import.meta.env.PUBLIC_ADS_ENABLED ?? '0') === '1';
+// Read at request time (not build time), so changing deploy/.env + restart is enough.
+export type AdsProvider = 'none' | 'direct' | 'sklik';
+export function adsProvider(): AdsProvider {
+  const v = process.env.ADS_PROVIDER ?? 'none';
+  return v === 'direct' || v === 'sklik' ? v : 'none';
+}
+
+/** Optional cookieless analytics (Umami-style script tag). */
+export function analytics(): { src: string; id: string } | null {
+  const src = process.env.ANALYTICS_SRC, id = process.env.ANALYTICS_ID;
+  return src && id ? { src, id } : null;
+}

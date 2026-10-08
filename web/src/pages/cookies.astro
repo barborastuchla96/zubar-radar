@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+import { adsProvider, analytics } from '../lib/site';
+const ads = adsProvider();
+const stats = analytics();
+---
+<Base title="Cookies" description="Jaké cookies a podobné technologie web používá.">
+  <h1>Cookies</h1>
+  {ads !== 'sklik' ? (
+    <>
+      <p><strong>Tento web nepoužívá žádné cookies</strong> ani jiné technologie, které by ukládaly
+         informace do vašeho zařízení. Proto se vás na nic neptáme a nezobrazujeme cookie lištu.</p>
+      {ads === 'direct' && (
+        <p>Reklamy označené „Reklama“ jsou doporučené ordinace, které si zde zaplatily zobrazení.
+           Nesledují vás a nepoužívají cookies.</p>
+      )}
+    </>
+  ) : (
+    <>
+      <p>Nezbytný provoz webu cookies nepotřebuje. Reklamu nám dodává Seznam.cz (Sklik). Ten může
+         s vaším souhlasem používat cookies pro měření a cílení reklamy. Souhlas udělujete nebo
+         odmítáte v liště, která se zobrazí při první návštěvě. Odmítnout je stejně snadné jako přijmout.</p>
+      <p>Svou volbu můžete kdykoli změnit odkazem na nastavení souhlasu v liště
+         nebo smazáním cookies v prohlížeči.</p>
+    </>
+  )}
+  <h2>Co dalšího</h2>
+  <ul>
+    {stats && <li>Návštěvnost měříme anonymně bez cookies (nástroj Umami). Neukládá nic do vašeho zařízení a nesleduje vás napříč weby.</li>}
+    <li>Mapy načítáme z OpenStreetMap. Váš prohlížeč při tom stahuje mapové dlaždice z jejich serverů.</li>
+    <li>Funkce „Najít v mém okolí“ použije vaši polohu, jen když ji v prohlížeči povolíte. Polohu neukládáme.</li>
+    <li>Hlášení o ordinacích ukládáme bez jména a bez IP adresy (viz <a href="/o-projektu">ochrana údajů</a>).</li>
+  </ul>
+</Base>

@@ -1,4 +1,4 @@
-"""CLI: python -m radar {initdb,inspect,import,near,report}"""
+"""CLI: python -m radar {initdb,inspect,import,near,report,sponsor}"""
 
 from __future__ import annotations
 
@@ -120,6 +120,35 @@ def cmd_report(args) -> None:
     print("recorded")
 
 
+def cmd_sponsor(args) -> None:
+    """Manage directly-sold sponsored listings."""
+    import psycopg
+    with psycopg.connect(_dsn(args)) as conn:
+        if args.action == "add":
+            row = conn.execute(
+                "INSERT INTO sponsored_listings (provider_id, specialty_slug, city_slug, tagline, starts_on, ends_on)"
+                " SELECT p.id, %s, coalesce(%s, p.city_slug), %s, coalesce(%s::date, current_date), %s::date"
+                "   FROM providers p WHERE p.id = %s RETURNING id, city_slug",
+                (args.specialty, args.city, args.tagline, args.start, args.end, args.provider_id),
+            ).fetchone()
+            if row is None:
+                sys.exit(f"no provider {args.provider_id}")
+            print(f"sponsor #{row[0]} on /{args.specialty}/{row[1]} until {args.end}")
+        elif args.action == "end":
+            cur = conn.execute(
+                "UPDATE sponsored_listings"
+                "   SET ends_on = current_date - 1, starts_on = least(starts_on, current_date - 1)"
+                " WHERE id = %s", (args.id,))
+            print("ended" if cur.rowcount else f"no sponsor #{args.id}")
+        else:
+            for r in conn.execute(
+                "SELECT s.id, p.name, s.specialty_slug, s.city_slug, s.starts_on, s.ends_on"
+                "  FROM sponsored_listings s JOIN providers p ON p.id = s.provider_id"
+                " WHERE s.ends_on >= current_date ORDER BY s.ends_on"
+            ):
+                print(f"#{r[0]:<4} {r[2]}/{r[3]:<20} {r[4]} → {r[5]}  {r[1]}")
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="radar", description="Zubař radar data tools")
     ap.add_argument("--dsn", help="Postgres DSN (default: $DATABASE_URL)")
@@ -155,6 +184,20 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--scope", default="all", choices=["adults", "children", "all"])
     p.add_argument("--note")
     p.set_defaults(func=cmd_report)
+
+    p = sub.add_parser("sponsor", help="sponsored listings: add / list / end")
+    sp = p.add_subparsers(dest="action", required=True)
+    pa = sp.add_parser("add")
+    pa.add_argument("provider_id", type=int)
+    pa.add_argument("--specialty", required=True)
+    pa.add_argument("--city", help="city slug (default: the provider's own city)")
+    pa.add_argument("--tagline")
+    pa.add_argument("--start", help="YYYY-MM-DD (default today)")
+    pa.add_argument("--end", required=True, help="YYYY-MM-DD, last day shown")
+    sp.add_parser("list")
+    pe = sp.add_parser("end")
+    pe.add_argument("id", type=int)
+    p.set_defaults(func=cmd_sponsor)
 
     args = ap.parse_args(argv)
     args.func(args)

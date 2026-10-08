@@ -5,7 +5,8 @@ The list of practices comes from the official NRPZS register. Each practice's st
 (taking / not taking new patients) comes from reports by patients and by the practices themselves.
 
 ```
-radar/        Python: NRPZS importer, Postgres schema, status scoring, CLI
+radar/        Python: NRPZS importer, Postgres schema, status scoring, CLI (incl. sponsored listings)
+deploy/       Docker Compose stack, Caddy, server setup/deploy/backup/import scripts
 web/          Astro (SSR, Node): public website + report API
 tests/        pytest (parser + DB integration)
 ```
@@ -77,19 +78,17 @@ If the total weight is below 0.3 the status is `unknown`; a score ≥ 0.5 is `ac
 - Reporters are identified only by a salted hash of their IP (`REPORT_SALT`). Raw IPs are never stored.
 - Behind a reverse proxy, set `TRUST_PROXY=1` so the real client IP is read from `X-Forwarded-For`.
 
-**Ads.** `<AdSlot>` placeholders sit on the homepage, the city pages (after the 6th practice) and
-the practice pages. They render only when `PUBLIC_ADS_ENABLED=1`. Add a consent banner (CMP)
-before turning on Sklik or AdSense, because EU law requires consent before ad cookies.
+**Ads & cookies.** The site sets no cookies. `ADS_PROVIDER` (`none` / `direct` / `sklik`) is read at
+runtime. Directly sold sponsored listings (`python -m radar sponsor add …`) need no consent banner;
+Sklik ads need Seznam's TCF consent platform. Full details are in [deploy/README.md](deploy/README.md#ads--cookies).
 
 **Maps.** Leaflet with OpenStreetMap tiles. That's fine at launch traffic; move to Mapy.com
 or a paid tile provider before traffic grows (see OSM's tile usage policy).
 
-## Deploying (suggested)
+## Deploying
 
-- One small VPS (Hetzner, or a Czech provider): Postgres, `node web/dist/server/entry.mjs` under systemd,
-  and Caddy in front for HTTPS (with `TRUST_PROXY=1`).
-- Monthly cron on the 2nd of the month (NRPZS updates on the 1st): download the CSV, then run `python -m radar import`.
-- Put Cloudflare (or Caddy caching) in front. City pages send `Cache-Control: public, max-age=120`.
+See **[deploy/README.md](deploy/README.md)**. It covers one VPS running Docker Compose (Postgres + site + Caddy
+with automatic HTTPS), plus setup and deploy scripts, daily backups and the monthly NRPZS import.
 
 ## Tests
 

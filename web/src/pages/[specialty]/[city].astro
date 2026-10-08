@@ -3,7 +3,8 @@ import Base from '../../layouts/Base.astro';
 import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
-import { cityProviders } from '../../lib/db';
+import Sponsored from '../../components/Sponsored.astro';
+import { cityProviders, sponsored } from '../../lib/db';
 import { SPECIALTIES, cityUrl, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
@@ -12,6 +13,7 @@ const rows = await cityProviders(spec.slug, Astro.params.city ?? '');
 if (rows.length === 0) return Astro.rewrite('/404');
 
 const city = rows[0].city!;
+const sponsors = await sponsored(spec.slug, Astro.params.city!);
 const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed: 0 } as Record<string, number>;
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const known = rows.length - counts.unknown;
@@ -38,10 +40,11 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 
   <Map providers={rows} />
 
+  <Sponsored rows={sponsors} />
   <div class="grid grid-2" id="list">
     {rows.slice(0, 6).map((p) => <ProviderCard p={p} />)}
   </div>
-  <AdSlot slot={`city-${spec.slug}`} />
+  <AdSlot name={`city-${spec.slug}`} />
   <div class="grid grid-2" id="list-rest">
     {rows.slice(6).map((p) => <ProviderCard p={p} />)}
   </div>
