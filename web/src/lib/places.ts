@@ -97,7 +97,7 @@ async function geocode(q: string): Promise<{ lat: number; lng: number; label: st
     });
     if (!hit) return null;
     const { lat, lng } = pos(hit);
-    const where = typeof hit.location === 'string' ? hit.location.replace(/,\s*Česko$/, '') : '';
+    const where = typeof hit.location === 'string' ? hit.location.normalize('NFC').replace(/,\s*(Česko|Česká republika|Czechia)\s*$/iu, '') : '';
     return { lat, lng, label: [hit.name, where].filter((x) => typeof x === 'string' && x).join(', ') || q.trim() };
   } catch {
     return null;

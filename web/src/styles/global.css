@@ -450,3 +450,5 @@ details.legend[open] dl { margin-top: .5rem; padding: .75rem 1rem; background: v
   .home-region svg, .home-region .map-credit { display: none; }
 }
 .notice.bad a, .notice.ok a { color: inherit; text-decoration: underline; font-weight: 600; }
+.focus-pin { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); font-size: 30px; line-height: 1; filter: drop-shadow(0 2px 2px rgb(0 0 0 / .35)); pointer-events: none; }
+.near-sub { margin-top: -.4rem; }

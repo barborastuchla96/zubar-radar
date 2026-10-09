@@ -15,14 +15,16 @@ const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat > 48 && lat < 
 const km = Math.min(Math.max(Number(q.get('km')) || 5, 1), 30);
 const RANK: Record<string, number> = { accepting: 0, waitlist: 1, mixed: 2, unknown: 3, not_accepting: 4 };
 const englishOnly = q.get('english') === '1';
-const misto = (q.get('misto') ?? '').slice(0, 80);
+const misto = (q.get('misto') ?? '').normalize('NFC').slice(0, 120).replace(/,\s*(Česko|Česká republika|Czechia)\s*$/iu, '');
+const short = misto.split(',')[0];
 const rows = (valid ? await nearby(spec.slug, lat, lng, englishOnly ? Math.max(km, 25) : km, englishOnly ? 500 : 30) : [])
   .filter((r) => !englishOnly || r.english).slice(0, 30)
   .sort((a, b) => (RANK[a.status] ?? 3) - (RANK[b.status] ?? 3) || Number(b.english) - Number(a.english) || a.km - b.km);
 const wider = `?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}${misto ? `&misto=${encodeURIComponent(misto)}` : ''}${englishOnly ? '&english=1' : ''}`;
 ---
 <Base title={`${E.plural} near you`} description={`${E.plural} near you that accept new patients.`} noindex activeSpecialty={spec.slug} alt={`/blizko${Astro.url.search}`}>
-  <h1>{E.plural} within {englishOnly ? Math.max(km, 25) : km} km{misto && ` of ${misto}`}{englishOnly && ', English-speaking'}</h1>
+  <h1>{E.plural} {misto ? `near ${short}` : 'near you'}{englishOnly && ', English-speaking'}</h1>
+  <p class="muted near-sub">Within {englishOnly ? Math.max(km, 25) : km} km{misto ? <> of <strong>{misto}</strong></> : ' of you'}</p>
   <SpecialistNote {spec} />
   {!valid && <p class="notice bad">Location missing or outside the Czech Republic. <a href="/en">Try again</a> or choose a town.</p>}
   {valid && rows.length === 0 && (englishOnly
@@ -33,7 +35,7 @@ const wider = `?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}$
       <p class="muted">Practices that accept new patients come first, English speakers first among them; then by distance.
         {km < 30 && <> <a href={wider}>Widen to {Math.min(km * 2, 30)} km</a></>}
       </p>
-      <Map providers={rows} />
+      <Map providers={rows} focus={{ lat, lng, label: misto || 'Your location' }} />
       <div class="grid grid-2">{rows.map((p) => <ProviderCard p={p} kmFrom={misto ? 'place' : 'you'} />)}</div>
     </>
   )}

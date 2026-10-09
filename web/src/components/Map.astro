@@ -6,7 +6,9 @@ import type { ProviderRow } from '../lib/db';
 import { address, formatPhone, STATUS_LABEL, telHref } from '../lib/site';
 import { STATUS_EN, doctorUrl, langOf } from '../lib/i18n';
 
-interface Props { providers: ProviderRow[] }
+// focus: the place searched for (or the visitor); the map centres there, marks it, and zooms to the nearest practices.
+interface Props { providers: (ProviderRow & { km?: number })[]; focus?: { lat: number; lng: number; label: string } }
+const focus = Astro.props.focus;
 const mapyKey = (process.env.MAPY_API_KEY ?? '').trim();
 const lang = langOf(Astro.url);
 const points = Astro.props.providers
@@ -20,7 +22,7 @@ const points = Astro.props.providers
     };
   });
 ---
-{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} data-mapy={mapyKey || undefined} data-lang={lang} role="region" aria-label={lang === 'en' ? 'Map of practices' : 'Mapa ordinací'}></div>}
+{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} data-mapy={mapyKey || undefined} data-lang={lang} data-focus={focus ? JSON.stringify(focus) : undefined} role="region" aria-label={lang === 'en' ? 'Map of practices' : 'Mapa ordinací'}></div>}
 
 <script>
   import L from 'leaflet';
@@ -111,7 +113,16 @@ const points = Astro.props.providers
       for (const [m, p] of tagged) m.setIcon(tagIcon(p, f));
     };
     map.on('zoomend', relabel);
-    if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], 15);
+    const focus = el.dataset.focus ? JSON.parse(el.dataset.focus) as { lat: number; lng: number; label: string } : null;
+    if (focus) {
+      L.marker([focus.lat, focus.lng], {
+        icon: L.divIcon({ html: '<span class="focus-pin" aria-hidden="true">📍</span>', className: 'tag-wrap', iconSize: [0, 0], iconAnchor: [0, 0] }),
+        title: focus.label, zIndexOffset: 2000, keyboard: false,
+      }).addTo(map);
+      // the searched place plus its nearest practices, not the whole radius
+      const near = [...pts].sort((a, b) => map.distance([focus.lat, focus.lng], [a.lat, a.lng]) - map.distance([focus.lat, focus.lng], [b.lat, b.lng])).slice(0, 8);
+      map.fitBounds(L.latLngBounds([[focus.lat, focus.lng], ...near.map((p) => [p.lat, p.lng] as [number, number])]), { padding: [30, 30], maxZoom: 16 });
+    } else if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], 15);
     else map.fitBounds(group.getBounds(), { padding: [20, 20], maxZoom: 15 });
     relabel();
   }
