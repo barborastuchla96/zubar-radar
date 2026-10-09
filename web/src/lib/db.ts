@@ -29,6 +29,7 @@ export interface ProviderRow {
   last_source: 'clinic' | 'region' | 'user' | 'web_crawl' | null;
   self_pay: boolean;      // no contract with any health insurer
   english: boolean;       // someone there speaks English
+  insurers: string[] | null;   // health insurer codes it has contracts with ('111', '207'…), where known
   specialties: string[];
 }
 
@@ -44,6 +45,9 @@ const PROVIDER_COLS = sql`
            AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS self_pay,
   EXISTS (SELECT 1 FROM provider_flags f WHERE f.provider_id = p.id AND f.flag = 'english'
            AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS english,
+  (SELECT array_agg(DISTINCT substr(f.flag, 4) ORDER BY substr(f.flag, 4)) FROM provider_flags f
+    WHERE f.provider_id = p.id AND f.flag LIKE 'ins%'
+      AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS insurers,
   (SELECT array_agg(specialty_slug ORDER BY specialty_slug)
      FROM provider_specialties WHERE provider_id = p.id) AS specialties`;
 
@@ -144,6 +148,7 @@ export interface ReportInput {
   note: string | null;
   selfPay?: boolean;      // "no contract with insurers, everything is paid"
   english?: boolean;      // "they speak English"
+  insurers?: string[];    // insurer codes the reporter knows the practice has a contract with
   reporterHash: string;
 }
 
@@ -166,7 +171,8 @@ export async function addReport(r: ReportInput): Promise<ReportResult> {
     await tx`
       INSERT INTO availability_signals (provider_id, source, status, scope, observed_at, note, reporter_hash)
       VALUES (${r.providerId}, 'user', ${r.status}, ${r.scope}, ${r.observedAt}, ${r.note}, ${r.reporterHash})`;
-    for (const [flag, on] of [['self_pay', r.selfPay], ['english', r.english]] as const) {
+    const flags: [string, boolean | undefined][] = [['self_pay', r.selfPay], ['english', r.english], ...(r.insurers ?? []).map((c) => [`ins${c}`, true] as [string, boolean])];
+    for (const [flag, on] of flags) {
       if (!on) continue;
       await tx`
         INSERT INTO provider_flags (provider_id, flag, source, observed_at)

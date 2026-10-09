@@ -1,6 +1,6 @@
 ---
 import StatusBadge from './StatusBadge.astro';
-import { address, ago, emailsOf, firstWeb, formatPhone, telHref } from '../lib/site';
+import { address, ago, emailsOf, firstWeb, formatPhone, insurersShort, telHref } from '../lib/site';
 import { agoEn, doctorUrl, langOf } from '../lib/i18n';
 import type { ProviderRow } from '../lib/db';
 
@@ -14,6 +14,7 @@ const web = firstWeb(p.web);
 const url = doctorUrl(en ? 'en' : 'cs', p);
 // The register lists hospital clinics under the hospital's name: say so, so it doesn't look like a mistake.
 const hospital = /nemocnic/i.test(`${p.facility_type ?? ''} ${p.name}`);
+const ins = p.self_pay ? null : insurersShort(p.insurers, en);
 const T = en
   ? { crawl: 'on their website, checked', clinic: 'confirmed by the practice', seen: 'reported', km: { you: 'km away', here: 'km from this practice', centre: 'km from the centre', place: 'km from there' }[kmFrom], english: 'Speaks English', hospital: 'Clinic at a hospital', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
   : { crawl: 'na webu ordinace, kontrola', clinic: 'potvrdila ordinace', seen: 'nahlášeno', km: { you: 'km od vás', here: 'km odsud', centre: 'km od středu', place: 'km od hledaného místa' }[kmFrom], english: 'Mluví anglicky', hospital: 'Ambulance v nemocnici', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
@@ -32,6 +33,7 @@ const T = en
       {p.self_pay && <span class="fact-tag self-pay">💳 {T.selfPay}</span>}
     </div>
   )}
+  {ins && <div class="insurers small"><span class="muted">{en ? 'Insurers:' : 'Pojišťovny:'}</span> {ins}</div>}
   <div class="addr">{address(p)}</div>
   <!-- Same layout on every card: every contact the register has, then the same two links. -->
   <div class="actions">

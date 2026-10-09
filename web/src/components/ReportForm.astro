@@ -1,5 +1,6 @@
 ---
 import { formToken } from '../lib/report';
+import { INSURERS } from '../lib/site';
 
 interface Props { providerId: number; result?: string | null }
 const { providerId, result } = Astro.props;
@@ -59,6 +60,10 @@ const msg = result ? MESSAGES[result] : null;
       <legend>{T.extra}</legend>
       <label class="opt"><input type="checkbox" name="english" value="1" /> {T.english}</label>
       <label class="opt"><input type="checkbox" name="self_pay" value="1" /> {T.selfPay}</label>
+      <p class="small ins-label">{en ? 'They have a contract with (if you know):' : 'Mají smlouvu s pojišťovnou (pokud víte):'}</p>
+      <div class="ins-choices">
+        {Object.entries(INSURERS).map(([code, name]) => <label class="ins-choice"><input type="checkbox" name="ins" value={code} /> {name} <span class="muted">{code}</span></label>)}
+      </div>
     </fieldset>
     <fieldset>
       <legend><label for="report-date">{T.when}</label></legend>

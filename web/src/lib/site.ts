@@ -46,6 +46,12 @@ export const SPECIALISTS = SPECIALTIES.filter((s) => s.specialist);
 /** Lower-case for mid-sentence use, keeping abbreviations: "ORL lékaři" -> "ORL lékaři", "Zubaři" -> "zubaři". */
 export const lowerName = (s: string) => s.replace(/\p{L}+/gu, (w) => (w.length > 1 && w === w.toUpperCase() ? w : w.toLowerCase()));
 
+/** Czech health insurers by code, as practices and patients know them. */
+export const INSURERS: Record<string, string> = { '111': 'VZP', '201': 'VoZP', '205': 'ČPZP', '207': 'OZP', '209': 'ZPŠ', '211': 'ZP MV', '213': 'RBP' };
+/** "VZP · OZP · ZP MV", or "všechny pojišťovny" when it is all seven */
+export const insurersShort = (codes: string[] | null, en = false) =>
+  !codes?.length ? null : codes.length === Object.keys(INSURERS).length ? (en ? 'all health insurers' : 'všechny pojišťovny') : codes.map((c) => INSURERS[c] ?? c).join(' · ');
+
 export const specialty = (slug: string) => SPECIALTIES.find((s) => s.slug === slug);
 
 // Czech plural forms: 1 → one, 2–4 → few, 0 and 5+ → many.

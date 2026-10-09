@@ -164,7 +164,7 @@ def crawl_targets(
     return sites
 
 
-FLAGS = ("self_pay", "english")
+FLAGS = ("self_pay", "english", "ins111", "ins201", "ins205", "ins207", "ins209", "ins211", "ins213")
 
 
 def _record_flags(conn: psycopg.Connection, r) -> None:

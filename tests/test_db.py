@@ -207,3 +207,14 @@ def test_crawl_skips_hospitals_and_many_field_places(conn):
     assert list(db.crawl_targets(conn, "^brno$")) == ["http://www.a-test.cz/"]      # the hospital is left out
     conn.execute("INSERT INTO provider_specialties VALUES (%s, 'ocni') ON CONFLICT DO NOTHING", (a,))
     assert db.crawl_targets(conn, "^brno$") == {}                                    # zubar + hygiena + oční: 3 fields
+
+
+def test_crawl_records_insurers(conn):
+    from radar.crawler import SiteResult, Verdict, find_flags
+    db.import_providers(conn, providers())
+    a = pid(conn, "1001")
+    r = SiteResult("http://x.cz/", Verdict(None), "http://x.cz/", flags=find_flags("Smluvní pojišťovny: 111, 207, 211"),
+                   provider_ids=[a])
+    db.record_crawl(conn, [r])
+    got = [f for (f,) in conn.execute("SELECT flag FROM provider_flags WHERE provider_id = %s ORDER BY flag", (a,))]
+    assert got == ["ins111", "ins207", "ins211"]

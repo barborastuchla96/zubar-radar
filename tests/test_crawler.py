@@ -255,3 +255,21 @@ def test_old_dated_news_is_not_todays_state():
     assert crawler.classify("Přijímáme nové pacienty.").status == "accepting"
     # a stop dated years ago is still a stop
     assert crawler.classify(f"Od 1. 2. {old} z kapacitních důvodů nepřijímáme nové pacienty.").status == "not_accepting"
+
+
+@pytest.mark.parametrize("text,codes", [
+    ("Smluvní pojišťovny: 111, 201, 205, 207, 209, 211, 213", {"111", "201", "205", "207", "209", "211", "213"}),
+    ("Máme smlouvy s pojišťovnami VZP, OZP a ZP MV.", {"111", "207", "211"}),
+    ("Spolupracujeme se všemi zdravotními pojišťovnami.", {"111", "201", "205", "207", "209", "211", "213"}),
+    ("Smluvní zdravotní pojišťovny: 111 (VZP), 207 (OZP)", {"111", "207"}),
+    ("Nemáme smlouvu s VZP, ostatní pojišťovny ano.", set()),
+    ("Bělení zubů 2010 Kč, Na Příkopě 201.", set()),
+    ("Pojišťovna 201 hradí preventivní prohlídku.", set()),
+    ("Je škoda, že pojišťovny 111 a 207 neproplácejí bělení.", {"111", "207"}),
+])
+def test_insurers(text, codes):
+    assert crawler.insurers(text)[0] == codes
+
+
+def test_self_pay_wins_over_insurer_names():
+    assert not any(f.startswith("ins") for f in crawler.find_flags("Nemáme smlouvy se zdravotními pojišťovnami. Dříve VZP 111, OZP 207."))

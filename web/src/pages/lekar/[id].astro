@@ -9,7 +9,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
 import { doctorUrl } from '../../lib/i18n';
-import { SPECIALTIES, STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, emailsOf, firstWeb, formatPhone, providerUrl, telHref } from '../../lib/site';
+import { INSURERS, SPECIALTIES, STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, emailsOf, firstWeb, formatPhone, providerUrl, telHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
 const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
@@ -111,6 +111,7 @@ const jsonLd = [
           {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name}>{formatPhone(p.phone)}</a></dd></>}
           {emails.length > 0 && <><dt>E-mail</dt><dd>{emails.map((e, i) => <>{i > 0 && <br />}<a href={`mailto:${e}`}>{e}</a></>)}</dd></>}
           {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
+          {!p.self_pay && p.insurers?.length ? <><dt>Pojišťovny</dt><dd>{p.insurers.map((c) => `${INSURERS[c]} (${c})`).join(', ')} <span class="muted small">(podle webu ordinace nebo hlášení)</span></dd></> : null}
           <dt>Obory</dt><dd>{specs.map((s) => s.singular).join(', ')}</dd>
           {p.facility_type && <><dt>Typ</dt><dd>{p.facility_type}</dd></>}
         </dl>

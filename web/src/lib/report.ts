@@ -68,6 +68,7 @@ export function parseReport(form: FormData, now = new Date()): Parsed {
     value: {
       providerId, status: status as ReportInput['status'], scope: scope as ReportInput['scope'],
       observedAt: clamped, note, selfPay: get('self_pay') === '1', english: get('english') === '1',
+      insurers: [...new Set(form.getAll('ins').map(String))].filter((c) => /^(111|201|205|207|209|211|213)$/.test(c)),
     },
   };
 }

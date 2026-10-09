@@ -96,9 +96,50 @@ def english(raw_text: str) -> str | None:
     return None
 
 
+# Czech health insurers: code → how practices write the name (normalized text).
+INSURERS = {
+    "111": r"\bvzp\b|vseobecn\w* zdravotni\w* pojistovn\w*",
+    "201": r"\bvozp\b|vojensk\w* zdravotni\w* pojistovn\w*",
+    "205": r"\bcpzp\b|ceska prumyslova",
+    "207": r"\bozp\b|oborov\w* zdravotni\w* pojistovn\w*",
+    "209": r"\bzps\b|zamestnaneck\w* pojistovn\w* skoda|pojistovn\w* skoda",
+    "211": r"\bzp ?mv\b|\bzpmv\b|ministerstva vnitra",
+    "213": r"\brbp\b|revirni bratrsk\w*",
+}
+_CODES = re.compile(r"\b(111|201|205|207|209|211|213)\b")
+_ALL_INSURERS = re.compile(r"\b(?:vsemi|vsech(?:ny)?) (?:zdravotnimi |zdravotnich |zdravotni )?pojistovn\w*")
+_NO_CONTRACT = re.compile(r"\b(?:nemame|nema|bez) smlouv\w*|\bnesmluvn\w*|\bkrome\b|\bmimo\b")
+
+
+def insurers(raw_text: str) -> tuple[set[str], str | None]:
+    """Insurers a page says the practice has contracts with ("Smluvní pojišťovny: 111, 201, 207",
+    "spolupracujeme se všemi zdravotními pojišťovnami"), and the snippet that says so."""
+    text, src = _normalize_with_map(raw_text)
+    found: set[str] = set()
+    first = None
+    for m in re.finditer(r"pojistov\w*|smluvn\w*", text):
+        a, b = max(0, m.start() - 120), min(len(text), m.end() + 160)
+        window = text[a:b]
+        if _NO_CONTRACT.search(window):
+            continue                       # "nemáme smlouvu s VZP": the opposite
+        hits = {code for code, name in INSURERS.items() if re.search(name, window)}
+        codes = set(_CODES.findall(window))
+        if len(codes) >= 2 or (codes and hits):      # a lone "201" is more likely a price or a house number
+            hits |= codes
+        if _ALL_INSURERS.search(window):
+            hits |= set(INSURERS)
+        if hits:
+            found |= hits
+            first = first or _snippet(text, m, pad=90, original=raw_text, src=src)
+    return found, first
+
+
 def find_flags(raw_text: str) -> dict[str, str]:
     """Facts beyond "accepting?" that a page states, as {flag: snippet}."""
     found = {"self_pay": self_pay(raw_text), "english": english(raw_text)}
+    if not found["self_pay"]:
+        codes, snippet = insurers(raw_text)
+        found.update({f"ins{c}": snippet for c in codes})
     return {k: v for k, v in found.items() if v}
 
 
