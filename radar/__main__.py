@@ -175,14 +175,17 @@ def cmd_crawl(args) -> None:
         elif done % 50 == 0:
             print(f"  … {done}/{len(sites)}", flush=True)
 
-    results = crawler.crawl(sites, workers=args.workers, progress=progress)
+    # Save in batches, so a crash or restart halfway through a long run keeps what was found.
+    written = 0
+    items = list(sites.items())
+    for start in range(0, len(items), 300):
+        results = crawler.crawl(dict(items[start:start + 300]), workers=args.workers, progress=progress)
+        if not args.dry_run:
+            with psycopg.connect(_dsn(args)) as conn:
+                written += record_crawl(conn, results)
     print("\nsummary: " + ", ".join(f"{k} {stats[k]}" for k in
           ("accepting", "waitlist", "not_accepting", "conflicting", "nothing", "error")))
-    if args.dry_run:
-        print("dry run: nothing written")
-        return
-    with psycopg.connect(_dsn(args)) as conn:
-        print(f"wrote {record_crawl(conn, results)} web_crawl signals")
+    print("dry run: nothing written" if args.dry_run else f"wrote {written} web_crawl signals")
 
 
 def cmd_alerts(args) -> None:
@@ -262,10 +265,10 @@ def main(argv: list[str] | None = None) -> None:
     p.set_defaults(func=cmd_sponsor)
 
     p = sub.add_parser("crawl", help="check clinic websites for new-patient notices")
-    p.add_argument("--city", default=r"^praha(-[0-9]+)?$", help="regex on city slug (default: all of Prague; '.' = everywhere)")
+    p.add_argument("--city", default=".", help=r"regex on city slug (default: everywhere; '^praha(-[0-9]+)?$' = Prague)")
     p.add_argument("--specialty", action="append", help="limit to a specialty (repeatable)")
     p.add_argument("--limit", type=int, help="max websites to check")
-    p.add_argument("--workers", type=int, default=8)
+    p.add_argument("--workers", type=int, default=16)
     p.add_argument("--dry-run", action="store_true", help="print findings, write nothing")
     p.add_argument("--verbose", action="store_true", help="also print fetch errors")
     p.set_defaults(func=cmd_crawl)

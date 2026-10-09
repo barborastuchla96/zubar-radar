@@ -59,7 +59,7 @@ ssh root@YOUR_SERVER_IP 'cd /opt/zubar-radar/deploy && docker compose run --rm i
 | Daily at 03:17 | `backup.sh`: database dump into `backups/`, last 14 days kept | `/var/log/berepacienty/backup.log` |
 | Daily at 07:41 | `alerts`: emails subscribers about practices near them that started accepting (only when `SMTP_HOST` is set) | `/var/log/berepacienty/alerts.log` |
 | 2nd of each month at 04:23 | `import-monthly.sh`: downloads `NRPZS_URL` and imports it | `/var/log/berepacienty/import.log` |
-| Sundays at 05:11 | `crawl`: checks Prague clinic websites for new-patient notices | `/var/log/berepacienty/crawl.log` |
+| Sundays at 05:11 | `crawl`: checks clinic websites nationwide for new-patient notices (~1 h) | `/var/log/berepacienty/crawl.log` |
 
 For the monthly import, put the direct CSV download link (from nrpzs.uzis.cz or data.gov.cz) into
 `NRPZS_URL` in `deploy/.env`. Until you do, the job does nothing and logs a message saying so.
@@ -71,11 +71,16 @@ crontab after `backup.sh`. To restore:
 
 ## Clinic website checker
 
-`docker compose run --rm importer crawl --dry-run` checks the clinic websites of all Prague
-practices and prints what it finds, without writing anything. Drop `--dry-run` to save the
-findings. They're stored as low-weight `web_crawl` signals and shown on the site as
-"podle webu ordinace" (based on the clinic's website). Options: `--specialty zubar`,
-`--limit 50`, `--city '^brno$'`, or `--city .` for the whole country.
+`docker compose run --rm importer crawl --dry-run` checks the clinic websites of all practices
+in the country and prints what it finds, without writing anything. Drop `--dry-run` to save the
+findings (saved every 300 sites, so an interrupted run keeps its progress). They're stored as
+low-weight `web_crawl` signals and shown on the site as "podle webu ordinace" (based on the
+clinic's website). Options: `--specialty zubar`, `--limit 50`, `--city '^brno$'`.
+
+Skipped on purpose: social networks, business directories and e-mail addresses in the web field
+(not the practice's own site), and any site listed by more than 5 practices (a hospital or chain
+homepage can't be pinned to one practice). On shared portals like `gynekolog.cz/novak/` the checker
+stays inside that doctor's pages.
 
 The checker identifies itself as `PrijimaNovePacientyBot`, honours robots.txt, waits between requests
 to the same site, and refuses private network addresses.

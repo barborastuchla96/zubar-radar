@@ -139,12 +139,18 @@ def crawl_targets(
     sites: dict[str, list[int]] = {}
     for pid, web in rows:
         url = normalize_site(web)
-        if url and (url in sites or limit is None or len(sites) < limit):
+        if url:
             sites.setdefault(url, []).append(pid)
+    # One site for many practices is a hospital or chain homepage; what it says can't be
+    # pinned to one practice, so leave those to patients' reports.
+    sites = {u: ids for u, ids in sites.items() if len(ids) <= MAX_PRACTICES_PER_SITE}
+    if limit is not None:
+        sites = dict(list(sites.items())[:limit])
     return sites
 
 
 RECHECK_DAYS = 6
+MAX_PRACTICES_PER_SITE = 5
 
 
 def record_crawl(conn: psycopg.Connection, results) -> int:

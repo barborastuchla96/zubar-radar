@@ -191,6 +191,9 @@ LINK_HINTS = ["pacient", "registrac", "objedn", "kontakt", "ordinac", "o-nas", "
 def pick_links(base_url: str, links: list[tuple[str, str]], limit: int = MAX_EXTRA_PAGES) -> list[str]:
     """Same-site links most likely to mention new patients, best first."""
     base = urllib.parse.urlsplit(base_url)
+    last = base.path.rsplit("/", 1)[-1]
+    # /novak/ and /novak are a folder; /novak/index.html is a page inside /novak/
+    scope = base.path if base.path.endswith("/") else (base.path.rsplit("/", 1)[0] + "/" if "." in last else base.path + "/")
     scored: dict[str, int] = {}
     for href, label in links:
         if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
@@ -198,6 +201,9 @@ def pick_links(base_url: str, links: list[tuple[str, str]], limit: int = MAX_EXT
         url = urllib.parse.urljoin(base_url, href).split("#")[0]
         u = urllib.parse.urlsplit(url)
         if u.scheme not in ("http", "https") or u.hostname != base.hostname or url.rstrip("/") == base_url.rstrip("/"):
+            continue
+        # A doctor's page on a shared portal (gynekolog.cz/novak/): stay inside it, the rest is other doctors.
+        if scope != "/" and not u.path.startswith(scope):
             continue
         if re.search(r"\.(?:pdf|jpe?g|png|gif|webp|docx?|xlsx?|zip)$", u.path, re.I):
             continue
@@ -267,15 +273,23 @@ def fetch(url: str, allow_private: bool = False, html_only: bool = True) -> tupl
         return r.geturl(), _decode(r.read(MAX_BYTES), ctype)
 
 
+# Not the practice's own website: social networks, business directories, webmail.
+NOT_OWN_SITE = re.compile(
+    r"(^|\.)(facebook\.com|fb\.com|instagram\.com|linkedin\.com|twitter\.com|x\.com|youtube\.com|"
+    r"firmy\.cz|seznam\.cz|google\.[a-z.]+|goo\.gl|mapy\.cz|mapy\.com|zlatestranky\.cz|najisto\.centrum\.cz)$")
+
+
 def normalize_site(web: str) -> str | None:
-    parts = (web or "").split()
+    parts = (web or "").replace(",", " ").replace(";", " ").split()
     if not parts:
         return None
     w = parts[0]
+    if "@" in w.split("/")[0 if "://" not in w else 2]:      # an e-mail address in the web field
+        return None
     if not re.match(r"^https?://", w, re.I):
         w = "http://" + w
     u = urllib.parse.urlsplit(w)
-    if not u.hostname or "." not in u.hostname:
+    if not u.hostname or "." not in u.hostname or NOT_OWN_SITE.search(u.hostname):
         return None
     return urllib.parse.urlunsplit((u.scheme.lower(), u.netloc.lower(), u.path or "/", u.query, ""))
 

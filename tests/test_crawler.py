@@ -148,3 +148,15 @@ def test_snippet_keeps_original_diacritics():
     v = classify("Vítejte.\nOd září opět PŘIJÍMÁME nové pacienty, prosíme volejte.\nTel. 123")
     assert v.status == "accepting"
     assert "Od září opět PŘIJÍMÁME nové pacienty" in v.snippet
+
+
+@pytest.mark.parametrize("web", ["ondrej.vacha@seznam.cz", "http://facebook.com/ordinace", "https://www.firmy.cz/detail/1.html",
+                                 "www.google.com/maps/place/x", "mailto:x@y.cz"])
+def test_not_the_practices_own_site(web):
+    assert crawler.normalize_site(web) is None
+
+
+@pytest.mark.parametrize("base", ["http://www.gynekolog.cz/novak/", "http://www.gynekolog.cz/novak", "http://www.gynekolog.cz/novak/index.html"])
+def test_portal_pages_stay_with_their_doctor(base):
+    links = [("/novak/kontakt", "Kontakt"), ("/svoboda/novi-pacienti", "Noví pacienti"), ("/kontakt", "Kontakt")]
+    assert crawler.pick_links(base, links) == ["http://www.gynekolog.cz/novak/kontakt"]

@@ -144,3 +144,11 @@ def test_crawl_targets_and_record(conn):
     assert db.record_crawl(conn, res) == 2          # a changed verdict is recorded
     note = conn.execute("SELECT note FROM availability_signals WHERE provider_id=%s ORDER BY id LIMIT 1", (a,)).fetchone()[0]
     assert note.startswith("„Přijímáme nové pacienty“ — http://www.zubar-test.cz/")
+
+
+def test_crawl_skips_sites_shared_by_many_practices(conn, monkeypatch):
+    db.import_providers(conn, providers())
+    conn.execute("UPDATE providers SET web = 'www.nemocnice-test.cz' WHERE city_slug = 'brno'")
+    assert list(db.crawl_targets(conn, "^brno$")) == ["http://www.nemocnice-test.cz/"]
+    monkeypatch.setattr(db, "MAX_PRACTICES_PER_SITE", 1)     # now it counts as a hospital/chain page
+    assert db.crawl_targets(conn, "^brno$") == {}
