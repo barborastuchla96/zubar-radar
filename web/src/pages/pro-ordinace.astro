@@ -1,5 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
+import { contactEmail } from '../lib/site';
+const contact = contactEmail();
+const subject = encodeURIComponent('Úprava údajů ordinace');
+const body = encodeURIComponent('Dobrý den,\n\nodkaz na profil naší ordinace: \n\nPřijímáme nové pacienty: ano / ne / jen děti / pořadník\n\nDěkujeme');
 ---
 <Base title="Pro ordinace" description="Dejte pacientům vědět, jestli přijímáte. Zdarma.">
   <h1>Pro ordinace</h1>
@@ -8,7 +12,10 @@ import Base from '../layouts/Base.astro';
   <div class="card">
     <h2 style="margin-top:0">Jak na to</h2>
     <p>Napište nám z e-mailu uvedeného v registru poskytovatelů a pošlete odkaz na profil vaší ordinace.
-       Ověříme vás a pošleme odkaz, kterým stav přepnete jedním kliknutím.</p>
+       Ověříme vás a stav upravíme. Je to zdarma.</p>
+    {contact
+      ? <p><a class="btn" href={`mailto:${contact}?subject=${subject}&body=${body}`}>✉️ Napsat na {contact}</a></p>
+      : <p class="muted">Kontaktní e-mail brzy doplníme.</p>}
     <p class="muted small">Samoobslužná správa profilu se připravuje.</p>
   </div>
 </Base>

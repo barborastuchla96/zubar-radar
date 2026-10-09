@@ -7,7 +7,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import PlaceSearch from '../../components/PlaceSearch.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import { cities, pragueAccepting } from '../../lib/db';
-import { SPECIALTIES, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
+import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -21,8 +21,9 @@ const description = `${spec.plural} v Praze podle městských částí: ${ordina
   (acceptingTotal ? `Podle hlášení ${prijima(acceptingTotal)} nové pacienty. ` : '') +
   'Ověřeno lidmi, kteří tam volali.';
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
+const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`], ['Praha', cityUrl(spec.slug, 'praha')]]);
 ---
-<Base {title} {description} activeSpecialty={spec.slug}>
+<Base {title} {description} activeSpecialty={spec.slug} {jsonLd}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › Praha</div>
   <h1>{spec.plural} – Praha</h1>
   <p class="muted">

@@ -6,7 +6,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import { cityProviders, sponsored } from '../../lib/db';
-import { SPECIALTIES, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
+import { SPECIALTIES, breadcrumbLd, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -23,8 +23,13 @@ const description = `${spec.plural} – ${city}: ${ordinaci(rows.length)}. ` +
   (counts.accepting ? `Podle hlášení ${prijima(counts.accepting)} nové pacienty. ` : '') +
   'Ověřeno lidmi, kteří tam volali.';
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
+const jsonLd = breadcrumbLd(Astro.site, [
+  ['Úvod', '/'], [spec.plural, `/${spec.slug}`],
+  ...(isPragueSlug(Astro.params.city!) ? [['Praha', cityUrl(spec.slug, 'praha')] as [string, string]] : []),
+  [city, cityUrl(spec.slug, Astro.params.city!)],
+]);
 ---
-<Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug}>
+<Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug} {jsonLd}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> ›
     {isPragueSlug(Astro.params.city!) && <> <a href={cityUrl(spec.slug, 'praha')}>Praha</a> ›</>} {city}</div>
   <h1>{spec.plural} – {city}</h1>

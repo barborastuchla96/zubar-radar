@@ -102,6 +102,23 @@ export function adsProvider(): AdsProvider {
   return v === 'direct' || v === 'sklik' ? v : 'none';
 }
 
+/** Public contact address (CONTACT_EMAIL in deploy/.env). Hidden on the site until set. */
+export function contactEmail(): string | null {
+  const e = (process.env.CONTACT_EMAIL ?? '').trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) ? e : null;
+}
+
+/** Breadcrumb trail as schema.org JSON-LD (helps search engines show the path). */
+export function breadcrumbLd(site: URL | undefined, items: [string, string][]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map(([name, path], i) => ({
+      '@type': 'ListItem', position: i + 1, name, item: new URL(path, site).toString(),
+    })),
+  };
+}
+
 /** Optional cookieless analytics (Umami-style script tag). */
 export function analytics(): { src: string; id: string } | null {
   const src = process.env.ANALYTICS_SRC, id = process.env.ANALYTICS_ID;

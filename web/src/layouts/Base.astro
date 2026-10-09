@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { SITE_NAME, SPECIALTIES, adsProvider, analytics } from '../lib/site';
+import { SITE_NAME, SPECIALTIES, adsProvider, analytics, contactEmail } from '../lib/site';
 
 const cmp = import.meta.glob<string>('../ads/cmp-head.html', { query: '?raw', import: 'default', eager: true })['../ads/cmp-head.html'];
 const cmpHtml = adsProvider() === 'sklik' ? cmp : undefined;
@@ -14,9 +14,15 @@ interface Props {
   description: string;
   noindex?: boolean;
   activeSpecialty?: string;
+  /** schema.org structured data for this page */
+  jsonLd?: object | object[];
 }
-const { title, description, noindex = false, activeSpecialty } = Astro.props;
+const { title, description, noindex = false, activeSpecialty, jsonLd } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL('/og.png', Astro.site);
+const contact = contactEmail();
+// Safe to inline: JSON.stringify output with "<" escaped can't close the script tag.
+const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
 ---
 <!doctype html>
 <html lang="cs">
@@ -30,6 +36,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {ld && <script type="application/ld+json" set:html={ld} />}
     <meta property="og:locale" content="cs_CZ" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {seznamWmt && <meta name="seznam-wmt" content={seznamWmt} />}
@@ -66,7 +79,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           Nemůžete najít lékaře? Vaše zdravotní pojišťovna má ze zákona povinnost pomoci vám
           ho najít.
         </p>
-        <p><a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a> · <a href="/cookies">Cookies</a></p>
+        <p><a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a> · <a href="/cookies">Cookies</a>{contact && <> · <a href={`mailto:${contact}`}>{contact}</a></>}</p>
       </div>
     </footer>
   </body>

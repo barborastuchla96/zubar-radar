@@ -6,7 +6,7 @@ import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
-import { STATUS_LABEL, address, ago, cityUrl, formatPhone, providerUrl, specialty, telHref, webHref } from '../../lib/site';
+import { STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, formatPhone, providerUrl, specialty, telHref, webHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
 const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
@@ -27,8 +27,35 @@ const status = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
 const desc = `${p.name}, ${address(p)}. ${specs.map((s) => s.singular).join(', ')}. ` +
   `Přijímá nové pacienty? ${status.label}${when ? ` (${crawl ? 'podle webu ordinace' : 'ověřeno'} ${when})` : ''}.`;
 Astro.response.headers.set('Cache-Control', 'private, no-cache');
+
+// schema.org: what this practice is and where (public register data only).
+const isDental = specs.some((s) => s.slug === 'zubar' || s.slug === 'hygienistka');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': isDental ? 'Dentist' : 'Physician',
+    name: p.name,
+    url: new URL(canonical, Astro.site).toString(),
+    ...(p.phone ? { telephone: p.phone.replace(/\s+/g, '') } : {}),
+    ...(web ? { sameAs: web } : {}),
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: [p.street, p.house_no].filter(Boolean).join(' ') || undefined,
+      addressLocality: p.city ?? undefined,
+      postalCode: p.postcode ?? undefined,
+      addressCountry: 'CZ',
+    },
+    ...(p.lat != null && p.lng != null ? { geo: { '@type': 'GeoCoordinates', latitude: p.lat, longitude: p.lng } } : {}),
+  },
+  breadcrumbLd(Astro.site, [
+    ['Úvod', '/'],
+    ...(main ? [[main.plural, `/${main.slug}`] as [string, string]] : []),
+    ...(main && p.city_slug ? [[p.city ?? '', cityUrl(main.slug, p.city_slug)] as [string, string]] : []),
+    [p.name, canonical],
+  ]),
+];
 ---
-<Base title={`${p.name} – přijímá nové pacienty?`} description={desc} activeSpecialty={main?.slug}>
+<Base title={`${p.name} – přijímá nové pacienty?`} description={desc} activeSpecialty={main?.slug} {jsonLd}>
   <div class="crumbs">
     <a href="/">Úvod</a>
     {main && <> › <a href={`/${main.slug}`}>{main.plural}</a></>}

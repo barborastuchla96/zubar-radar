@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import { contactEmail } from '../lib/site';
+const contact = contactEmail();
 ---
 <Base title="O projektu a ochrana údajů" description="Odkud bereme data a jak nakládáme s hlášeními.">
   <h1>O projektu</h1>
@@ -18,4 +20,10 @@ import Base from '../layouts/Base.astro';
   <h2>Nejde o oficiální službu</h2>
   <p>Informace nemusí být přesné. Před návštěvou vždy zavolejte do ordinace. Pokud nemůžete lékaře najít,
      obraťte se na svou zdravotní pojišťovnu: ze zákona vám musí pomoci péči zajistit.</p>
+  {contact && (
+    <>
+      <h2>Kontakt</h2>
+      <p>Máte dotaz, našli jste chybu, nebo jste z ordinace? Napište na <a href={`mailto:${contact}`}>{contact}</a>.</p>
+    </>
+  )}
 </Base>
