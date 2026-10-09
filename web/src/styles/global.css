@@ -105,6 +105,8 @@ input[type="date"], input[type="email"], textarea, select { font: inherit; color
 
 .notice { border-radius: var(--radius); padding: .8rem 1rem; margin: 1rem 0; }
 .notice.ok { background: var(--ok-bg); color: var(--ok); }
+.notice.referral { background: color-mix(in srgb, var(--brand) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border)); }
+.notice.referral p { margin: .2rem 0; }
 .notice.bad { background: var(--bad-bg); color: var(--bad); }
 
 .ad { border: 1px dashed var(--border); border-radius: var(--radius); padding: .5rem; margin: 1.25rem 0; min-height: 100px; display: grid; place-items: center; color: var(--muted); font-size: .8rem; }
@@ -172,6 +174,12 @@ input[type="radio"] { width: 1.2rem; height: 1.2rem; }
 .tile-sub { color: var(--muted); }
 .tile-stats { margin-top: auto; padding-top: .35rem; display: flex; flex-direction: column; gap: .05rem; color: var(--muted); }
 .tile-ok { color: var(--ok); font-weight: 700; }
+.tile-group { margin: 1.1rem 0 .5rem; font-weight: 700; color: var(--muted); }
+.grid-cards.compact { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: .6rem; }
+.grid-cards.compact .spec-tile { padding: .7rem .8rem; }
+.grid-cards.compact .icon { font-size: 1.25rem; }
+.grid-cards.compact .tile-title { font-size: 1rem; }
+@media (max-width: 640px) { .grid-cards.compact { grid-template-columns: 1fr 1fr; } }
 
 /* short link lists as chips (no "·" separators that wrap badly) */
 .pills { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -309,6 +317,11 @@ h1, h2, h3, label, legend { text-wrap: balance; }
   background: var(--surface); border: 2px solid var(--brand); border-radius: 12px; box-shadow: 0 10px 30px rgb(0 0 0 / .15); }
 .nav-list a { display: flex; gap: .6rem; align-items: center; min-height: 48px; padding: .4rem .75rem; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 1.05rem; }
 .nav-list a:hover, .nav-list a[aria-current="page"] { background: color-mix(in srgb, var(--brand) 12%, var(--surface)); font-weight: 700; }
+/* desktop: the five main specialties inline, specialists in a drop-down */
+.nav-menu.nav-more { display: inline-block; align-self: center; }
+.nav-menu.nav-more > summary { min-height: 0; padding: .25rem .6rem; border-width: 1px; font-weight: inherit; }
+.nav-menu.nav-more > summary[aria-current="page"] { font-weight: 700; border-color: var(--brand); }
+.nav-group { padding: .6rem .75rem .2rem; font-size: .85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-top: 1px solid var(--border); margin-top: .25rem; }
 @media (max-width: 640px) {
   .site-header .wrap { flex-direction: row; align-items: center; padding: .4rem 16px; min-height: 56px; }
   .nav-wide { display: none; }

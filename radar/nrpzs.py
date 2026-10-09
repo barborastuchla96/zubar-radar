@@ -53,7 +53,18 @@ SPECIALTY_LABELS: dict[str, str] = {
     "gynekologie a porodnictví": "gynekolog",
     "dentální hygiena": "hygienistka",
     "dentální hygienistka": "hygienistka",
+    "oftalmologie": "ocni",
+    "otorinolaryngologie a chirurgie hlavy a krku": "orl",
+    "otorinolaryngologie": "orl",
+    "dětská otorinolaryngologie": "orl",
+    "dermatovenerologie": "kozni",
+    "dětská dermatovenerologie": "kozni",
+    "psychiatrie": "psychiatr",
+    "neurologie": "neurolog",
 }
+
+# Specialists also sit in hospital wards; only count places that see outpatients.
+SPECIALISTS = {"ocni", "orl", "kozni", "psychiatr", "neurolog"}
 
 # Rough bounding box of Czechia, to drop garbage coordinates.
 CZ_LAT = (48.5, 51.1)
@@ -94,10 +105,13 @@ def resolve_columns(headers: list[str], overrides: dict[str, str] | None = None)
     return resolved
 
 
-def parse_specialties(raw: str) -> set[str]:
-    """'Zubní lékařství, ortodoncie' -> {'zubar'}."""
+def parse_specialties(raw: str, care_form: str | None = None) -> set[str]:
+    """'Zubní lékařství, ortodoncie' -> {'zubar'}. Specialists only with outpatient care."""
     labels = (p.strip().lower() for p in re.split(r"[,;|]", raw or ""))
-    return {SPECIALTY_LABELS[l] for l in labels if l in SPECIALTY_LABELS}
+    found = {SPECIALTY_LABELS[l] for l in labels if l in SPECIALTY_LABELS}
+    if care_form and "ambulant" not in care_form.lower():
+        found -= SPECIALISTS
+    return found
 
 
 def _parse_float(s: str | None) -> float | None:
@@ -209,7 +223,7 @@ def iter_providers(
             filter(None, [g("facility_id") or g("ico") or name, g("city"), g("street"), g("house_no")])
         )
         if (p := by_place.get(place_id)) is not None:
-            p.specialties |= parse_specialties(raw_spec)
+            p.specialties |= parse_specialties(raw_spec, g("care_form"))
             if raw_spec and raw_spec not in p._merged_labels:
                 p._merged_labels.append(raw_spec)
                 p.raw_specialties = ", ".join(p._merged_labels)
@@ -218,7 +232,7 @@ def iter_providers(
         city = g("city")
         p = Provider(
             place_id=place_id, name=name,
-            specialties=parse_specialties(raw_spec), raw_specialties=raw_spec,
+            specialties=parse_specialties(raw_spec, g("care_form")), raw_specialties=raw_spec,
             facility_id=g("facility_id"), ico=g("ico"), facility_type=g("facility_type"),
             street=g("street"), house_no=g("house_no"),
             city=city, city_slug=slugify(city) if city else None,

@@ -1,4 +1,5 @@
 ---
+import SpecialistNote from '../../../components/SpecialistNote.astro';
 import Base from '../../../layouts/Base.astro';
 import AreaMap from '../../../components/AreaMap.astro';
 import ProviderCard from '../../../components/ProviderCard.astro';
@@ -49,6 +50,7 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › <a href={regionUrl(spec.slug, region.slug)}>{region.name}</a> › okres {okres.name}</div>
   <h1>{spec.plural} – okres {okres.name}</h1>
   <p class="muted fact">{fact}</p>
+  <SpecialistNote {spec} />
 
   {towns.length === 0 ? (
     <p class="card">V tomto okrese v registru žádné ordinace tohoto oboru nejsou. Zkuste <a href={regionUrl(spec.slug, region.slug)}>sousední okres</a>.</p>

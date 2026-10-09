@@ -21,7 +21,12 @@ INSERT INTO specialties (slug, name_cs, nrpzs_labels) VALUES
     ('praktik',   'Praktický lékař',              ARRAY['všeobecné praktické lékařství']),
     ('pediatr',   'Praktický lékař pro děti',     ARRAY['praktické lékařství pro děti a dorost']),
     ('gynekolog', 'Gynekolog',                    ARRAY['gynekologie a porodnictví']),
-    ('hygienistka','Dentální hygiena',            ARRAY['dentální hygiena', 'dentální hygienistka'])
+    ('hygienistka','Dentální hygiena',            ARRAY['dentální hygiena', 'dentální hygienistka']),
+    ('ocni',      'Oční lékař',                   ARRAY['oftalmologie']),
+    ('orl',       'ORL lékař',                    ARRAY['otorinolaryngologie a chirurgie hlavy a krku', 'otorinolaryngologie', 'dětská otorinolaryngologie']),
+    ('kozni',     'Kožní lékař',                  ARRAY['dermatovenerologie', 'dětská dermatovenerologie']),
+    ('psychiatr', 'Psychiatr',                    ARRAY['psychiatrie']),
+    ('neurolog',  'Neurolog',                     ARRAY['neurologie'])
 ON CONFLICT (slug) DO UPDATE
     SET name_cs = EXCLUDED.name_cs, nrpzs_labels = EXCLUDED.nrpzs_labels;
 

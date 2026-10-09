@@ -1,4 +1,5 @@
 ---
+import SpecialistNote from '../components/SpecialistNote.astro';
 import Base from '../layouts/Base.astro';
 import ProviderCard from '../components/ProviderCard.astro';
 import Map from '../components/Map.astro';
@@ -14,6 +15,7 @@ const rows = valid ? await nearby(spec.slug, lat, lng, km) : [];
 ---
 <Base title={`${spec.plural} v okolí`} description={`${spec.plural} ve vašem okolí, kteří přijímají nové pacienty.`} noindex activeSpecialty={spec.slug}>
   <h1>{spec.plural} do {km} km od vás</h1>
+  <SpecialistNote {spec} />
   {!valid && <p class="notice bad">Poloha chybí nebo je mimo Česko. <a href="/">Zkuste to znovu</a> nebo vyberte město.</p>}
   {valid && rows.length === 0 && (
     <p>Nic jsme nenašli. <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}`}>Zkusit větší okruh</a>.</p>

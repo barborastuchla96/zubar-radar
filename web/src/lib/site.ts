@@ -25,6 +25,7 @@ export interface SpecialtyInfo {
   some: string;         // "některý zubař" (… začne přijímat)
   seo?: string;         // name used in page titles when people also search another word
   icon: string;
+  specialist?: boolean; // shown in its own group; many want a referral
 }
 
 export const SPECIALTIES: SpecialtyInfo[] = [
@@ -33,7 +34,17 @@ export const SPECIALTIES: SpecialtyInfo[] = [
   { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Dětští lékaři', acc: 'dětského lékaře', nearby: 'Další dětští lékaři v okolí', some: 'některý dětský lékař', seo: 'Dětští lékaři (pediatři)', icon: '🧸' },
   { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekologové', acc: 'gynekologa', nearby: 'Další gynekologové v okolí', some: 'některý gynekolog', icon: '🌸' },
   { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Dentální hygiena', acc: 'dentální hygienu', nearby: 'Další dentální hygiena v okolí', some: 'některá ordinace dentální hygieny', icon: '✨' },
+  { slug: 'ocni', singular: 'Oční lékař', plural: 'Oční lékaři', short: 'Oční', acc: 'očního lékaře', nearby: 'Další oční lékaři v okolí', some: 'některý oční lékař', seo: 'Oční lékaři (oftalmologové)', icon: '👁️', specialist: true },
+  { slug: 'orl', singular: 'ORL lékař', plural: 'ORL lékaři', short: 'ORL', acc: 'ORL lékaře', nearby: 'Další ORL lékaři v okolí', some: 'některý ORL lékař', seo: 'ORL lékaři (ušní, nosní, krční)', icon: '👂', specialist: true },
+  { slug: 'kozni', singular: 'Kožní lékař', plural: 'Kožní lékaři', short: 'Kožní', acc: 'kožního lékaře', nearby: 'Další kožní lékaři v okolí', some: 'některý kožní lékař', seo: 'Kožní lékaři (dermatologové)', icon: '🩹', specialist: true },
+  { slug: 'psychiatr', singular: 'Psychiatr', plural: 'Psychiatři', short: 'Psychiatři', acc: 'psychiatra', nearby: 'Další psychiatři v okolí', some: 'některý psychiatr', icon: '💬', specialist: true },
+  { slug: 'neurolog', singular: 'Neurolog', plural: 'Neurologové', short: 'Neurologové', acc: 'neurologa', nearby: 'Další neurologové v okolí', some: 'některý neurolog', icon: '🧠', specialist: true },
 ];
+export const MAIN_SPECIALTIES = SPECIALTIES.filter((s) => !s.specialist);
+export const SPECIALISTS = SPECIALTIES.filter((s) => s.specialist);
+
+/** Lower-case for mid-sentence use, keeping abbreviations: "ORL lékaři" -> "ORL lékaři", "Zubaři" -> "zubaři". */
+export const lowerName = (s: string) => s.replace(/\p{L}+/gu, (w) => (w.length > 1 && w === w.toUpperCase() ? w : w.toLowerCase()));
 
 export const specialty = (slug: string) => SPECIALTIES.find((s) => s.slug === slug);
 
@@ -141,7 +152,7 @@ export const dayLong = (d = new Date()) => d.toLocaleDateString('cs', { day: 'nu
 const zOrdinaci = (n: number) => `z ${num(n)} ${n === 1 ? 'ordinace' : 'ordinací'}`;
 /** "Brno, zubaři: k 9. října 2026 podle posledních zpráv přijímá nové pacienty 12 z 331 ordinací." */
 export function factLine(place: string, specPlural: string, accepting: number, total: number, d = new Date()) {
-  const head = `${place}, ${specPlural.toLowerCase()}: k ${dayLong(d)}`;
+  const head = `${place}, ${lowerName(specPlural)}: k ${dayLong(d)}`;
   return accepting > 0
     ? `${head} podle posledních zpráv ${plural(accepting, 'přijímá', 'přijímají', 'přijímá')} nové pacienty ${num(accepting)} ${zOrdinaci(total)}.`
     : total === 1

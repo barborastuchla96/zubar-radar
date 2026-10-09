@@ -1,4 +1,5 @@
 ---
+import SpecialistNote from '../../components/SpecialistNote.astro';
 import Base from '../../layouts/Base.astro';
 import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
@@ -46,6 +47,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
     {isPragueSlug(Astro.params.city!) && <> <a href={cityUrl(spec.slug, 'praha')}>Praha</a> ›</>} {city}</div>
   <h1>{spec.plural} – {city}</h1>
   <p class="muted fact">{fact}</p>
+  <SpecialistNote {spec} />
 
   {open > 0 ? (
     <>

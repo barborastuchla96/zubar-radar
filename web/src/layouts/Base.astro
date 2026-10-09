@@ -1,7 +1,7 @@
 ---
 import CallFollowup from '../components/CallFollowup.astro';
 import '../styles/global.css';
-import { SITE_NAME, SPECIALTIES, adsProvider, analytics, contactEmail } from '../lib/site';
+import { MAIN_SPECIALTIES, SITE_NAME, SPECIALISTS, adsProvider, analytics, contactEmail } from '../lib/site';
 
 const cmp = import.meta.glob<string>('../ads/cmp-head.html', { query: '?raw', import: 'default', eager: true })['../ads/cmp-head.html'];
 const cmpHtml = adsProvider() === 'sklik' ? cmp : undefined;
@@ -57,15 +57,27 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
       <div class="wrap">
         <a href="/" class="logo">Přijímá <span>nové pacienty?</span></a>
         <nav class="nav nav-wide" aria-label="Obory">
-          {SPECIALTIES.map((s) => (
+          {MAIN_SPECIALTIES.map((s) => (
             <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}>{s.short}</a>
           ))}
+          <details class="nav-menu nav-more">
+            <summary aria-current={SPECIALISTS.some((s) => s.slug === activeSpecialty) ? 'page' : undefined}>Specialisté <span aria-hidden="true">▾</span></summary>
+            <div class="nav-list">
+              {SPECIALISTS.map((s) => (
+                <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
+              ))}
+            </div>
+          </details>
         </nav>
         {/* Phones: one compact row, the specialties open from a button (works without JavaScript). */}
         <details class="nav-menu">
           <summary><span aria-hidden="true">☰</span> Obory</summary>
           <nav class="nav-list" aria-label="Obory">
-            {SPECIALTIES.map((s) => (
+            {MAIN_SPECIALTIES.map((s) => (
+              <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
+            ))}
+            <span class="nav-group">Specialisté</span>
+            {SPECIALISTS.map((s) => (
               <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
             ))}
           </nav>

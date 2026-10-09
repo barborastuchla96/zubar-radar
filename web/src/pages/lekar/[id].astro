@@ -1,4 +1,5 @@
 ---
+import SpecialistNote from '../../components/SpecialistNote.astro';
 import Base from '../../layouts/Base.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import ReportForm from '../../components/ReportForm.astro';
@@ -33,6 +34,8 @@ Astro.response.headers.set('Cache-Control', 'private, no-cache');
 const SCHEMA_SPECIALTY: Record<string, string> = {
   zubar: 'https://schema.org/Dentistry', hygienistka: 'https://schema.org/Dentistry',
   praktik: 'https://schema.org/PrimaryCare', pediatr: 'https://schema.org/Pediatric', gynekolog: 'https://schema.org/Gynecologic',
+  orl: 'https://schema.org/Otolaryngologic', kozni: 'https://schema.org/Dermatology',
+  psychiatr: 'https://schema.org/Psychiatric', neurolog: 'https://schema.org/Neurologic',
 };
 // schema.org: what this practice is and where (public register data only).
 const isDental = specs.some((s) => s.slug === 'zubar' || s.slug === 'hygienistka');
@@ -76,6 +79,7 @@ const jsonLd = [
     <StatusBadge status={p.status} />
     <span class="muted small">{when ? (crawl ? `podle webu ordinace, zkontrolováno ${when}` : `poslední hlášení ${when}`) : status.hint}</span>
   </p>
+  {specs.find((s) => s.specialist) && <SpecialistNote spec={specs.find((s) => s.specialist)!} />}
   {crawl && (
     <p class="small muted">
       Na webu ordinace jsme našli: {crawl.note.split(' — ')[0]}

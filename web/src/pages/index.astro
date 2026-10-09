@@ -18,7 +18,7 @@ const BIG = [['praha', 'Praha'], ['brno', 'Brno'], ['ostrava', 'Ostrava'], ['plz
   ['karlovy-vary', 'Karlovy Vary']] as const;
 Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 ---
-<Base title={`${SITE_NAME} – ${TAGLINE}`} description="Najděte zubaře, praktického či dětského lékaře nebo gynekologa, který přijímá nové pacienty. Ověřeno lidmi, kteří tam volali.">
+<Base title={`${SITE_NAME} – ${TAGLINE}`} description="Najděte zubaře, praktického či dětského lékaře, gynekologa nebo specialistu, který přijímá nové pacienty. Ověřeno lidmi, kteří tam volali.">
   <section class="hero">
     <h1 class="hero-title"><span>Hledáte zubaře nebo lékaře,</span> <span>který vás vezme?</span></h1>
     <p>
@@ -30,19 +30,24 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   <form id="home-search" class="home-search" method="get" action="/hledat" role="search">
     <fieldset class="step-box">
       <legend><span class="step-no">1</span> Koho hledáte?</legend>
-      <div class="grid grid-cards">
-        {totals.map(({ s, n, accepting }, i) => (
-          <label class="card spec-tile pick">
-            <input type="radio" name="s" value={s.slug} checked={i === 0} />
-            <span class="icon" aria-hidden="true">{s.icon}</span>
-            <strong class="tile-title">{s.plural}</strong>
-            <span class="tile-stats">
-              <span class="nowrap">{ordinaci(n)}</span>
-              {accepting > 0 && <span class="nowrap tile-ok">✓ {prijima(accepting)}</span>}
-            </span>
-          </label>
-        ))}
-      </div>
+      {[totals.filter((t) => !t.s.specialist), totals.filter((t) => t.s.specialist)].map((group, g) => (
+        <>
+          {g === 1 && <p class="tile-group">Specialisté</p>}
+          <div class={`grid grid-cards${g === 1 ? ' compact' : ''}`}>
+            {group.map(({ s, n, accepting }, i) => (
+              <label class="card spec-tile pick">
+                <input type="radio" name="s" value={s.slug} checked={g === 0 && i === 0} />
+                <span class="icon" aria-hidden="true">{s.icon}</span>
+                <strong class="tile-title">{s.plural}</strong>
+                <span class="tile-stats">
+                  <span class="nowrap">{ordinaci(n)}</span>
+                  {accepting > 0 && <span class="nowrap tile-ok">✓ {prijima(accepting)}</span>}
+                </span>
+              </label>
+            ))}
+          </div>
+        </>
+      ))}
     </fieldset>
 
     <fieldset class="step-box">

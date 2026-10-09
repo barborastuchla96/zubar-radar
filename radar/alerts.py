@@ -28,6 +28,8 @@ MAX_PER_EMAIL = 10       # practices listed in one alert
 SPECIALTY_PLURAL = {
     "zubar": "Zubaři", "praktik": "Praktičtí lékaři", "pediatr": "Dětští lékaři",
     "gynekolog": "Gynekologové", "hygienistka": "Dentální hygiena",
+    "ocni": "Oční lékaři", "orl": "ORL lékaři", "kozni": "Kožní lékaři",
+    "psychiatr": "Psychiatři", "neurolog": "Neurologové",
 }
 
 

@@ -1,0 +1,16 @@
+---
+import type { SpecialtyInfo } from '../lib/site';
+
+interface Props { spec: SpecialtyInfo }
+const { spec } = Astro.props;
+---
+{spec.specialist && (
+  <div class="notice referral">
+    <p>💡 Mnoho specialistů bere nové pacienty jen s <strong>doporučením (žádankou) od praktického lékaře</strong>.
+      Až budete volat, zeptejte se, jestli ho potřebujete.</p>
+    {spec.slug === 'psychiatr' && (
+      <p>Jste v akutní krizi? Volejte nonstop <a href="tel:116123"><strong>116 123</strong></a> (Linka první psychické pomoci),
+        nebo v ohrožení života <a href="tel:155"><strong>155</strong></a>.</p>
+    )}
+  </div>
+)}

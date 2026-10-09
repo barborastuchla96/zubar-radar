@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { findByToken, unsubscribe } from '../../lib/alerts';
-import { specialty } from '../../lib/site';
+import { specialty, lowerName } from '../../lib/site';
 
 const post = Astro.request.method === 'POST';
 const token = post ? String((await Astro.request.formData()).get('t') ?? '') : (Astro.url.searchParams.get('t') ?? '');
@@ -18,7 +18,7 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
       <p><a href="/">Zpět na hlavní stránku</a></p></div>
   ) : (
     <form class="card" method="post">
-      <p>Opravdu už nechcete upozornění ({spec?.plural.toLowerCase()} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong>)?</p>
+      <p>Opravdu už nechcete upozornění ({(spec ? lowerName(spec.plural) : '')} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong>)?</p>
       <input type="hidden" name="t" value={token} />
       <button class="btn" type="submit">Ano, odhlásit</button>
     </form>

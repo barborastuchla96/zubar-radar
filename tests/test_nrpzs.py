@@ -20,6 +20,14 @@ def test_old_format_filters_to_tracked_specialties():
     assert provs["1002"].specialties == {"praktik"}
 
 
+def test_specialists_only_with_outpatient_care():
+    assert nrpzs.parse_specialties("Oftalmologie, neurologie", "ambulantní péče") == {"ocni", "neurolog"}
+    assert nrpzs.parse_specialties("neurologie", "akutní lůžková péče standardní") == set()
+    assert nrpzs.parse_specialties("zubní lékařství, psychiatrie", "lůžková péče") == {"zubar"}
+    assert nrpzs.parse_specialties("Otorinolaryngologie a chirurgie hlavy a krku") == {"orl"}
+    assert nrpzs.parse_specialties("korektivní dermatologie", "ambulantní péče") == set()
+
+
 def test_duplicate_place_rows_are_merged():
     p = load("old_format.csv")["1001"]
     assert p.specialties == {"zubar", "hygienistka"}
