@@ -77,3 +77,11 @@ const REGION_EN: Record<string, string> = {
   'Moravskoslezský kraj': 'Moravian-Silesian Region', 'Zlínský kraj': 'Zlín Region',
 };
 export const regionEn = (name: string) => REGION_EN[name] ?? name;
+
+/** "GPs (family doctors)" → "GPs (family doctors)", "Dentists" → "dentists": for use mid-sentence. */
+export const lowerEn = (s: string) => s.toLowerCase().replace(/\bgp(s?)\b/g, 'GP$1').replace(/\bent\b/g, 'ENT');
+/** "a GP (family doctor)", "an eye doctor", "an ENT doctor" */
+export const aDoctorEn = (slug: string) => {
+  const s = lowerEn(SPECIALTY_EN[slug].singular).replace(/\bent\b/i, 'ENT');
+  return `${/^[aeiou]|^ENT/i.test(s) ? 'an' : 'a'} ${s}`;
+};

@@ -53,17 +53,14 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
     <fieldset class="step-box">
       <legend><span class="step-no">2</span> Kde?</legend>
-      <label for="home-q">Napište město, obec nebo část Prahy</label>
+      <label for="home-q">Napište město, obec, část Prahy nebo PSČ</label>
       <div class="search-row">
         <div class="suggest-wrap">
-          <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="Např. Praha 6, Kladno, Brno"
+          <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="Např. Dejvice, Kladno, 602 00"
                  data-suggest data-spec-from="home-search" />
         </div>
         <button class="btn big" type="submit">Hledat</button>
       </div>
-      <ul class="pills big-cities" aria-label="Krajská města">
-        {BIG.map(([slug, name]) => <li><a href={cityUrl('zubar', slug)} data-city={slug}>{name}</a></li>)}
-      </ul>
     </fieldset>
   </form>
 
@@ -74,9 +71,14 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
     <button class="btn secondary" type="submit" id="near-btn">📍 Ukázat ordinace v mém okolí</button>
   </form>
   <p class="small muted" id="near-msg" hidden></p>
+  <ul class="pills big-cities" aria-label="Krajská města">
+    {BIG.map(([slug, name]) => <li><a href={cityUrl('zubar', slug)} data-city={slug}>{name}</a></li>)}
+  </ul>
 
   <h2 class="map-title">Nebo klikněte na svůj kraj</h2>
+  <div class="home-region">
   <RegionMap specialty="zubar" syncWith="home-search" />
+  </div>
 
   <Suggest />
 
@@ -95,7 +97,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   const chosen = () => (search.elements.namedItem('s') as RadioNodeList).value || 'zubar';
 
   // City shortcuts follow the specialty tiles.
-  const syncCities = () => search.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
+  const syncCities = () => document.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
     a.href = `/${chosen()}/${a.dataset.city}`;
   });
   search.addEventListener('change', syncCities);

@@ -138,6 +138,7 @@ CREATE INDEX IF NOT EXISTS subscriptions_active_idx
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS place_label text;     -- "Praha 6", shown in emails
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS requester_hash text;  -- salted IP hash, for rate limits
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS confirm_sends smallint NOT NULL DEFAULT 1;  -- confirmation emails sent
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS lang text NOT NULL DEFAULT 'cs';  -- language of the emails: cs / en
 CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_token_idx ON subscriptions (verify_token);
 CREATE INDEX IF NOT EXISTS subscriptions_email_idx ON subscriptions (lower(email));
 

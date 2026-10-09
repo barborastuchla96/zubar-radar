@@ -1,0 +1,25 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { findByToken, unsubscribe } from '../../../lib/alerts';
+import { enOf, lowerEn } from '../../../lib/i18n';
+
+const post = Astro.request.method === 'POST';
+const token = post ? String((await Astro.request.formData()).get('t') ?? '') : (Astro.url.searchParams.get('t') ?? '');
+const sub = await findByToken(token);
+if (post && sub) await unsubscribe(token);
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+<Base title="Unsubscribe" description="Unsubscribe from e-mail alerts" noindex>
+  <h1>Unsubscribe</h1>
+  {(post || !sub) ? (
+    <div class="card"><p class="notice ok" role="status">You're unsubscribed. We won't send you anything else and have deleted your address.</p>
+      <p><a href="/en">Back to the home page</a></p></div>
+  ) : (
+    <form class="card" method="post">
+      <p>Stop the alerts ({lowerEn(enOf(sub.specialty_slug).plural)} within {sub.radius_km} km of <strong>{sub.place_label}</strong>)?</p>
+      <input type="hidden" name="t" value={token} />
+      <button class="btn" type="submit">Yes, unsubscribe</button>
+    </form>
+  )}
+</Base>

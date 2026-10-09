@@ -3,11 +3,18 @@ import { RADII } from '../lib/alerts';
 import { mailEnabled } from '../lib/mail';
 import { formToken } from '../lib/report';
 import type { SpecialtyInfo } from '../lib/site';
+import { aDoctorEn } from '../lib/i18n';
 
 interface Props { spec: SpecialtyInfo; lat: number; lng: number; place: string; radius?: number }
 const { spec, lat, lng, place, radius = 5 } = Astro.props;
 const result = Astro.url.searchParams.get('u');
-const MESSAGES: Record<string, [string, string]> = {
+const en = Astro.url.pathname.startsWith('/en');
+const MESSAGES: Record<string, [string, string]> = en ? {
+  sent: ['ok', "Done. We've sent you an e-mail with a link. The alert starts once you click it. (If it doesn't arrive, check your Spam or Promotions folder.)"],
+  too_many: ['bad', "We've already sent many e-mails to this address or from this device today. Please try again tomorrow."],
+  invalid: ['bad', "That doesn't look like an e-mail address. Please check it."],
+  error: ['bad', "We couldn't send the e-mail right now. Please try again in a moment."],
+} : {
   sent: ['ok', 'Hotovo. Poslali jsme vám e-mail s odkazem. Upozornění začne platit, až na něj kliknete. (Když e-mail nepřijde, podívejte se do složky Spam nebo Hromadné.)'],
   too_many: ['bad', 'Dnes už jsme na tuto adresu nebo z tohoto zařízení posílali hodně e-mailů. Zkuste to prosím zítra.'],
   invalid: ['bad', 'Tohle nevypadá jako e-mailová adresa. Zkontrolujte ji prosím.'],
@@ -18,9 +25,19 @@ const back = Astro.url.pathname;
 ---
 {mailEnabled() && (
   <section id="upozorneni" class="card alert-signup">
-    <h2 style="margin-top:0">Pošleme vám e-mail, až se uvolní místo</h2>
-    <p>Jakmile {spec.some} v okolí místa <strong>{place}</strong> začne přijímat nové pacienty,
-      dáme vám vědět.</p>
+    {en ? (
+      <>
+        <h2 style="margin-top:0">Get an e-mail when a place opens up</h2>
+        <p>As soon as {aDoctorEn(spec.slug)} near <strong>{place}</strong> starts
+          accepting new patients, we'll let you know. The e-mails are in English.</p>
+      </>
+    ) : (
+      <>
+        <h2 style="margin-top:0">Pošleme vám e-mail, až se uvolní místo</h2>
+        <p>Jakmile {spec.some} v okolí místa <strong>{place}</strong> začne přijímat nové pacienty,
+          dáme vám vědět.</p>
+      </>
+    )}
     {msg && <p class={`notice ${msg[0]}`} role="status">{msg[1]}</p>}
     <form method="post" action="/api/upozorneni" class="alert-form">
       <input type="hidden" name="s" value={spec.slug} />
@@ -29,23 +46,25 @@ const back = Astro.url.pathname;
       <input type="hidden" name="place" value={place} />
       <input type="hidden" name="back" value={back} />
       <input type="hidden" name="t" value={formToken()} />
+      {en && <input type="hidden" name="lang" value="en" />}
       <div class="hp" aria-hidden="true">
         <label>Web <input type="text" name="web" tabindex="-1" autocomplete="off" /></label>
       </div>
       <div>
-        <label for="al-email">Váš e-mail</label>
+        <label for="al-email">{en ? 'Your e-mail' : 'Váš e-mail'}</label>
         <input id="al-email" type="email" name="email" required maxlength="254" autocomplete="email"
-          inputmode="email" placeholder="jmeno@example.cz" />
+          inputmode="email" placeholder={en ? 'name@example.com' : 'jmeno@example.cz'} />
       </div>
       <div>
-        <label for="al-radius">Jak daleko?</label>
+        <label for="al-radius">{en ? 'How far?' : 'Jak daleko?'}</label>
         <select id="al-radius" name="radius">
-          {RADII.map((r) => <option value={r} selected={r === radius}>do {r} km</option>)}
+          {RADII.map((r) => <option value={r} selected={r === radius}>{en ? `within ${r} km` : `do ${r} km`}</option>)}
         </select>
       </div>
-      <div><button class="btn" type="submit">Chci upozornění</button></div>
+      <div><button class="btn" type="submit">{en ? 'Send me alerts' : 'Chci upozornění'}</button></div>
     </form>
-    <p class="small muted">Nejdřív vám pošleme e-mail s odkazem na potvrzení. Adresu použijeme jen pro tato upozornění
-      a v každém e-mailu najdete odkaz, kterým se z odběru odhlásíte.</p>
+    <p class="small muted">{en
+      ? "First we'll send you an e-mail with a confirmation link. We use the address only for these alerts, and every e-mail has a link to unsubscribe."
+      : 'Nejdřív vám pošleme e-mail s odkazem na potvrzení. Adresu použijeme jen pro tato upozornění a v každém e-mailu najdete odkaz, kterým se z odběru odhlásíte.'}</p>
   </section>
 )}

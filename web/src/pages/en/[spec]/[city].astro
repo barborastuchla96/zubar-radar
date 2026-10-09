@@ -6,6 +6,8 @@ import ProviderCard from '../../../components/ProviderCard.astro';
 import Map from '../../../components/Map.astro';
 import StatusLegend from '../../../components/StatusLegend.astro';
 import SpecialistNote from '../../../components/SpecialistNote.astro';
+import NearMeButton from '../../../components/NearMeButton.astro';
+import AlertForm from '../../../components/AlertForm.astro';
 import { cityProviders, nearby } from '../../../lib/db';
 import { SPECIALTIES, breadcrumbLd, cityUrl, isPragueSlug, placeLabel } from '../../../lib/site';
 import { enOf, factLineEn, monthYearEn, placeEn, placeUrl, specUrl, specialtyFromEn } from '../../../lib/i18n';
@@ -26,6 +28,11 @@ const open = (counts.accepting ?? 0) + (counts.waitlist ?? 0);
 const speaks = rows.filter((r) => r.english);
 const others = rows.filter((r) => !r.english);
 const english = speaks.length;
+const othersOpen = others.filter((r) => r.status === 'accepting' || r.status === 'waitlist').length;
+const LIMIT = Math.max(30, othersOpen + 6);
+const showAll = Astro.url.searchParams.has('all');
+const othersShown = showAll ? others : others.slice(0, LIMIT);
+const hiddenOthers = others.length - othersShown.length;
 // ?english=1 (the search checkbox): only practices where we know you can speak English,
 // and when there are none in this town, the nearest ones within 25 km.
 const englishOnly = Astro.url.searchParams.get('english') === '1';
@@ -112,6 +119,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
     if (matchMedia('(max-width: 640px)').matches) document.currentScript.previousElementSibling.open = false;
   </script>
 
+  {rows.length > 30 && <NearMeButton specialty={spec.slug} />}
   {english > 0 && (
     <section class="list-part">
       <h2>🗣️ You can speak English here ({english})</h2>
@@ -125,7 +133,13 @@ const jsonLd = breadcrumbLd(Astro.site, [
       : <h2 class="sr-only">Practices</h2>}
     {english > 0 && <p class="notice unknown-english">We <strong>don't know yet</strong> whether these speak English. That doesn't mean they don't:
       many doctors do, so it's worth asking. If you find out, tell others on the practice page.</p>}
-    <div class="grid grid-2 list">{others.map((p) => <ProviderCard p={p} />)}</div>
+    <div class="grid grid-2 list" id="others">{othersShown.map((p) => <ProviderCard p={p} />)}</div>
+    {hiddenOthers > 0 && (
+      <div class="card more-list">
+        <p>Showing {othersShown.length} of {others.length} practices.</p>
+        <p><a class="btn secondary" href="?all=1#others">Show all {others.length}</a></p>
+      </div>
+    )}
   </section>
   <p class="notice ok" id="empty" hidden>Nothing in this filter.</p>
 
@@ -137,6 +151,8 @@ const jsonLd = breadcrumbLd(Astro.site, [
   )}
 
   </>)}
+
+  {center && !englishOnly && <AlertForm {spec} lat={center.lat} lng={center.lng} place={city} radius={prague ? 2 : 5} />}
 
   <h2>Other doctors – {city}</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={placeUrl('en', s.slug, citySlug)}>{enOf(s.slug).plural}</a></li>)}</ul>

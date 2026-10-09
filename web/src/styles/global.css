@@ -430,3 +430,21 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .fact-tag.hospital { color: var(--muted); background: var(--surface); }
 .near-accepting { margin: 1.25rem 0 0; }
 .near-accepting > .grid { margin-bottom: 1rem; }
+details.legend { margin: .5rem 0 1rem; padding: 0; }
+details.legend > summary { cursor: pointer; color: var(--brand); font-weight: 600; font-size: .95rem; list-style: none; display: inline-flex; gap: .35rem; min-height: 32px; align-items: center; }
+details.legend > summary::-webkit-details-marker { display: none; }
+details.legend[open] dl { margin-top: .5rem; padding: .75rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.near-me { margin: .25rem 0 1rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.more-list { text-align: center; margin-top: 1rem; }
+/* Homepage on phones: the search within the first screen and a half */
+@media (max-width: 640px) {
+  /* one compact row per field: icon + name; the counts are on the next page anyway */
+  .home-search .grid-cards, .home-search .grid-cards.compact { grid-template-columns: 1fr 1fr; gap: .45rem; }
+  .home-search .spec-tile { flex-direction: row; align-items: center; gap: .45rem; padding: .55rem .6rem; min-height: 52px; }
+  .home-search .spec-tile .icon { font-size: 1.15rem; }
+  .home-search .tile-title { font-size: .95rem; line-height: 1.2; }
+  .home-search .tile-stats { display: none; }
+  .home-search .spec-tile.pick:has(input:checked)::after { content: "✓"; top: -.45rem; right: -.35rem; font-size: .75rem; padding: .05rem .4rem; }
+  .home-search .tile-group { margin: .7rem 0 .35rem; }
+  .home-region svg, .home-region .map-credit { display: none; }
+}

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { confirmationText, createSignup, logMail, parseSignup, sendFailed } from '../../lib/alerts';
+import { confirmationSubject, confirmationText, createSignup, logMail, parseSignup, sendFailed } from '../../lib/alerts';
 import { mailEnabled, sendMail } from '../../lib/mail';
 import { clientIp, reporterHash } from '../../lib/report';
 
@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect, site })
   if (result.kind === 'too_many') return back('too_many');
   if (result.kind === 'send') {
     try {
-      await sendMail(parsed.value.email, 'Potvrďte prosím upozornění na volné ordinace',
+      await sendMail(parsed.value.email, confirmationSubject(parsed.value.lang),
         confirmationText(String(site ?? process.env.SITE_URL), result.token, parsed.value));
       await logMail('confirm');
     } catch (e) {

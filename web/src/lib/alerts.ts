@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { sql } from './db';
 import { formTokenOk } from './report';
 import { specialty } from './site';
+import { aDoctorEn } from './i18n';
 
 export const RADII = [2, 5, 10, 20] as const;
 const DAILY_LIMIT = Number(process.env.MAIL_DAILY_LIMIT ?? 450);   // shared with `radar alerts`
@@ -10,7 +11,7 @@ const PER_EMAIL_DAY = 3;         // confirmation emails to one address per 24 h
 const MAX_ACTIVE_PER_EMAIL = 10;
 const MAX_RESENDS = 3;           // confirmation emails per sign-up, at least 10 minutes apart
 
-export interface SignupInput { email: string; specialty: string; lat: number; lng: number; radiusKm: number; place: string }
+export interface SignupInput { email: string; specialty: string; lat: number; lng: number; radiusKm: number; place: string; lang: 'cs' | 'en' }
 export type SignupParsed = { ok: true; value: SignupInput; back: string } | { ok: false; reason: 'invalid' | 'bot'; back: string };
 
 const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}$/i;
@@ -32,7 +33,8 @@ export function parseSignup(form: FormData, now = Date.now()): SignupParsed {
       || !(RADII as readonly number[]).includes(radiusKm)) {
     return { ok: false, reason: 'invalid', back };
   }
-  return { ok: true, value: { email, specialty: spec.slug, lat, lng, radiusKm, place }, back };
+  const lang = get('lang') === 'en' ? 'en' : 'cs';
+  return { ok: true, value: { email, specialty: spec.slug, lat, lng, radiusKm, place, lang }, back };
 }
 
 export type SignupResult =
@@ -72,8 +74,8 @@ export async function createSignup(v: SignupInput, requesterHash: string): Promi
     }
     const token = randomBytes(24).toString('base64url');
     await tx`
-      INSERT INTO subscriptions (email, specialty_slug, lat, lng, radius_km, verify_token, place_label, requester_hash)
-      VALUES (${v.email}, ${v.specialty}, ${v.lat}, ${v.lng}, ${v.radiusKm}, ${token}, ${v.place}, ${requesterHash})`;
+      INSERT INTO subscriptions (email, specialty_slug, lat, lng, radius_km, verify_token, place_label, requester_hash, lang)
+      VALUES (${v.email}, ${v.specialty}, ${v.lat}, ${v.lng}, ${v.radiusKm}, ${token}, ${v.place}, ${requesterHash}, ${v.lang})`;
     return { kind: 'send', token } as const;
   });
 }
@@ -85,12 +87,12 @@ export const sendFailed = (token: string) => sql`
 
 export const logMail = (kind: 'confirm' | 'alert') => sql`INSERT INTO mail_log (kind) VALUES (${kind})`;
 
-export interface SubscriptionRow { specialty_slug: string; place_label: string | null; radius_km: number; verified_at: Date | null }
+export interface SubscriptionRow { specialty_slug: string; place_label: string | null; radius_km: number; verified_at: Date | null; lang: 'cs' | 'en' }
 
 export async function findByToken(token: string): Promise<SubscriptionRow | undefined> {
   if (!/^[\w-]{20,64}$/.test(token)) return undefined;
   const [row] = await sql<SubscriptionRow[]>`
-    SELECT specialty_slug, place_label, radius_km, verified_at FROM subscriptions
+    SELECT specialty_slug, place_label, radius_km, verified_at, lang FROM subscriptions
      WHERE verify_token = ${token} AND unsubscribed_at IS NULL`;
   return row;
 }
@@ -106,8 +108,27 @@ export async function unsubscribe(token: string): Promise<void> {
   await sql`DELETE FROM subscriptions WHERE verify_token = ${token}`;
 }
 
-export function confirmationText(siteUrl: string, token: string, v: Pick<SignupInput, 'specialty' | 'place' | 'radiusKm'>) {
+export const confirmationSubject = (lang: 'cs' | 'en') =>
+  lang === 'en' ? 'Please confirm your alert for practices accepting new patients' : 'Potvrďte prosím upozornění na volné ordinace';
+
+export function confirmationText(siteUrl: string, token: string, v: Pick<SignupInput, 'specialty' | 'place' | 'radiusKm'> & { lang?: 'cs' | 'en' }) {
   const spec = specialty(v.specialty)!;
+  if (v.lang === 'en') {
+    const link = `${siteUrl.replace(/\/$/, '')}/en/alerts/confirm?t=${token}`;
+    return [
+      'Hello,',
+      '',
+      `would you like us to e-mail you when ${aDoctorEn(v.specialty)} within ${v.radiusKm} km of ${v.place} starts accepting new patients?`,
+      '',
+      'If so, please confirm here:',
+      link,
+      '',
+      "If you didn't ask for this, just ignore this e-mail. Without confirmation we won't send anything else and will delete the address within a week.",
+      '',
+      'Best regards',
+      'Accepting new patients? (prijimanovepacienty.cz)',
+    ].join('\n');
+  }
   const link = `${siteUrl.replace(/\/$/, '')}/upozorneni/potvrdit?t=${token}`;
   return [
     'Dobrý den,',

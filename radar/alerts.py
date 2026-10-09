@@ -31,6 +31,12 @@ SPECIALTY_PLURAL = {
     "ocni": "Oční lékaři", "orl": "ORL lékaři", "kozni": "Kožní lékaři",
     "psychiatr": "Psychiatři", "neurolog": "Neurologové",
 }
+# English, matches SPECIALTY_EN in web/src/lib/i18n.ts
+SPECIALTY_PLURAL_EN = {
+    "zubar": "Dentists", "praktik": "GPs", "pediatr": "Pediatricians", "gynekolog": "Gynecologists",
+    "hygienistka": "Dental hygienists", "ocni": "Eye doctors", "orl": "ENT doctors", "kozni": "Dermatologists",
+    "psychiatr": "Psychiatrists", "neurolog": "Neurologists",
+}
 
 
 def _plural(n: int, one: str, few: str, many: str) -> str:
@@ -59,10 +65,13 @@ class Alert:
     place: str
     radius_km: int
     providers: list[dict] = field(default_factory=list)
+    lang: str = "cs"
 
 
 def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     """Build the alert email (plain text: readable everywhere, hard to mark as spam)."""
+    if a.lang == "en":
+        return _compose_en(a, site_url, sender)
     site = site_url.rstrip("/")
     n = len(a.providers)
     spec = SPECIALTY_PLURAL.get(a.specialty, a.specialty)
@@ -112,11 +121,55 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     return msg
 
 
+def _compose_en(a: Alert, site_url: str, sender: str) -> EmailMessage:
+    site = site_url.rstrip("/")
+    n = len(a.providers)
+    spec = SPECIALTY_PLURAL_EN.get(a.specialty, a.specialty)
+    unsubscribe = f"{site}/en/alerts/unsubscribe?t={a.token}"
+    lines = [
+        "Hello,",
+        "",
+        f"good news. According to recent reports, {'this practice' if n == 1 else 'these practices'} within"
+        f" {a.radius_km} km of {a.place} now {'accepts' if n == 1 else 'accept'} new patients:",
+        "",
+    ]
+    for p in a.providers:
+        addr = ", ".join(filter(None, [" ".join(filter(None, [p.get("street"), p.get("house_no")])), p.get("city")]))
+        lines.append(f"• {p['name']}")
+        lines.append(f"  {addr} ({_km(p['km']).replace(',', '.')})" if addr else f"  {_km(p['km']).replace(',', '.')}")
+        if tel := _phone(p.get("phone")):
+            lines.append(f"  Phone: +420 {tel}")
+        lines.append(f"  {site}/en/doctor/{p['id']}")
+        lines.append("")
+    lines += [
+        "Please contact the practice before you go. The reports come from patients and practice websites"
+        " and may not be completely up to date. Many practices answer e-mails more easily than calls.",
+        "",
+        "Once you know, please mark the result on the practice page. It helps the next person.",
+        "",
+        "Best regards",
+        "Accepting new patients? (prijimanovepacienty.cz)",
+        "",
+        "--",
+        f"Don't want these alerts any more? Unsubscribe here: {unsubscribe}",
+    ]
+    msg = EmailMessage(policy=SMTP_POLICY.clone(max_line_length=998))
+    msg["Subject"] = f"{spec} near {a.place}: {n} {'practice accepts' if n == 1 else 'practices accept'} new patients"
+    msg["From"] = formataddr(("Accepting new patients?", sender))
+    msg["To"] = a.email
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=sender.rsplit("@", 1)[-1])
+    msg["List-Unsubscribe"] = f"<{unsubscribe}>"
+    msg["Auto-Submitted"] = "auto-generated"
+    msg.set_content("\n".join(lines))
+    return msg
+
+
 # ---------------------------------------------------------------------------
 # Database
 # ---------------------------------------------------------------------------
 PENDING_SQL = """
-SELECT s.id::text AS subscription_id, s.email, s.verify_token, s.specialty_slug,
+SELECT s.id::text AS subscription_id, s.email, s.verify_token, s.specialty_slug, s.lang,
        coalesce(s.place_label, 'vybrané místo') AS place, s.radius_km,
        p.id, p.name, p.street, p.house_no, p.city, p.phone,
        distance_km(s.lat, s.lng, p.lat, p.lng) AS km
@@ -146,7 +199,7 @@ def pending_alerts(conn: psycopg.Connection) -> list[Alert]:
             if a is None:
                 a = alerts[r["subscription_id"]] = Alert(
                     r["subscription_id"], r["email"], r["verify_token"], r["specialty_slug"],
-                    r["place"], r["radius_km"])
+                    r["place"], r["radius_km"], lang=r["lang"] or "cs")
             if len(a.providers) < MAX_PER_EMAIL:
                 a.providers.append(r)
     return list(alerts.values())

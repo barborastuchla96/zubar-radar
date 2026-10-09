@@ -7,8 +7,8 @@ interface Props { specialty?: string; q?: string; compact?: boolean; english?: b
 const { specialty = 'zubar', q = '', compact = false, english = false, englishKnown = 0 } = Astro.props;
 const en = Astro.url.pathname.startsWith('/en');
 const T = en
-  ? { action: '/en/search', who: 'Who are you looking for?', where: 'Where? Type a town or a part of Prague', ph: 'E.g. Praha 6, Kladno, Brno', go: 'Search' }
-  : { action: '/hledat', who: 'Koho hledáte?', where: 'Kde? Napište město nebo část Prahy', ph: 'Např. Praha 6, Kladno, Brno', go: 'Hledat' };
+  ? { action: '/en/search', who: 'Who are you looking for?', where: 'Where? Town, part of Prague, postcode or street', ph: 'E.g. Vinohrady, Brno, 160 00', go: 'Search' }
+  : { action: '/hledat', who: 'Koho hledáte?', where: 'Kde? Město, část Prahy, PSČ nebo ulice', ph: 'Např. Dejvice, Kladno, 602 00', go: 'Hledat' };
 ---
 <form class={`place-search card${compact ? ' compact' : ''}`} id="place-search" method="get" action={T.action} role="search">
   <div class="field">

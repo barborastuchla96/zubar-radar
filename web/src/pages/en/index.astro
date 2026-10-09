@@ -55,18 +55,15 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
     <fieldset class="step-box">
       <legend><span class="step-no">2</span> Where?</legend>
-      <label for="home-q">Type a town, village or part of Prague</label>
+      <label for="home-q">Type a town, part of Prague, postcode or street</label>
       <div class="search-row">
         <div class="suggest-wrap">
-          <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="E.g. Praha 6, Brno, Kladno"
+          <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="E.g. Vinohrady, Brno, 160 00"
                  data-suggest data-spec-from="home-search" />
         </div>
         <button class="btn big" type="submit">Search</button>
       </div>
       <label class="opt english-only" hidden><input type="checkbox" name="english" value="1" /> 🗣️ Only practices where we know you can speak English <span class="muted" data-english-n></span></label>
-      <ul class="pills big-cities" aria-label="Big cities">
-        {BIG.map(([slug, name]) => <li><a href={placeUrl('en', 'praktik', slug)} data-city={slug}>{name}</a></li>)}
-      </ul>
     </fieldset>
   </form>
 
@@ -77,6 +74,9 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
     <button class="btn secondary" type="submit" id="near-btn">📍 Show practices near me</button>
   </form>
   <p class="small muted" id="near-msg" hidden></p>
+  <ul class="pills big-cities" aria-label="Big cities">
+    {BIG.map(([slug, name]) => <li><a href={placeUrl('en', 'praktik', slug)} data-city={slug}>{name}</a></li>)}
+  </ul>
 
   <Suggest />
 
@@ -99,7 +99,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   const search = document.getElementById('home-search') as HTMLFormElement;
   const checked = () => search.querySelector<HTMLInputElement>('input[name=s]:checked');
   const englishOnly = () => !!search.querySelector<HTMLInputElement>('input[name=english]:checked');
-  const syncCities = () => search.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
+  const syncCities = () => document.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
     a.href = `/en/${checked()?.dataset.en ?? 'gp'}/${a.dataset.city}${englishOnly() ? '?english=1' : ''}`;
   });
   // The "English only" box appears only when we know English speakers of the chosen kind.

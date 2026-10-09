@@ -6,6 +6,7 @@ import ReportForm from '../../../components/ReportForm.astro';
 import ProviderCard from '../../../components/ProviderCard.astro';
 import Map from '../../../components/Map.astro';
 import SpecialistNote from '../../../components/SpecialistNote.astro';
+import AlertForm from '../../../components/AlertForm.astro';
 import { alternatives, latestCrawlNote, provider } from '../../../lib/db';
 import { SPECIALTIES, address, breadcrumbLd, emailsOf, firstWeb, formatPhone, providerUrl, telHref } from '../../../lib/site';
 import { STATUS_EN, agoEn, doctorUrl, enOf, placeEn, placeUrl, specUrl } from '../../../lib/i18n';
@@ -91,6 +92,9 @@ const jsonLd = breadcrumbLd(Astro.site, [
     <ReportForm providerId={p.id} {result} />
   </div>
 
+  {main && p.lat != null && p.lng != null && p.status !== 'accepting' && (
+    <AlertForm spec={main} lat={p.lat} lng={p.lng} place={p.city ?? 'this practice'} radius={p.city_slug?.startsWith('praha') ? 2 : 5} />
+  )}
   {alts.length > 0 && main && (
     <section>
       <h2>{enOf(main.slug).nearby}</h2>

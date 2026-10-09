@@ -5,16 +5,11 @@ import StatusBadge from './StatusBadge.astro';
 import { STATUS_EN } from '../lib/i18n';
 const en = Astro.url.pathname.startsWith('/en');
 const T = en
-  ? { title: 'Labels:', more: 'What do they mean?', accepting: STATUS_EN.accepting.hint, waitlist: STATUS_EN.waitlist.hint, not_accepting: STATUS_EN.not_accepting.hint, unknown: STATUS_EN.unknown.hint }
-  : { title: 'Štítky:', more: 'Co znamenají?', accepting: 'Podle nedávných zpráv přijímá nové pacienty.', waitlist: 'Zapisuje nové pacienty do pořadníku.', not_accepting: 'Podle nedávných zpráv nové pacienty nepřijímá.', unknown: 'Zatím o tom nemáme zprávy.' };
+  ? { title: 'Labels:', more: 'What do the labels mean?', accepting: STATUS_EN.accepting.hint, waitlist: STATUS_EN.waitlist.hint, not_accepting: STATUS_EN.not_accepting.hint, unknown: STATUS_EN.unknown.hint }
+  : { title: 'Štítky:', more: 'Co znamenají štítky?', accepting: 'Podle nedávných zpráv přijímá nové pacienty.', waitlist: 'Zapisuje nové pacienty do pořadníku.', not_accepting: 'Podle nedávných zpráv nové pacienty nepřijímá.', unknown: 'Zatím o tom nemáme zprávy.' };
 ---
-<details class="legend card">
-  <summary>
-    <span class="legend-title">{T.title}</span>
-    <StatusBadge status="accepting" /> <StatusBadge status="waitlist" />
-    <StatusBadge status="not_accepting" /> <StatusBadge status="unknown" />
-    <span class="legend-more">{T.more}</span>
-  </summary>
+<details class="legend">
+  <summary><span aria-hidden="true">ℹ️</span> {T.more}</summary>
   <dl>
     <dt><StatusBadge status="accepting" /></dt><dd>{T.accepting}</dd>
     <dt><StatusBadge status="waitlist" /></dt><dd>{T.waitlist}</dd>

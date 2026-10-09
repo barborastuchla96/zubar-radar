@@ -7,6 +7,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import AlertForm from '../../components/AlertForm.astro';
+import NearMeButton from '../../components/NearMeButton.astro';
 import { cityProviders, nearby, sponsored } from '../../lib/db';
 import { placeUrl } from '../../lib/i18n';
 import { SPECIALTIES, breadcrumbLd, cityUrl, factLine, isPragueSlug, monthYear, placeLabel, specialty } from '../../lib/site';
@@ -39,6 +40,12 @@ const nearAccepting = open === 0 && center
   ? (await nearby(spec.slug, center.lat, center.lng, 30, 12))
       .filter((r) => !here.has(r.id) && (r.status === 'accepting' || r.status === 'waitlist')).slice(0, 4)
   : [];
+// Big towns (Brno: 331 dentists) were an endless scroll on phones: show the first part,
+// always including every practice known to accept, and offer "all" or "nearest to me".
+const LIMIT = Math.max(30, open + 6);
+const showAll = Astro.url.searchParams.has('vse');
+const shown = showAll ? rows : rows.slice(0, LIMIT);
+const hidden = rows.length - shown.length;
 const title = `${spec.seo ?? spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(city, spec.plural, counts.accepting, rows.length);
 const description = `${fact} Kontakty, mapa a zprávy od pacientů.`;
@@ -58,15 +65,13 @@ const jsonLd = breadcrumbLd(Astro.site, [
 
   {open > 0 ? (
     <>
-      <p class="intro">Nahoře najdete ordinace, které podle hlášení <strong>přijímají nové pacienty</strong>.
-        U ostatních to zatím nevíme.</p>
-      <StatusLegend />
       <div class="filters" role="group" aria-label="Zobrazit">
         <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
         <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Přijímají ({open})</button>
-        <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Zatím nevíme ({counts.unknown + counts.mixed})</button>
-        {english > 0 && <button class="chip" type="button" data-filter="english" aria-pressed="false">🗣️ Mluví anglicky ({english})</button>}
+        {hidden === 0 && <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Zatím nevíme ({counts.unknown + counts.mixed})</button>}
+        {hidden === 0 && english > 0 && <button class="chip" type="button" data-filter="english" aria-pressed="false">🗣️ Mluví anglicky ({english})</button>}
       </div>
+      <StatusLegend />
     </>
   ) : (
     // Nobody here is known to accept: say it plainly and offer the two ways to help right away.
@@ -96,15 +101,22 @@ const jsonLd = breadcrumbLd(Astro.site, [
   </script>
 
   <Sponsored rows={sponsors} />
+  {rows.length > 30 && <NearMeButton specialty={spec.slug} />}
   <h2 class="sr-only">Ordinace</h2>
   <div class="grid grid-2" id="list">
-    {rows.slice(0, 6).map((p) => <ProviderCard p={p} />)}
+    {shown.slice(0, 6).map((p) => <ProviderCard p={p} />)}
   </div>
   <AdSlot name={`city-${spec.slug}`} />
   <div class="grid grid-2" id="list-rest">
-    {rows.slice(6).map((p) => <ProviderCard p={p} />)}
+    {shown.slice(6).map((p) => <ProviderCard p={p} />)}
   </div>
   <p class="notice ok" id="empty" hidden>V tomto filtru nic není.</p>
+  {hidden > 0 && (
+    <div class="card more-list">
+      <p>Zobrazeno {shown.length} z {rows.length} ordinací.</p>
+      <p><a class="btn secondary" href="?vse=1#list-rest">Zobrazit všech {rows.length}</a></p>
+    </div>
+  )}
 
   {around.length > 0 && (
     <>

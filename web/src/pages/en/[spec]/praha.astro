@@ -7,6 +7,7 @@ import StatusLegend from '../../../components/StatusLegend.astro';
 import Tile from '../../../components/Tile.astro';
 import AreaMap from '../../../components/AreaMap.astro';
 import SpecialistNote from '../../../components/SpecialistNote.astro';
+import AlertForm from '../../../components/AlertForm.astro';
 import { pragueDetail, toMap } from '../../../lib/areas';
 import { cities, englishCounts as englishCountsQ, nearby, pragueAccepting } from '../../../lib/db';
 import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug } from '../../../lib/site';
@@ -104,6 +105,8 @@ const jsonLd = breadcrumbLd(Astro.site, [['Home', '/en'], [E.plural, specUrl('en
   )}
 
   </>)}
+
+  <AlertForm {spec} lat={50.0755} lng={14.4378} place="Praha" radius={10} />
 
   <h2>Other doctors in Prague</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={placeUrl('en', s.slug, 'praha')}>{enOf(s.slug).plural}</a></li>)}</ul>

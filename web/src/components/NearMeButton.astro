@@ -1,0 +1,33 @@
+---
+// "Sort by distance from me": asks the browser for the location and opens the near-me list.
+// Without JavaScript or permission it explains and leaves the page as it is.
+interface Props { specialty: string; english?: boolean }
+const { specialty, english = false } = Astro.props;
+const en = Astro.url.pathname.startsWith('/en');
+const T = en
+  ? { label: '📍 Nearest to me', wait: 'Finding your location… Your browser may ask for permission.', fail: "We couldn't get your location." }
+  : { label: '📍 Seřadit podle vzdálenosti ode mě', wait: 'Zjišťuji polohu… Prohlížeč se vás možná zeptá, jestli ji smí použít.', fail: 'Polohu se nepodařilo zjistit.' };
+---
+<form method="get" action={en ? '/en/near' : '/blizko'} class="near-me" data-wait={T.wait} data-fail={T.fail}>
+  <input type="hidden" name="s" value={specialty} />
+  <input type="hidden" name="lat" /><input type="hidden" name="lng" /><input type="hidden" name="km" value="3" />
+  {english && <input type="hidden" name="english" value="1" />}
+  <button class="btn secondary" type="submit">{T.label}</button>
+  <span class="small muted" role="status" hidden></span>
+</form>
+<script>
+  document.querySelectorAll<HTMLFormElement>('form.near-me').forEach((form) => {
+    const msg = form.querySelector<HTMLElement>('[role=status]')!;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      msg.hidden = false;
+      if (!navigator.geolocation) { msg.textContent = form.dataset.fail!; return; }
+      msg.textContent = form.dataset.wait!;
+      navigator.geolocation.getCurrentPosition((pos) => {
+        (form.elements.namedItem('lat') as HTMLInputElement).value = pos.coords.latitude.toFixed(4);
+        (form.elements.namedItem('lng') as HTMLInputElement).value = pos.coords.longitude.toFixed(4);
+        form.submit();
+      }, () => { msg.textContent = form.dataset.fail!; }, { timeout: 10000, maximumAge: 600000 });
+    });
+  });
+</script>

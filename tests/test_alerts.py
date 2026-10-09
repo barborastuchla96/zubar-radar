@@ -36,6 +36,17 @@ def test_compose_unsubscribe_header_is_plain():
     assert want.split(": ", 1)[1].strip("<>") in m.get_content()
 
 
+def test_compose_english():
+    a = _alert(2)
+    a.lang = "en"
+    m = alerts.compose(a, SITE, "info@prijimanovepacienty.cz")
+    assert m["Subject"] == "Dentists near Praha 6: 2 practices accept new patients"
+    body = m.get_content()
+    assert "these practices within 5 km of Praha 6 now accept new patients" in body
+    assert "Phone: +420 737 351 057" in body and f"{SITE}/en/doctor/10" in body
+    assert f"<{SITE}/en/alerts/unsubscribe?t=tok_" in m.as_string()
+
+
 # ---------------------------------------------------------------------------
 # DB: who gets told about what
 # ---------------------------------------------------------------------------
