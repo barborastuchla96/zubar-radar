@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PlaceSearch from '../../components/PlaceSearch.astro';
-import { cities } from '../../lib/db';
+import { cities, englishCounts } from '../../lib/db';
 import { SPECIALTIES, isPragueSlug, slugify, specialty } from '../../lib/site';
 import { acceptingN, enOf, placeUrl, practices, regionEn } from '../../lib/i18n';
 
@@ -9,6 +9,7 @@ const spec = specialty(Astro.url.searchParams.get('s') ?? '') ?? SPECIALTIES[0];
 const E = enOf(spec.slug);
 const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
 const englishOnly = Astro.url.searchParams.get('english') === '1';
+const englishKnown = (await englishCounts())[spec.slug] ?? 0;
 const withFilter = (u: string) => (englishOnly ? `${u}?english=1` : u);
 const needle = slugify(q).replace(/-/g, '');
 
@@ -29,7 +30,7 @@ if (needle) {
 ---
 <Base title={`Search: ${q || E.plural}`} description={`${E.plural} – search by town.`} noindex activeSpecialty={spec.slug} alt={`/hledat?s=${spec.slug}&q=${encodeURIComponent(q)}`}>
   <h1>{E.plural}: where are you looking?</h1>
-  <PlaceSearch specialty={spec.slug} {q} english={englishOnly} />
+  <PlaceSearch specialty={spec.slug} {q} english={englishOnly} {englishKnown} />
   {q && matches.length === 0 && (
     <p class="notice bad">Nothing found for “{q}”. Try a town name (e.g. “Kladno”) or a part of Prague (e.g. “Praha 6”).
       Or see <a href={`/en/${E.en}`}>all towns</a>.</p>

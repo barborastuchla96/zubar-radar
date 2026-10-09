@@ -38,7 +38,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
           <div class={`grid grid-cards${g === 1 ? ' compact' : ''}`}>
             {group.map(({ s, n, accepting, english: en }, i) => (
               <label class="card spec-tile pick">
-                <input type="radio" name="s" value={s.slug} data-en={enOf(s.slug).en} checked={g === 0 && i === 0} />
+                <input type="radio" name="s" value={s.slug} data-en={enOf(s.slug).en} data-english={en} checked={g === 0 && i === 0} />
                 <span class="icon" aria-hidden="true">{s.icon}</span>
                 <strong class="tile-title">{enOf(s.slug).plural}</strong>
                 <span class="tile-stats">
@@ -63,7 +63,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
         </div>
         <button class="btn big" type="submit">Search</button>
       </div>
-      <label class="opt english-only"><input type="checkbox" name="english" value="1" /> 🗣️ Only practices where we know you can speak English</label>
+      <label class="opt english-only" hidden><input type="checkbox" name="english" value="1" /> 🗣️ Only practices where we know you can speak English <span class="muted" data-english-n></span></label>
       <ul class="pills big-cities" aria-label="Big cities">
         {BIG.map(([slug, name]) => <li><a href={placeUrl('en', 'praktik', slug)} data-city={slug}>{name}</a></li>)}
       </ul>
@@ -102,7 +102,16 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   const syncCities = () => search.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
     a.href = `/en/${checked()?.dataset.en ?? 'gp'}/${a.dataset.city}${englishOnly() ? '?english=1' : ''}`;
   });
-  search.addEventListener('change', syncCities);
+  // The "English only" box appears only when we know English speakers of the chosen kind.
+  const box = search.querySelector<HTMLLabelElement>('.english-only')!;
+  const syncEnglish = () => {
+    const n = Number(checked()?.dataset.english ?? 0);
+    box.hidden = n === 0;
+    if (n === 0) box.querySelector('input')!.checked = false;
+    box.querySelector('[data-english-n]')!.textContent = `(${n} known)`;
+  };
+  search.addEventListener('change', () => { syncEnglish(); syncCities(); });
+  syncEnglish();
   syncCities();
 
   const form = document.getElementById('near-form') as HTMLFormElement;

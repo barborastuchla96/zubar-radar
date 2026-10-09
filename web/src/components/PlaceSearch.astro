@@ -3,8 +3,8 @@
 import { SPECIALTIES } from '../lib/site';
 import { SPECIALTY_EN } from '../lib/i18n';
 import Suggest from './Suggest.astro';
-interface Props { specialty?: string; q?: string; compact?: boolean; english?: boolean }
-const { specialty = 'zubar', q = '', compact = false, english = false } = Astro.props;
+interface Props { specialty?: string; q?: string; compact?: boolean; english?: boolean; englishKnown?: number }
+const { specialty = 'zubar', q = '', compact = false, english = false, englishKnown = 0 } = Astro.props;
 const en = Astro.url.pathname.startsWith('/en');
 const T = en
   ? { action: '/en/search', who: 'Who are you looking for?', where: 'Where? Type a town or a part of Prague', ph: 'E.g. Praha 6, Kladno, Brno', go: 'Search' }
@@ -25,6 +25,6 @@ const T = en
     </div>
   </div>
   <button class="btn big" type="submit">{T.go}</button>
-  {en && <label class="opt english-only"><input type="checkbox" name="english" value="1" checked={english} /> 🗣️ Only practices where we know you can speak English</label>}
+  {en && englishKnown > 0 && <label class="opt english-only"><input type="checkbox" name="english" value="1" checked={english} /> 🗣️ Only practices where we know you can speak English <span class="muted">({englishKnown} known)</span></label>}
 </form>
 <Suggest />

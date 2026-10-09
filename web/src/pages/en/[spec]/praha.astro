@@ -8,13 +8,14 @@ import Tile from '../../../components/Tile.astro';
 import AreaMap from '../../../components/AreaMap.astro';
 import SpecialistNote from '../../../components/SpecialistNote.astro';
 import { pragueDetail, toMap } from '../../../lib/areas';
-import { cities, nearby, pragueAccepting } from '../../../lib/db';
+import { cities, englishCounts as englishCountsQ, nearby, pragueAccepting } from '../../../lib/db';
 import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug } from '../../../lib/site';
 import { acceptingN, enOf, factLineEn, monthYearEn, placeUrl, practices, specUrl, specialtyFromEn } from '../../../lib/i18n';
 
 const spec = specialtyFromEn(Astro.params.spec ?? '');
 if (!spec) return Astro.rewrite('/404');
 const E = enOf(spec.slug);
+const englishCounts = await englishCountsQ();
 const districts = (await cities(spec.slug, 1)).filter((c) => isPragueSlug(c.city_slug)).sort(byDistrict);
 districts.sort((a, b) => Number(a.city_slug === 'praha') - Number(b.city_slug === 'praha'));
 const total = districts.reduce((t, c) => t + c.n, 0);
@@ -27,12 +28,18 @@ const englishAll = englishOnly
   ? (await nearby(spec.slug, 50.0755, 14.4378, 25, 3000)).filter((p) => p.english && isPragueSlug(p.city_slug ?? ''))
       .sort((a, b) => (RANK[a.status] ?? 3) - (RANK[b.status] ?? 3))
   : [];
+const englishByDistrict = new Map<string, number>();
+for (const p of englishAll) englishByDistrict.set(p.city_slug!, (englishByDistrict.get(p.city_slug!) ?? 0) + 1);
 
 const dots = districts.filter((c) => c.lat != null && c.lng != null && c.city_slug !== 'praha').map((c) => {
   const [x, y] = toMap(pragueDetail, c.lat!, c.lng!);
   return {
-    href: placeUrl('en', spec.slug, c.city_slug) + (englishOnly ? '?english=1' : ''), label: c.city, x, y, r: 19, ok: c.accepting > 0, showLabel: false,
-    inner: c.city.replace('Praha ', ''), title: `${c.city}: ${practices(c.n)}${c.accepting ? `, ${acceptingN(c.accepting)}` : ''}`,
+    href: placeUrl('en', spec.slug, c.city_slug) + (englishOnly ? '?english=1' : ''), label: c.city, x, y, r: 19,
+    ok: englishOnly ? (englishByDistrict.get(c.city_slug) ?? 0) > 0 : c.accepting > 0, showLabel: false,
+    inner: c.city.replace('Praha ', ''),
+    title: englishOnly
+      ? `${c.city}: ${englishByDistrict.get(c.city_slug) ?? 0} English-speaking`
+      : `${c.city}: ${practices(c.n)}${c.accepting ? `, ${acceptingN(c.accepting)}` : ''}`,
   };
 });
 for (let round = 0; round < 40; round++) {
@@ -55,22 +62,27 @@ const jsonLd = breadcrumbLd(Astro.site, [['Home', '/en'], [E.plural, specUrl('en
 
   {englishOnly && (
     <section>
-      <p class="notice english-note">🗣️ Showing practices in Prague where we know <strong>you can speak English</strong>.{' '}
-        <a href={placeUrl('en', spec.slug, 'praha')}>Show all practices</a> (many others speak English too; we just don't know yet).</p>
-      {englishAll.length > 0
-        ? <div class="grid grid-2">{englishAll.map(({ km, ...p }) => <ProviderCard p={p} />)}</div>
-        : <p class="card">We don't know yet of any English-speaking practice of this kind in Prague. Our data on English is new
-            and growing every week. Pick your district below and ask: many doctors speak English.</p>}
+      {englishAll.length > 0 ? (
+        <>
+          <p class="notice english-note">🗣️ {englishAll.length === 1 ? 'The practice' : `The ${englishAll.length} practices`} in Prague where we know
+            <strong> you can speak English</strong>. <a href={placeUrl('en', spec.slug, 'praha')}>Show all practices instead</a></p>
+          <div class="grid grid-2">{englishAll.map(({ km, ...p }) => <ProviderCard p={p} />)}</div>
+        </>
+      ) : (
+        <p class="notice english-note">🗣️ We don't know of any English-speaking practice of this kind in Prague yet.{' '}
+          <a href={placeUrl('en', spec.slug, 'praha')}>Show all practices</a>: many doctors speak English, so it's worth asking.</p>
+      )}
     </section>
   )}
 
   <h2>Choose your part of Prague</h2>
-  <p class="small muted">Tap your district number. <span class="tile-ok">Green</span> means someone there accepts new patients.</p>
+  <p class="small muted">Tap your district number. <span class="tile-ok">Green</span> means {englishOnly ? 'we know of an English-speaking practice there' : 'someone there accepts new patients'}.</p>
   <AreaMap viewBox={pragueDetail.viewBox} label="Prague districts" outline={pragueDetail.d} {dots} />
   <div class="grid grid-cards compact prague-districts">
-    {districts.map((d) => <Tile href={placeUrl('en', spec.slug, d.city_slug) + (englishOnly ? '?english=1' : '')} title={d.city === 'Praha' ? 'Prague (no district)' : d.city} n={d.n} accepting={d.accepting} />)}
+    {districts.map((d) => <Tile href={placeUrl('en', spec.slug, d.city_slug) + (englishOnly ? '?english=1' : '')} title={d.city === 'Praha' ? 'Prague (no district)' : d.city}
+      n={d.n} accepting={englishOnly ? 0 : d.accepting} sub={englishOnly && englishByDistrict.get(d.city_slug) ? `🗣️ ${englishByDistrict.get(d.city_slug)} English-speaking` : null} />)}
   </div>
-  <PlaceSearch specialty={spec.slug} q="Praha " compact english={englishOnly} />
+  <PlaceSearch specialty={spec.slug} q="Praha " compact english={englishOnly} englishKnown={englishCounts[spec.slug] ?? 0} />
 
   {!englishOnly && (<>
   <h2>Accepting in Prague right now</h2>

@@ -62,20 +62,21 @@ const jsonLd = breadcrumbLd(Astro.site, [
 
   {englishOnly ? (
     <>
-      <p class="notice english-note">🗣️ Showing only practices where we know <strong>you can speak English</strong>.{' '}
-        <a href={allUrl}>Show all {rows.length} practices</a> (many others speak English too; we just don't know yet).</p>
       {english > 0 ? (
-        <div class="grid grid-2 list">{speaks.map((p) => <ProviderCard p={p} />)}</div>
+        <>
+          <p class="notice english-note">🗣️ {english === 1 ? 'The practice' : `The ${english} practices`} in {city} where we know
+            <strong> you can speak English</strong>. <a href={allUrl}>Show all {rows.length} practices instead</a></p>
+          <div class="grid grid-2 list">{speaks.map((p) => <ProviderCard p={p} />)}</div>
+        </>
       ) : englishNearby.length > 0 ? (
         <>
-          <h2>None known in {city} yet. Nearest English-speaking practices</h2>
-          <p class="small muted">Distance from the centre of {city}.</p>
+          <p class="notice english-note">🗣️ We don't know of an English-speaking practice in {city} yet. These are the nearest ones
+            (distance from the centre of {city}). <a href={allUrl}>Show all {rows.length} practices in {city}</a></p>
           <div class="grid grid-2 list">{englishNearby.map((p) => <ProviderCard p={p} />)}</div>
         </>
       ) : (
-        <p class="card">We don't know yet of any English-speaking practice of this kind within 25 km.
-          Our data on English is new and growing every week. <a href={allUrl}>See all practices in {city}</a> and ask:
-          many doctors speak English.</p>
+        <p class="notice english-note">🗣️ We don't know of any English-speaking practice of this kind within 25 km yet.{' '}
+          <a href={allUrl}>Show all {rows.length} practices in {city}</a>: many doctors speak English, so it's worth asking.</p>
       )}
     </>
   ) : (<>
