@@ -247,12 +247,17 @@ def mark_sent(conn: psycopg.Connection, a: Alert) -> None:
 
 
 def cleanup(conn: psycopg.Connection) -> int:
-    """Forget unconfirmed sign-ups and old mail log entries."""
+    """Forget unconfirmed sign-ups, old mail log entries and old reporter hashes."""
     with conn.transaction():
         n = conn.execute(
             "DELETE FROM subscriptions WHERE verified_at IS NULL AND created_at < now() - make_interval(days => %s)",
             (PENDING_DAYS,)).rowcount
         conn.execute("DELETE FROM mail_log WHERE sent_at < now() - interval '30 days'")
+        # The salted IP hash only guards against spam; a report stops counting after 90 days, so drop it then.
+        conn.execute("UPDATE availability_signals SET reporter_hash = NULL"
+                     " WHERE reporter_hash IS NOT NULL AND created_at < now() - interval '90 days'")
+        conn.execute("UPDATE subscriptions SET requester_hash = NULL"
+                     " WHERE requester_hash IS NOT NULL AND created_at < now() - interval '90 days'")
     return n
 
 
