@@ -54,7 +54,7 @@ export const STATUS_LABEL: Record<string, { label: string; hint: string; icon: s
   waitlist:      { icon: '⏳', label: 'Pořadník',              hint: 'Zapisuje nové pacienty do pořadníku.' },
   mixed:         { icon: '!', label: 'Nejasné',               hint: 'Hlášení si odporují. Zavolejte a ověřte.' },
   not_accepting: { icon: '✗', label: 'Nepřijímá',             hint: 'Podle nedávných zpráv nové pacienty nepřijímá.' },
-  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Zatím to nikdo nenahlásil. Zavolejte a dejte vědět ostatním.' },
+  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Zatím to nikdo nenahlásil. Až tam zavoláte, můžete výsledek označit tady na webu.' },
 };
 
 const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });

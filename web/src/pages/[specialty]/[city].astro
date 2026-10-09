@@ -43,7 +43,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   {open > 0 ? (
     <>
       <p class="intro">Nahoře najdete ordinace, které podle hlášení <strong>přijímají nové pacienty</strong>.
-        U ostatních to zatím nevíme. Zavolejte a pak dejte vědět ostatním.</p>
+        U ostatních to zatím nevíme. Pokud tam zavoláte, můžete pak výsledek označit tady na webu.</p>
       <StatusLegend />
       <div class="filters" role="group" aria-label="Zobrazit">
         <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
@@ -55,8 +55,8 @@ const jsonLd = breadcrumbLd(Astro.site, [
     // Nobody here is known to accept: say it plainly and offer the two ways to help right away.
     <div class="card empty-state">
       <h2>{known === 0 ? 'Tady nám zatím nikdo nic nenahlásil' : 'Tady zatím nikdo nehlásí, že by přijímali'}</h2>
-      <p>Pomozte sobě i ostatním: <strong>zavolejte do 2–3 ordinací</strong> níže a po hovoru klikněte na
-        „Volali jste? Dejte vědět“. Další lidé pak nemusí volat znovu.</p>
+      <p>Kontakty na všechny ordinace najdete níže. Až některé zavoláte, můžete výsledek označit jedním
+        klepnutím. Další lidé pak nemusí volat znovu.</p>
       {center && <p><a href="#upozorneni">📧 Nechcete volat? Pošleme vám e-mail, až tu někdo začne přijímat</a></p>}
     </div>
   )}
