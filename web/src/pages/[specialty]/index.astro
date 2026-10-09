@@ -29,11 +29,9 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
   {regions.map(([region, list]) => (
     <section>
       <h2>{region}</h2>
-      <p>
-        {list.map((c, i) => (
-          <>{i > 0 && ' · '}<a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a> <span class="small muted">({c.n})</span></>
-        ))}
-      </p>
+      <ul class="place-list">
+        {list.map((c) => <li><a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a> <span class="muted nowrap">({c.n})</span></li>)}
+      </ul>
     </section>
   ))}
 </Base>

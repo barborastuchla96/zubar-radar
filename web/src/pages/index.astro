@@ -2,8 +2,9 @@
 import Base from '../layouts/Base.astro';
 import AdSlot from '../components/AdSlot.astro';
 import PlaceSearch from '../components/PlaceSearch.astro';
+import Tile from '../components/Tile.astro';
 import { cities } from '../lib/db';
-import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, isPragueSlug, ordinaci, prijima } from '../lib/site';
+import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, isPragueSlug } from '../lib/site';
 
 // Provider counts for the launch city, per specialty.
 const featured = await Promise.all(
@@ -19,10 +20,10 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 ---
 <Base title={`${SITE_NAME} – ${TAGLINE}`} description="Najděte zubaře, praktického či dětského lékaře nebo gynekologa, který přijímá nové pacienty. Ověřeno lidmi, kteří tam volali.">
   <section class="hero">
-    <h1>Hledáte zubaře nebo lékaře,<br />který vás vezme?</h1>
+    <h1 class="hero-title"><span>Hledáte zubaře nebo lékaře,</span> <span>který vás vezme?</span></h1>
     <p>
-      Všechny ordinace z oficiálního registru na jednom místě. U každé vidíte, jestli podle
-      posledních hlášení <strong>přijímá nové pacienty</strong> a kdy to někdo naposledy ověřil.
+      Všechny ordinace z oficiálního registru na jednom místě. U každé uvidíte, jestli podle
+      posledních zpráv <strong>přijímá nové pacienty</strong> a kdy to naposledy někdo ověřil.
     </p>
     <PlaceSearch />
     <form method="get" action="/blizko" class="near" id="near-form">
@@ -37,11 +38,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   <h2>{FEATURED_CITY.name}</h2>
   <div class="grid grid-cards">
     {featured.map(({ s, n, accepting }) => (
-      <a class="card spec-tile" href={cityUrl(s.slug, FEATURED_CITY.slug)}>
-        <span class="icon" aria-hidden="true">{s.icon}</span>
-        <strong>{s.plural}</strong>
-        <span class="small muted">{ordinaci(n)}{accepting > 0 && <> · <span style="color:var(--ok)">{prijima(accepting)}</span></>}</span>
-      </a>
+      <Tile href={cityUrl(s.slug, FEATURED_CITY.slug)} icon={s.icon} title={s.plural} {n} {accepting} />
     ))}
   </div>
 
@@ -49,18 +46,16 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
   <h2>Jak to funguje</h2>
   <div class="grid grid-2">
-    <div class="card"><strong>1. Najděte ordinaci</strong><p class="small muted">Seznam vychází z Národního registru poskytovatelů zdravotních služeb, takže by v něm neměl nikdo chybět.</p></div>
-    <div class="card"><strong>2. Podívejte se na stav</strong><p class="small muted">Zelená znamená, že podle čerstvých hlášení přijímají. Starší hlášení postupně ztrácejí váhu.</p></div>
-    <div class="card"><strong>3. Zavolejte a dejte vědět</strong><p class="small muted">Jedno kliknutí po telefonátu ušetří dalším lidem hodiny obvolávání.</p></div>
+    <div class="card"><strong>1. Najděte ordinaci</strong><p class="small muted">Seznam přebíráme z Národního registru poskytovatelů zdravotních služeb, takže v něm najdete všechny ordinace.</p></div>
+    <div class="card"><strong>2. Podívejte se na stav</strong><p class="small muted">Zelený štítek znamená, že ordinace podle nedávných zpráv přijímá nové pacienty. Starší zprávy se počítají méně.</p></div>
+    <div class="card"><strong>3. Zavolejte a dejte vědět</strong><p class="small muted">Po telefonátu nám jedním kliknutím dejte vědět, jak to dopadlo. Ostatním tím ušetříte hodiny obvolávání.</p></div>
   </div>
 
   <h2>Zubaři v dalších městech</h2>
-  <p>
-    {topDentistCities.map((c, i) => (
-      <>{i > 0 && ' · '}<a href={cityUrl('zubar', c.city_slug)}>{c.city}</a></>
-    ))}
-    {' · '}<a href="/zubar">všechna města →</a>
-  </p>
+  <ul class="pills">
+    {topDentistCities.map((c) => <li><a href={cityUrl('zubar', c.city_slug)}>{c.city}</a></li>)}
+    <li><a class="pill-more" href="/zubar">Všechna města →</a></li>
+  </ul>
 </Base>
 
 <script>

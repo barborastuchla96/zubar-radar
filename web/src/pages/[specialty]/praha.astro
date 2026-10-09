@@ -6,6 +6,7 @@ import ProviderCard from '../../components/ProviderCard.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import PlaceSearch from '../../components/PlaceSearch.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
+import Tile from '../../components/Tile.astro';
 import { cities, pragueAccepting } from '../../lib/db';
 import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
@@ -36,8 +37,8 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
   {accepting.length > 0 ? (
     <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
   ) : (
-    <p class="card">Zatím tu nemáme žádné hlášení, že by někdo přijímal. Vyberte svou část Prahy a pomozte:
-      po telefonátu do ordinace stačí jedno kliknutí.</p>
+    <p class="card">Zatím nemáme žádnou zprávu, že by tu někdo přijímal. Vyberte svou část Prahy a pomozte nám.
+      Po telefonátu do ordinace stačí jedno kliknutí.</p>
   )}
 
   {accepting.length > 0 && <StatusLegend />}
@@ -45,14 +46,9 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
 
   <h2>Podle městské části</h2>
   <div class="grid grid-cards">
-    {districts.map((d) => (
-      <a class="card spec-tile" href={cityUrl(spec.slug, d.city_slug)}>
-        <strong>{d.city}</strong>
-        <span class="small muted">{ordinaci(d.n)}{d.accepting > 0 && <> · <span style="color:var(--ok)">{prijima(d.accepting)}</span></>}</span>
-      </a>
-    ))}
+    {districts.map((d) => <Tile href={cityUrl(spec.slug, d.city_slug)} title={d.city} n={d.n} accepting={d.accepting} />)}
   </div>
 
-  <h2>Další obory – Praha</h2>
-  <p>{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s, i) => <>{i > 0 && ' · '}<a href={cityUrl(s.slug, 'praha')}>{s.plural}</a></>)}</p>
+  <h2>Další obory v Praze</h2>
+  <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={cityUrl(s.slug, 'praha')}>{s.plural}</a></li>)}</ul>
 </Base>

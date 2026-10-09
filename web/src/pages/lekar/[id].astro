@@ -64,13 +64,13 @@ const jsonLd = [
   <h1>{p.name}</h1>
   <p style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
     <StatusBadge status={p.status} />
-    <span class="muted small">{when ? (crawl ? `podle webu ordinace (kontrola ${when})` : `poslední hlášení ${when}`) : status.hint}</span>
+    <span class="muted small">{when ? (crawl ? `podle webu ordinace, zkontrolováno ${when}` : `poslední hlášení ${when}`) : status.hint}</span>
   </p>
   {crawl && (
     <p class="small muted">
       Na webu ordinace jsme našli: {crawl.note.split(' — ')[0]}
       {' '}<a href={crawl.note.split(' — ')[1]} rel="nofollow noopener" target="_blank">zdroj</a>.
-      Weby nemusí být aktuální, ověřte si to telefonem a dejte vědět ostatním.
+      Weby ale nemusí být aktuální. Ověřte si to telefonem a dejte vědět ostatním.
     </p>
   )}
 
@@ -99,7 +99,7 @@ const jsonLd = [
 
   {alts.length > 0 && main && (
     <section>
-      <h2>Další ordinace v okolí ({main.plural.toLowerCase()})</h2>
+      <h2>{main.nearby}</h2>
       <div class="grid grid-2">{alts.map((a) => <ProviderCard p={a} />)}</div>
     </section>
   )}

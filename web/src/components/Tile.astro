@@ -1,0 +1,16 @@
+---
+// One clickable tile (specialty, district, search hit). Counts sit at the
+// bottom on their own lines, so tiles line up and phrases never break.
+import { ordinaci, prijima } from '../lib/site';
+interface Props { href: string; title: string; icon?: string; sub?: string | null; n: number; accepting?: number }
+const { href, title, icon, sub, n, accepting = 0 } = Astro.props;
+---
+<a class="card spec-tile" href={href}>
+  {icon && <span class="icon" aria-hidden="true">{icon}</span>}
+  <strong class="tile-title">{title}</strong>
+  {sub && <span class="tile-sub">{sub}</span>}
+  <span class="tile-stats">
+    <span class="nowrap">{ordinaci(n)}</span>
+    {accepting > 0 && <span class="nowrap tile-ok">✓ {prijima(accepting)}</span>}
+  </span>
+</a>

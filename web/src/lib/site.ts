@@ -20,15 +20,17 @@ export interface SpecialtyInfo {
   singular: string;     // "Zubař"
   plural: string;       // "Zubaři"
   short: string;        // nav label
+  acc: string;          // 4th case, after "hledáte": "zubaře"
+  nearby: string;       // "Další zubaři v okolí"
   icon: string;
 }
 
 export const SPECIALTIES: SpecialtyInfo[] = [
-  { slug: 'zubar', singular: 'Zubař', plural: 'Zubaři', short: 'Zubaři', icon: '🦷' },
-  { slug: 'praktik', singular: 'Praktický lékař', plural: 'Praktičtí lékaři', short: 'Praktičtí lékaři', icon: '🩺' },
-  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Dětští lékaři', icon: '🧸' },
-  { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekologové', icon: '🌸' },
-  { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Dentální hygiena', icon: '✨' },
+  { slug: 'zubar', singular: 'Zubař', plural: 'Zubaři', short: 'Zubaři', acc: 'zubaře', nearby: 'Další zubaři v okolí', icon: '🦷' },
+  { slug: 'praktik', singular: 'Praktický lékař', plural: 'Praktičtí lékaři', short: 'Praktičtí lékaři', acc: 'praktického lékaře', nearby: 'Další praktičtí lékaři v okolí', icon: '🩺' },
+  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Dětští lékaři', acc: 'dětského lékaře', nearby: 'Další dětští lékaři v okolí', icon: '🧸' },
+  { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekologové', acc: 'gynekologa', nearby: 'Další gynekologové v okolí', icon: '🌸' },
+  { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Dentální hygiena', acc: 'dentální hygienu', nearby: 'Další dentální hygiena v okolí', icon: '✨' },
 ];
 
 export const specialty = (slug: string) => SPECIALTIES.find((s) => s.slug === slug);
@@ -51,7 +53,7 @@ export const STATUS_LABEL: Record<string, { label: string; hint: string; icon: s
   waitlist:      { icon: '⏳', label: 'Pořadník',              hint: 'Zapisuje nové pacienty do pořadníku.' },
   mixed:         { icon: '!', label: 'Nejasné',               hint: 'Hlášení si odporují. Zavolejte a ověřte.' },
   not_accepting: { icon: '✗', label: 'Nepřijímá',             hint: 'Podle čerstvých hlášení nové pacienty nepřijímá.' },
-  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Nikdo to zatím nenahlásil. Zavolejte a dejte vědět ostatním.' },
+  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Zatím to nikdo nenahlásil. Zavolejte a dejte vědět ostatním.' },
 };
 
 const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });

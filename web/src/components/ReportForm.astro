@@ -14,7 +14,7 @@ const MESSAGES: Record<string, [string, string]> = {
 const msg = result ? MESSAGES[result] : null;
 ---
 <section id="nahlasit" class="card">
-  <h2 style="margin-top:0">Volali jste sem? Dejte vědět ostatním</h2>
+  <h2 style="margin-top:0">Volali jste do této ordinace? Dejte vědět ostatním</h2>
   {msg && <p class={`notice ${msg[0]}`} role="status">{msg[1]}</p>}
   <form class="report" method="post" action="/api/report">
     <input type="hidden" name="provider_id" value={providerId} />
@@ -29,9 +29,9 @@ const msg = result ? MESSAGES[result] : null;
       <label class="opt"><input type="radio" name="status" value="not_accepting" /> Nové pacienty nepřijímají</label>
     </fieldset>
     <fieldset>
-      <legend>Pro koho?</legend>
+      <legend>Koho přijímají?</legend>
       <select name="scope">
-        <option value="all">Nevím / pro všechny</option>
+        <option value="all">Všechny / nevím</option>
         <option value="adults">Jen dospělé</option>
         <option value="children">Jen děti</option>
       </select>
@@ -46,6 +46,6 @@ const msg = result ? MESSAGES[result] : null;
         placeholder="Např. „přijímají jen děti s trvalým bydlištěm v Praze 6“. Nepište prosím jména ani zdravotní údaje."></textarea>
     </fieldset>
     <div><button class="btn" type="submit">Odeslat hlášení</button></div>
-    <p class="small muted">Neukládáme vaši IP adresu ani jméno, jen anonymní otisk proti spamu.</p>
+    <p class="small muted">Neukládáme vaše jméno ani IP adresu. Jen anonymní otisk, který nás chrání před spamem.</p>
   </form>
 </section>

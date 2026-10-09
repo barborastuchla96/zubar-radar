@@ -39,14 +39,14 @@ const jsonLd = breadcrumbLd(Astro.site, [
     {known === 0 && <> · zatím bez hlášení – <strong>buďte první, kdo dá vědět</strong></>}
   </p>
 
-  <p class="intro">Nahoře jsou ordinace, které podle hlášení <strong>přijímají nové pacienty</strong>.
-    U ostatních to zatím nevíme: zavolejte, a pak dejte vědět ostatním.</p>
+  <p class="intro">Nahoře najdete ordinace, které podle hlášení <strong>přijímají nové pacienty</strong>.
+    U ostatních to zatím nevíme. Zavolejte a pak dejte vědět ostatním.</p>
   <StatusLegend />
 
   <div class="filters" role="group" aria-label="Zobrazit">
     <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
     <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Přijímají ({counts.accepting + counts.waitlist})</button>
-    <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Neověřené ({counts.unknown + counts.mixed})</button>
+    <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Zatím nevíme ({counts.unknown + counts.mixed})</button>
   </div>
 
   <Map providers={rows} />
@@ -62,7 +62,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   <p class="notice ok" id="empty" hidden>V tomto filtru nic není.</p>
 
   <h2>Další obory – {city}</h2>
-  <p>{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s, i) => <>{i > 0 && ' · '}<a href={cityUrl(s.slug, Astro.params.city!)}>{s.plural}</a></>)}</p>
+  <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={cityUrl(s.slug, Astro.params.city!)}>{s.plural}</a></li>)}</ul>
 </Base>
 
 <script>
