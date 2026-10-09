@@ -8,25 +8,26 @@ import { specialty } from '../../lib/site';
 const post = Astro.request.method === 'POST';
 const token = post ? String((await Astro.request.formData()).get('t') ?? '') : (Astro.url.searchParams.get('t') ?? '');
 let sub = await findByToken(token);
-let done = false;
-if (post && sub) { done = await confirm(token); sub = await findByToken(token); }
+// After the button: redirect, so the page visibly changes and a refresh doesn't re-send the form.
+if (post && sub) { await confirm(token); return Astro.redirect(`/upozorneni/potvrdit?t=${encodeURIComponent(token)}`, 303); }
 const spec = sub ? specialty(sub.specialty_slug) : undefined;
 Astro.response.headers.set('Cache-Control', 'no-store');
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 ---
-<Base title="Potvrzení upozornění" description="Potvrzení e-mailového upozornění" noindex>
-  <h1>Upozornění na volné ordinace</h1>
+<Base title={sub?.verified_at ? 'Upozornění je zapnuté' : 'Potvrzení upozornění'} description="Potvrzení e-mailového upozornění" noindex>
+  <h1>{sub?.verified_at ? '✓ Hotovo, upozornění je zapnuté' : 'Upozornění na volné ordinace'}</h1>
   {!sub && (
     <div class="card"><p>Tento odkaz už neplatí. Možná jste se mezitím odhlásili, nebo od přihlášení uběhl víc než týden.</p>
       <p><a href="/">Zpět na hlavní stránku</a></p></div>
   )}
-  {sub && (sub.verified_at || done) && (
-    <div class="card"><p class="notice ok" role="status">Hotovo, upozornění je zapnuté.</p>
+  {sub && (sub.verified_at) && (
+    <div class="card done-card" role="status">
       <p>Jakmile {spec?.some} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong> začne přijímat
         nové pacienty, pošleme vám e-mail. Obvykle ráno, nejvýš jednou denně.</p>
-      <p><a href="/">Zpět na hlavní stránku</a></p></div>
+      <p>Upozornění můžete kdykoli zrušit odkazem v každém e-mailu.</p>
+      <p><a class="btn secondary" href="/">Zpět na hlavní stránku</a></p></div>
   )}
-  {sub && !sub.verified_at && !done && (
+  {sub && !sub.verified_at && (
     <form class="card" method="post">
       <p>Chcete, abychom vám napsali, až {spec?.some} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong> začne přijímat nové pacienty?</p>
       <input type="hidden" name="t" value={token} />

@@ -7,25 +7,26 @@ import { aDoctorEn } from '../../../lib/i18n';
 const post = Astro.request.method === 'POST';
 const token = post ? String((await Astro.request.formData()).get('t') ?? '') : (Astro.url.searchParams.get('t') ?? '');
 let sub = await findByToken(token);
-let done = false;
-if (post && sub) { done = await confirm(token); sub = await findByToken(token); }
+// After the button: redirect, so the page visibly changes and a refresh doesn't re-send the form.
+if (post && sub) { await confirm(token); return Astro.redirect(`/en/alerts/confirm?t=${encodeURIComponent(token)}`, 303); }
 const who = sub ? aDoctorEn(sub.specialty_slug) : '';
 Astro.response.headers.set('Cache-Control', 'no-store');
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 ---
-<Base title="Confirm your alert" description="Confirm your e-mail alert" noindex>
-  <h1>Alerts for practices accepting new patients</h1>
+<Base title={sub?.verified_at ? 'Your alert is on' : 'Confirm your alert'} description="Confirm your e-mail alert" noindex>
+  <h1>{sub?.verified_at ? '✓ Done, your alert is on' : 'Alerts for practices accepting new patients'}</h1>
   {!sub && (
     <div class="card"><p>This link is no longer valid. Maybe you unsubscribed, or more than a week has passed since you signed up.</p>
       <p><a href="/en">Back to the home page</a></p></div>
   )}
-  {sub && (sub.verified_at || done) && (
-    <div class="card"><p class="notice ok" role="status">Done, your alert is on.</p>
+  {sub && (sub.verified_at) && (
+    <div class="card done-card" role="status">
       <p>As soon as {who} within {sub.radius_km} km of <strong>{sub.place_label}</strong> starts accepting new
         patients, we'll e-mail you. Usually in the morning, at most once a day.</p>
-      <p><a href="/en">Back to the home page</a></p></div>
+      <p>You can turn it off any time with the link in each e-mail.</p>
+      <p><a class="btn secondary" href="/en">Back to the home page</a></p></div>
   )}
-  {sub && !sub.verified_at && !done && (
+  {sub && !sub.verified_at && (
     <form class="card" method="post">
       <p>Would you like us to e-mail you when {who} within {sub.radius_km} km of <strong>{sub.place_label}</strong> starts accepting new patients?</p>
       <input type="hidden" name="t" value={token} />

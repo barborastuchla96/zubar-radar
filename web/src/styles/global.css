@@ -457,3 +457,6 @@ details.legend[open] dl { margin-top: .5rem; padding: .75rem 1rem; background: v
 .ins-choices { display: flex; flex-wrap: wrap; gap: .4rem; }
 .ins-choice { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .6rem; border: 1px solid var(--border); border-radius: 999px; min-height: 40px; cursor: pointer; background: var(--surface); }
 .ins-choice input { width: 1.1rem; height: 1.1rem; accent-color: var(--brand); }
+
+/* Confirmed alert: make the change obvious after the button */
+.done-card { border: 2px solid var(--ok); background: var(--ok-bg); }
