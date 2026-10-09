@@ -50,10 +50,10 @@ export const prijima = (n: number) => `${num(n)} ${plural(n, 'přijímá', 'při
 
 // Every status has a symbol too, so it can be read without relying on colour.
 export const STATUS_LABEL: Record<string, { label: string; hint: string; icon: string }> = {
-  accepting:     { icon: '✓', label: 'Přijímá nové pacienty', hint: 'Podle čerstvých hlášení přijímá nové pacienty.' },
+  accepting:     { icon: '✓', label: 'Přijímá nové pacienty', hint: 'Podle nedávných zpráv přijímá nové pacienty.' },
   waitlist:      { icon: '⏳', label: 'Pořadník',              hint: 'Zapisuje nové pacienty do pořadníku.' },
   mixed:         { icon: '!', label: 'Nejasné',               hint: 'Hlášení si odporují. Zavolejte a ověřte.' },
-  not_accepting: { icon: '✗', label: 'Nepřijímá',             hint: 'Podle čerstvých hlášení nové pacienty nepřijímá.' },
+  not_accepting: { icon: '✗', label: 'Nepřijímá',             hint: 'Podle nedávných zpráv nové pacienty nepřijímá.' },
   unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Zatím to nikdo nenahlásil. Zavolejte a dejte vědět ostatním.' },
 };
 

@@ -3,14 +3,19 @@
 // otherwise OpenStreetMap's community server (fine only for small traffic).
 // The key is public by nature (the browser loads the tiles); limit its use in the Mapy.com console.
 import type { ProviderRow } from '../lib/db';
-import { providerUrl, STATUS_LABEL } from '../lib/site';
+import { address, formatPhone, providerUrl, STATUS_LABEL, telHref } from '../lib/site';
 
 interface Props { providers: ProviderRow[] }
 const mapyKey = (process.env.MAPY_API_KEY ?? '').trim();
 const points = Astro.props.providers
   .filter((p) => p.lat != null && p.lng != null)
-  .map((p) => ({ lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status,
-                 label: (STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown).label }));
+  .map((p) => {
+    const st = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
+    return {
+      lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status, label: st.label, icon: st.icon,
+      addr: address(p), phone: p.phone ? formatPhone(p.phone) : null, tel: p.phone ? telHref(p.phone) : null,
+    };
+  });
 ---
 {points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} data-mapy={mapyKey || undefined} role="region" aria-label="Mapa ordinací"></div>}
 
@@ -18,9 +23,25 @@ const points = Astro.props.providers
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
 
-  const COLORS: Record<string, string> = {
-    accepting: '#1f9d55', waitlist: '#d39b18', mixed: '#d39b18', not_accepting: '#c7393d', unknown: '#8a949c',
-  };
+  interface Pt { lat: number; lng: number; name: string; url: string; status: string; label: string; icon: string; addr: string; phone: string | null; tel: string | null }
+
+  /** Small card shown when a pin is tapped: built from DOM nodes, so names can't inject HTML. */
+  function popup(p: Pt): HTMLElement {
+    const div = document.createElement('div');
+    div.className = 'map-popup';
+    const h = document.createElement('a'); h.href = p.url; h.className = 'mp-name'; h.textContent = p.name;
+    const badge = document.createElement('span'); badge.className = `badge ${p.status}`; badge.textContent = `${p.icon} ${p.label}`;
+    const addr = document.createElement('div'); addr.className = 'mp-addr'; addr.textContent = p.addr;
+    div.append(h, badge, addr);
+    if (p.tel && p.phone) {
+      const call = document.createElement('a'); call.href = p.tel; call.className = 'btn call mp-call'; call.textContent = `📞 ${p.phone}`;
+      div.append(call);
+    }
+    const more = document.createElement('a'); more.href = p.url; more.className = 'mp-more'; more.textContent = 'Podrobnosti a kontakt →';
+    div.append(more);
+    return div;
+  }
+
   const el = document.getElementById('map');
   // Inside a folded "Zobrazit na mapě" box, wait until it is opened: Leaflet needs a visible box.
   const box = el?.closest('details');
@@ -30,7 +51,7 @@ const points = Astro.props.providers
   function init() {
     if (!el) return;
     el.dataset.ready = '1';
-    const pts = JSON.parse(el.dataset.points ?? '[]');
+    const pts: Pt[] = JSON.parse(el.dataset.points ?? '[]');
     const map = L.map(el, { scrollWheelZoom: false });
     const key = el.dataset.mapy;
     if (key) {
@@ -56,17 +77,18 @@ const points = Astro.props.providers
         maxZoom: 19, attribution: '&copy; OpenStreetMap',
       }).addTo(map);
     }
+    // Known statuses are pins with the same symbol as the labels; "don't know yet" stays a small quiet dot.
     const group = L.featureGroup();
     for (const p of pts) {
-      const m = L.circleMarker([p.lat, p.lng], {
-        radius: p.status === 'unknown' ? 6 : 8, color: '#fff', weight: 1.5,
-        fillColor: COLORS[p.status] ?? COLORS.unknown, fillOpacity: .95,
+      const known = p.status !== 'unknown';
+      const html = known
+        ? `<span class="pin pin-${p.status}"><span>${p.icon}</span></span>`
+        : '<span class="pin-dot"></span>';
+      const icon = L.divIcon({
+        html, className: 'pin-wrap', iconSize: known ? [34, 42] : [16, 16], iconAnchor: known ? [17, 40] : [8, 8], popupAnchor: known ? [0, -38] : [0, -6],
       });
-      const a = document.createElement('a');
-      a.href = p.url; a.textContent = p.name;
-      const div = document.createElement('div');
-      div.append(a, document.createElement('br'), p.label);
-      m.bindPopup(div);
+      const m = L.marker([p.lat, p.lng], { icon, title: `${p.name}: ${p.label}`, zIndexOffset: p.status === 'accepting' ? 1000 : known ? 500 : 0, riseOnHover: true });
+      m.bindPopup(popup(p), { minWidth: 220, maxWidth: 280 });
       group.addLayer(m);
     }
     group.addTo(map);
