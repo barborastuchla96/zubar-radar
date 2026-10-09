@@ -56,6 +56,15 @@ POSITIVE = [
     re.compile(rf"\bnovi {_WHO} (?:jsou )?vitani\b"),
 ]
 
+# "Přijímáme nové klienty na bělení zubů": that's about a paid extra, not registering as a patient.
+NOT_REGISTRATION = re.compile(r"\b(?:belen\w*|beleni|estetick\w*|kosmetick\w*|samoplat\w*)")
+
+
+def _sentence(text: str, m: re.Match) -> str:
+    start = max(text.rfind(c, 0, m.start()) for c in ".!?\n") + 1
+    ends = [i for i in (text.find(c, m.end()) for c in ".!?\n") if i != -1]
+    return text[start:min(ends) if ends else len(text)]
+
 
 def normalize(text: str) -> str:
     return _normalize_with_map(text)[0]
@@ -120,7 +129,7 @@ def classify(raw_text: str) -> Verdict:
     masked = text
     for p in NEGATIVE:
         masked = p.sub(lambda m: " " * len(m.group(0)), masked)
-    pos = next((m for p in POSITIVE for m in p.finditer(masked)), None)
+    pos = next((m for p in POSITIVE for m in p.finditer(masked) if not NOT_REGISTRATION.search(_sentence(masked, m))), None)
 
     found = [(s, m) for s, m in (("not_accepting", neg), ("waitlist", wait), ("accepting", pos)) if m]
     if not found:

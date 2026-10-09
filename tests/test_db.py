@@ -145,6 +145,14 @@ def test_crawl_targets_and_record(conn):
     note = conn.execute("SELECT note FROM availability_signals WHERE provider_id=%s ORDER BY id LIMIT 1", (a,)).fetchone()[0]
     assert note.startswith("„Přijímáme nové pacienty“ — http://www.zubar-test.cz/")
 
+    count = lambda: conn.execute("SELECT count(*) FROM availability_signals WHERE source='web_crawl'").fetchone()[0]
+    res[0].verdict, res[0].error = None, "HTTP 503"
+    db.record_crawl(conn, res)
+    assert count() == 4                              # site down this week: keep what we knew
+    res[0].verdict, res[0].error = Verdict(None), None
+    db.record_crawl(conn, res)
+    assert count() == 0                              # site no longer says it: forget it
+
 
 def test_crawl_skips_sites_shared_by_many_practices(conn, monkeypatch):
     db.import_providers(conn, providers())

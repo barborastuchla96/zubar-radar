@@ -160,8 +160,14 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
     with conn.transaction():
         for r in results:
             v = r.verdict
-            if not v or not v.status:
+            if r.error is None and (not v or not v.status):
+                # The site loaded and no longer says anything clear: what we read there
+                # earlier isn't true any more (wording removed, or we misread it before).
+                conn.execute("DELETE FROM availability_signals WHERE source = 'web_crawl' AND provider_id = ANY(%s)",
+                             (list(r.provider_ids),))
                 continue
+            if not v or not v.status:
+                continue                       # site unreachable this time: keep what we had
             note = f"„{v.snippet[:300]}“ — {r.page_url}"[:500]
             for pid in r.provider_ids:
                 # Same verdict seen recently: just refresh its quote (e.g. after a wording fix).

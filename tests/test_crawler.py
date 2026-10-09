@@ -32,6 +32,8 @@ def test_classify(text, status, scope):
     "Přijímáme pacienty všech pojišťoven.",          # no "nové"
     "Přijímáme platební karty. Nové pacienty prosíme o objednání.",  # different sentences
     "Naši pacienti jsou pro nás na prvním místě.",
+    "Přijímáme nové klienty na ordinační bělení zubů.",              # a paid extra, not registration
+    "Nové pacienty přijímáme pouze jako samoplátce.",
 ])
 def test_classify_nothing(text):
     assert classify(text).status is None
