@@ -298,3 +298,31 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 .leaflet-popup-content { margin: 12px 14px; }
 .map-popup a.mp-more, .map-popup a.mp-name { color: var(--brand); }
 .map-popup a.mp-name { color: var(--text); }
+
+/* header: full menu on wide screens, a compact menu button on phones */
+.nav-menu { display: none; position: relative; }
+.nav-menu > summary { list-style: none; display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; padding: .35rem .9rem;
+  border: 2px solid var(--border); border-radius: 10px; font-weight: 700; cursor: pointer; background: var(--surface); }
+.nav-menu > summary::-webkit-details-marker { display: none; }
+.nav-menu[open] > summary { border-color: var(--brand); }
+.nav-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 60; min-width: 230px; display: flex; flex-direction: column; padding: .35rem;
+  background: var(--surface); border: 2px solid var(--brand); border-radius: 12px; box-shadow: 0 10px 30px rgb(0 0 0 / .15); }
+.nav-list a { display: flex; gap: .6rem; align-items: center; min-height: 48px; padding: .4rem .75rem; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 1.05rem; }
+.nav-list a:hover, .nav-list a[aria-current="page"] { background: color-mix(in srgb, var(--brand) 12%, var(--surface)); font-weight: 700; }
+@media (max-width: 640px) {
+  .site-header .wrap { flex-direction: row; align-items: center; padding: .4rem 16px; min-height: 56px; }
+  .nav-wide { display: none; }
+  .nav-menu { display: block; }
+}
+
+/* search results: one clear row per place */
+.result-list { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .5rem; }
+.result-list a { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .7rem; padding: .8rem 1rem; min-height: 52px;
+  background: var(--surface); border: 2px solid var(--border); border-radius: 12px; color: var(--text); text-decoration: none; }
+.result-list a:hover { border-color: var(--brand); }
+.result-list strong { font-size: 1.15rem; }
+.provider h3 a { display: inline-block; padding: .2rem 0; }
+
+.place-search .suggest-wrap { flex: none; }
+.nav-menu > summary, .logo { white-space: nowrap; }
+@media (max-width: 640px) { .wide-only { display: none; } .logo { font-size: 1.1rem; } }

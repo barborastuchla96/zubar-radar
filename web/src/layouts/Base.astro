@@ -55,11 +55,20 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
     <header class="site-header">
       <div class="wrap">
         <a href="/" class="logo">Přijímá <span>nové pacienty?</span></a>
-        <nav class="nav" aria-label="Obory">
+        <nav class="nav nav-wide" aria-label="Obory">
           {SPECIALTIES.map((s) => (
             <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}>{s.short}</a>
           ))}
         </nav>
+        {/* Phones: one compact row, the specialties open from a button (works without JavaScript). */}
+        <details class="nav-menu">
+          <summary><span aria-hidden="true">☰</span> Obory</summary>
+          <nav class="nav-list" aria-label="Obory">
+            {SPECIALTIES.map((s) => (
+              <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
+            ))}
+          </nav>
+        </details>
       </div>
     </header>
     <main>

@@ -1,9 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import PlaceSearch from '../components/PlaceSearch.astro';
-import Tile from '../components/Tile.astro';
 import { cities } from '../lib/db';
-import { SPECIALTIES, cityUrl, slugify, specialty } from '../lib/site';
+import { SPECIALTIES, cityUrl, isPragueSlug, ordinaci, prijima, slugify, specialty } from '../lib/site';
 
 const spec = specialty(Astro.url.searchParams.get('s') ?? '') ?? SPECIALTIES[0];
 const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
@@ -36,9 +35,15 @@ if (needle) {
   {matches.length > 0 && (
     <>
       <h2>Vyberte místo</h2>
-      <div class="grid grid-2">
-        {matches.map((c) => <Tile href={cityUrl(spec.slug, c.city_slug)} title={c.city} sub={c.region} n={c.n} accepting={c.accepting} />)}
-      </div>
+      <ul class="result-list">
+        {matches.map((c) => (
+          <li><a href={cityUrl(spec.slug, c.city_slug)}>
+            <strong>{c.city.replace(/ \(okres .*\)$/, '')}</strong>
+            <span class="muted">{[isPragueSlug(c.city_slug) ? 'Praha' : c.district ? `okres ${c.district}` : c.region, ordinaci(c.n)].filter(Boolean).join(' · ')}</span>
+            {c.accepting > 0 && <span class="tile-ok">✓ {prijima(c.accepting)}</span>}
+          </a></li>
+        ))}
+      </ul>
     </>
   )}
 </Base>

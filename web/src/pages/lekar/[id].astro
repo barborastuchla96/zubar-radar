@@ -79,7 +79,7 @@ const jsonLd = [
   <div class="two-col">
     <div>
       {p.phone && (
-        <a class="btn call big full" href={telHref(p.phone)}>📞 Zavolat do ordinace <span class="nowrap">{formatPhone(p.phone)}</span></a>
+        <a class="btn call big full" href={telHref(p.phone)}>📞 Zavolat<span class="wide-only">&nbsp;do ordinace</span> <span class="nowrap">{formatPhone(p.phone)}</span></a>
       )}
       {(emails.length > 0 || web) && (
         <div class="contact-row detail">
