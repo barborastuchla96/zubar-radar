@@ -27,11 +27,11 @@ PENDING_DAYS = 7         # unconfirmed sign-ups are deleted after this long
 MAX_PER_EMAIL = 10       # practices listed in one alert
 
 # Nominative plural, matches SPECIALTIES in web/src/lib/site.ts
-SPECIALTY_PLURAL = {
-    "zubar": "Zubaři", "praktik": "Praktičtí lékaři", "pediatr": "Dětští lékaři",
-    "gynekolog": "Gynekologové", "hygienistka": "Dentální hygiena",
-    "ocni": "Oční lékaři", "orl": "ORL lékaři", "kozni": "Kožní lékaři",
-    "psychiatr": "Psychiatři", "neurolog": "Neurologové",
+SPECIALTY_PLURAL = {   # start of the Czech subject line
+    "zubar": "Zubař", "praktik": "Praktický lékař", "pediatr": "Dětský lékař",
+    "gynekolog": "Gynekologie", "hygienistka": "Dentální hygiena",
+    "ocni": "Oční lékař", "orl": "ORL lékař", "kozni": "Kožní lékař",
+    "psychiatr": "Psychiatrie", "neurolog": "Neurologie",
 }
 # English, matches SPECIALTY_EN in web/src/lib/i18n.ts
 SPECIALTY_PLURAL_EN = {
@@ -95,7 +95,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     lines = [
         "Dobrý den,",
         "",
-        f"dobrá zpráva: v lokalitě {a.place} teď podle posledních hlášení"
+        f"máme pro vás dobrou zprávu: v lokalitě {a.place} podle posledních informací"
         f" {'přijímá' if n == 1 else 'přijímají'} nové pacienty {these}:",
         "",
     ]
@@ -112,17 +112,19 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  Na našem webu: {site}/lekar/{p['id']}")
         lines.append("")
     lines += [
-        "Než se do ordinace vydáte, ověřte si to přímo u nich. Zprávy o přijímání nových pacientů pocházejí"
-        " od ostatních pacientů, přímo od ordinací a z jejich webů a nemusí být vždy aktuální.",
+        "Než ordinaci navštívíte, radši si to u nich ověřte telefonicky nebo e-mailem. Informace máme od pacientů,"
+        " od samotných ordinací a z jejich webů, takže nemusí být vždy aktuální.",
         "",
-        "Až zjistíte, jak to je, dejte prosím vědět na stránce ordinace. Pomůžete tím dalším.",
+        ("Až zjistíte, jak to dopadlo, dejte nám prosím vědět na stránce ordinace"
+         f" {site}/lekar/{a.providers[0]['id']}. Pomůžete tím dalším pacientům." if n == 1 else
+         "Až zjistíte, jak to dopadlo, dejte nám prosím vědět na stránce ordinace (odkazy „Na našem webu“ výše)."
+         " Pomůžete tím dalším pacientům."),
         "",
         "Hezký den",
         "Barbora z Přijímá nové pacienty?",
-        f"({site.split('//')[-1]})",
         "",
         "--",
-        f"Upozornění už nechcete? Odhlásíte se tady: {unsubscribe}",
+        f"Už nechcete dostávat upozornění? Odhlásit se můžete zde: {unsubscribe}",
     ]
 
     # long lines allowed in headers, so the unsubscribe URL isn't encoded into gibberish

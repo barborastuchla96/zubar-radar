@@ -21,7 +21,7 @@ def _alert(n=1):
 ])
 def test_compose_czech_grammar(n, subject_end, verb):
     m = alerts.compose(_alert(n), SITE, "info@prijimanovepacienty.cz")
-    assert m["Subject"] == f"Zubaři – Praha 6 a okolí: {subject_end}"
+    assert m["Subject"] == f"Zubař – Praha 6 a okolí: {subject_end}"
     body = m.get_content()
     assert verb in body
     assert "Bělohorská 12, Praha 6 (1,2 km)" in body and "Telefon: 737 351 057" in body

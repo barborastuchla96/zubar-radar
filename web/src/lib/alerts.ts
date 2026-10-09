@@ -109,13 +109,13 @@ export async function unsubscribe(token: string): Promise<void> {
 }
 
 export const confirmationSubject = (lang: 'cs' | 'en') =>
-  lang === 'en' ? 'Please confirm your alert for practices accepting new patients' : 'Přihlášení k odběru e-mailových upozornění - prijimanovepacienty.cz';
+  lang === 'en' ? 'Please confirm your alert for practices accepting new patients' : 'Potvrďte prosím odběr upozornění – prijimanovepacienty.cz';
 
-/** "…až některá {FROM_PRACTICES} ve vzdálenosti do 5 km…" */
+/** "…jakmile některá {FROM_PRACTICES} v lokalitě Praha 6…" */
 const FROM_PRACTICES: Record<string, string> = {
   zubar: 'ze zubařských ordinací', praktik: 'z ordinací praktického lékaře', pediatr: 'z ordinací dětského lékaře',
-  gynekolog: 'z ordinací gynekologa', hygienistka: 'z ordinací dentální hygieny', ocni: 'z ordinací očního lékaře',
-  orl: 'z ordinací ORL lékaře', kozni: 'z ordinací kožního lékaře', psychiatr: 'z ordinací psychiatra', neurolog: 'z ordinací neurologa',
+  gynekolog: 'z gynekologických ordinací', hygienistka: 'z ordinací dentální hygieny', ocni: 'z ordinací očního lékaře',
+  orl: 'z ordinací ORL', kozni: 'z ordinací kožního lékaře', psychiatr: 'z psychiatrických ambulancí', neurolog: 'z neurologických ordinací',
 };
 
 export function confirmationText(siteUrl: string, token: string, v: Pick<SignupInput, 'specialty' | 'place' | 'radiusKm'> & { lang?: 'cs' | 'en' }) {
@@ -140,13 +140,17 @@ export function confirmationText(siteUrl: string, token: string, v: Pick<SignupI
   return [
     'Dobrý den,',
     '',
-    `chcete, abychom vám dali vědět, až některá ${FROM_PRACTICES[v.specialty] ?? spec.some} ve vzdálenosti do ${v.radiusKm} km od místa ${v.place} začne přijímat nové pacienty?`,
+    'děkujeme za přihlášení k odběru upozornění z prijimanovepacienty.cz.',
     '',
-    `Pokud ano, potvrďte to prosím na této adrese: ${link}`,
+    `Dáme vám vědět, jakmile některá ${FROM_PRACTICES[v.specialty] ?? spec.some} v lokalitě ${v.place} začne přijímat nové pacienty.`,
     '',
-    'Pokud jste o nic nežádali, e-mail klidně ignorujte. Bez potvrzení vám už nic nepošleme a vaši e-mailovou adresu do týdne smažeme.',
+    'Odběr prosím potvrďte kliknutím na tento odkaz:',
+    link,
     '',
-    'Hezký den',
+    'Pokud jste se k odběru nepřihlašovali, tento e-mail ignorujte. Bez potvrzení vám nic dalšího nepošleme a vaši e-mailovou adresu do týdne smažeme.',
+    '',
+    'Hezký den!',
+    '',
     'Barbora z Přijímá nové pacienty?',
     '(prijimanovepacienty.cz)',
   ].join('\n');
