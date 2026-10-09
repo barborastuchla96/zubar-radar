@@ -263,3 +263,13 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 .provider .contact-row .contact { min-height: 48px; }
 .contact-row.detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .5rem; margin: .6rem 0 1rem; }
 .contact-row.detail .btn { min-height: 52px; display: flex; align-items: center; justify-content: center; }
+
+/* town page */
+.empty-state { margin: 1rem 0; border-color: color-mix(in srgb, var(--brand) 40%, var(--border)); }
+.empty-state h2 { margin-top: 0; }
+.map-toggle { margin: 1rem 0; }
+.map-toggle > summary { display: inline-flex; align-items: center; min-height: 48px; padding: .4rem 1rem; border: 2px solid var(--border);
+  border-radius: 10px; background: var(--surface); font-weight: 700; cursor: pointer; list-style: none; }
+.map-toggle > summary::-webkit-details-marker { display: none; }
+.map-toggle[open] > summary { display: none; }
+@media (max-width: 640px) { .map-toggle[open] > summary { display: inline-flex; } }

@@ -22,7 +22,14 @@ const points = Astro.props.providers
     accepting: '#1f9d55', waitlist: '#d39b18', mixed: '#d39b18', not_accepting: '#c7393d', unknown: '#8a949c',
   };
   const el = document.getElementById('map');
-  if (el) {
+  // Inside a folded "Zobrazit na mapě" box, wait until it is opened: Leaflet needs a visible box.
+  const box = el?.closest('details');
+  if (el && box && !box.open) box.addEventListener('toggle', () => { if (box.open && !el.dataset.ready) init(); });
+  else if (el) init();
+
+  function init() {
+    if (!el) return;
+    el.dataset.ready = '1';
     const pts = JSON.parse(el.dataset.points ?? '[]');
     const map = L.map(el, { scrollWheelZoom: false });
     const key = el.dataset.mapy;
