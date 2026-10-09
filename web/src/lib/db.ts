@@ -196,6 +196,19 @@ export async function regionAccepting(specialty: string, region: string, limit =
      LIMIT ${limit}`;
 }
 
+export interface AvailabilityRow { region: string | null; district: string | null; status: Status; n: number }
+
+/** Practices per district and status, for the availability overview. */
+export async function availability(specialty: string): Promise<AvailabilityRow[]> {
+  return sql<AvailabilityRow[]>`
+    SELECT p.region, p.district, coalesce(s.status, 'unknown') AS status, count(*)::int AS n
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
+      LEFT JOIN provider_status s ON s.provider_id = p.id
+     WHERE p.active
+     GROUP BY 1, 2, 3`;
+}
+
 /** The latest note from the website checker, e.g. „přijímáme nové pacienty“ — URL. */
 export async function latestCrawlNote(providerId: number): Promise<{ note: string; observed_at: Date } | undefined> {
   const [row] = await sql<{ note: string; observed_at: Date }[]>`

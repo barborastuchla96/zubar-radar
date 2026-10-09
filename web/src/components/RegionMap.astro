@@ -4,27 +4,28 @@
 import { REGIONS, REGION_VIEWBOX } from '../lib/regions';
 import { regionUrl } from '../lib/site';
 
-interface Props { specialty: string; active?: string; syncWith?: string }
-const { specialty, active, syncWith } = Astro.props;
+// fills/titles: optional per-region colour and tooltip (the availability map)
+interface Props { specialty: string; active?: string; syncWith?: string; fills?: Record<string, string>; titles?: Record<string, string>; pills?: boolean }
+const { specialty, active, syncWith, fills = {}, titles = {}, pills = true } = Astro.props;
 ---
 <div class="region-map" data-sync={syncWith}>
   <svg viewBox={REGION_VIEWBOX} role="group" aria-label="Mapa krajů České republiky">
     {REGIONS.map((r) => (
       <a href={regionUrl(specialty, r.slug)} data-kraj={r.slug} aria-label={r.name}
          aria-current={r.slug === active ? 'page' : undefined}>
-        <title>{r.name}</title>
-        <path d={r.d} class={`kraj${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`} />
+        <title>{titles[r.slug] ?? r.name}</title>
+        <path d={r.d} class={`kraj${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`} style={fills[r.slug] ? `--fill:${fills[r.slug]}` : undefined} />
         <text x={r.lx} y={r.ly} class={`kraj-label${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`}
               text-anchor="middle" dominant-baseline="middle">{r.label}</text>
       </a>
     ))}
   </svg>
-  <ul class="pills region-pills">
+  {pills && <ul class="pills region-pills">
     {[...REGIONS].sort((a, b) => (a.slug === 'hlavni-mesto-praha' ? -1 : b.slug === 'hlavni-mesto-praha' ? 1
         : a.name.localeCompare(b.name, 'cs'))).map((r) => (
       <li><a href={regionUrl(specialty, r.slug)} data-kraj={r.slug} aria-current={r.slug === active ? 'page' : undefined}>{r.name}</a></li>
     ))}
-  </ul>
+  </ul>}
   <p class="small muted map-credit">Hranice krajů © <a href="/o-projektu">ČÚZK, CC BY 4.0</a></p>
 </div>
 

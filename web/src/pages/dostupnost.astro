@@ -1,0 +1,121 @@
+---
+// Availability overview: how many practices are known to accept new patients, by region and district.
+import Base from '../layouts/Base.astro';
+import RegionMap from '../components/RegionMap.astro';
+import { availability } from '../lib/db';
+import { REGIONS, regionByName } from '../lib/regions';
+import { SPECIALTIES, districtUrl, ordinaci, placeCompare, regionUrl, slugify, specialty } from '../lib/site';
+
+const spec = specialty(Astro.url.searchParams.get('obor') ?? '') ?? SPECIALTIES[0];
+const rows = await availability(spec.slug);
+
+interface Tally { n: number; accepting: number; waitlist: number; not_accepting: number; known: number }
+const empty = (): Tally => ({ n: 0, accepting: 0, waitlist: 0, not_accepting: 0, known: 0 });
+const add = (t: Tally, status: string, n: number) => {
+  t.n += n;
+  if (status === 'accepting' || status === 'waitlist' || status === 'not_accepting') t[status] += n;
+  if (status !== 'unknown') t.known += n;
+};
+const total = empty();
+const byRegion = new Map<string, { t: Tally; districts: Map<string, Tally> }>();
+for (const r of rows) {
+  if (!r.region) continue;
+  add(total, r.status, r.n);
+  const reg = byRegion.get(r.region) ?? { t: empty(), districts: new Map() };
+  add(reg.t, r.status, r.n);
+  const d = reg.districts.get(r.district ?? '') ?? empty();
+  add(d, r.status, r.n);
+  reg.districts.set(r.district ?? '', d);
+  byRegion.set(r.region, reg);
+}
+const regions = [...byRegion.entries()].sort((a, b) => placeCompare(a[0], b[0]));
+
+const pct = (part: number, of: number) => (of ? (100 * part) / of : 0);
+const fmt = (x: number) => `${x.toLocaleString('cs', { maximumFractionDigits: 1 })} %`;
+// Map colour: share of practices known to accept. Grey = nobody known yet.
+const SCALE = [[10, '#1b7a45'], [5, '#3f9b63'], [2, '#7fbf93'], [0.0001, '#c3e2cc']] as const;
+const colour = (share: number) => SCALE.find(([min]) => share >= min)?.[1] ?? '#e3e7ea';
+const fills: Record<string, string> = {};
+const titles: Record<string, string> = {};
+for (const r of REGIONS) {
+  const t = byRegion.get(r.name)?.t;
+  if (!t) continue;
+  fills[r.slug] = colour(pct(t.accepting, t.n));
+  titles[r.slug] = `${r.name}: přijímá ${t.accepting} z ${ordinaci(t.n)} (${fmt(pct(t.accepting, t.n))})`;
+}
+const today = new Date().toLocaleDateString('cs', { day: 'numeric', month: 'long', year: 'numeric' });
+Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
+---
+<Base title={`Dostupnost péče – ${spec.plural.toLowerCase()} podle krajů a okresů`}
+      description={`Kolik ordinací (${spec.plural.toLowerCase()}) podle posledních zpráv přijímá nové pacienty, po krajích a okresech.`}>
+  <div class="crumbs"><a href="/">Úvod</a> › Dostupnost péče</div>
+  <h1>Kde přijímají nové pacienty</h1>
+  <p class="intro">Přehled po krajích a okresech: kolik ordinací podle posledních zpráv přijímá nové pacienty.
+    Stav k {today}.</p>
+
+  <ul class="pills" aria-label="Obor">
+    {SPECIALTIES.map((s) => <li><a href={`/dostupnost?obor=${s.slug}`} aria-current={s.slug === spec.slug ? 'page' : undefined}>{s.plural}</a></li>)}
+  </ul>
+
+  <div class="stat-row">
+    <div class="card stat"><span class="stat-n">{total.n.toLocaleString('cs')}</span><span>ordinací v registru</span></div>
+    <div class="card stat ok"><span class="stat-n">{total.accepting.toLocaleString('cs')}</span><span>✓ přijímá nové pacienty</span></div>
+    <div class="card stat"><span class="stat-n">{total.not_accepting.toLocaleString('cs')}</span><span>✗ nepřijímá</span></div>
+    <div class="card stat"><span class="stat-n">{fmt(pct(total.known, total.n))}</span><span>ordinací se známým stavem</span></div>
+  </div>
+
+  <h2>Mapa: podíl ordinací, které přijímají</h2>
+  <RegionMap specialty={spec.slug} {fills} {titles} pills={false} />
+  <ul class="map-legend" aria-label="Legenda">
+    <li><i style="background:#1b7a45"></i> 10 % a víc</li>
+    <li><i style="background:#3f9b63"></i> 5–10 %</li>
+    <li><i style="background:#7fbf93"></i> 2–5 %</li>
+    <li><i style="background:#c3e2cc"></i> méně než 2 %</li>
+    <li><i style="background:#e3e7ea"></i> zatím nevíme o žádné</li>
+  </ul>
+
+  <h2>Podle krajů</h2>
+  <div class="table-wrap">
+    <table class="avail">
+      <thead><tr><th>Kraj</th><th>Ordinací</th><th>✓ Přijímá</th><th>⏳ Pořadník</th><th>✗ Nepřijímá</th><th>Stav známe</th></tr></thead>
+      <tbody>
+        {regions.map(([name, { t }]) => (
+          <tr>
+            <th scope="row"><a href={regionUrl(spec.slug, regionByName(name)?.slug ?? slugify(name))}>{name}</a></th>
+            <td>{t.n.toLocaleString('cs')}</td><td class="ok">{t.accepting}</td><td>{t.waitlist}</td><td>{t.not_accepting}</td>
+            <td>{fmt(pct(t.known, t.n))}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Podle okresů</h2>
+  {regions.map(([name, { districts }]) => (
+    <details class="card district-table">
+      <summary>{name}</summary>
+      <div class="table-wrap">
+        <table class="avail">
+          <thead><tr><th>Okres</th><th>Ordinací</th><th>✓ Přijímá</th><th>⏳ Pořadník</th><th>✗ Nepřijímá</th><th>Stav známe</th></tr></thead>
+          <tbody>
+            {[...districts.entries()].sort((a, b) => placeCompare(a[0], b[0])).map(([d, t]) => (
+              <tr>
+                <th scope="row">{name === 'Hlavní město Praha' ? <a href={districtUrl(spec.slug, 'praha')}>Praha</a> : <a href={districtUrl(spec.slug, slugify(d))}>{d}</a>}</th>
+                <td>{t.n.toLocaleString('cs')}</td><td class="ok">{t.accepting}</td><td>{t.waitlist}</td><td>{t.not_accepting}</td>
+                <td>{fmt(pct(t.known, t.n))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  ))}
+
+  <h2>Odkud čísla jsou</h2>
+  <p>Seznam ordinací přebíráme z Národního registru poskytovatelů zdravotních služeb. Stav „přijímá / nepřijímá“
+    zjišťujeme z hlášení pacientů, od samotných ordinací a jednou týdně z webů ordinací. Starší zprávy se počítají méně
+    a po 90 dnech přestanou platit.</p>
+  <p><strong>Stav známe jen u části ordinací.</strong> Světlá místa na mapě proto neznamenají, že tam nikdo nepřijímá,
+    jen že o tom zatím nemáme zprávy. Čím víc lidí po telefonátu dá vědět, jak to dopadlo, tím je přehled přesnější.</p>
+  <p class="small muted">Pro média, zdravotní pojišťovny a úřady: rádi připravíme podrobnější data. Napište nám.</p>
+</Base>

@@ -6,7 +6,7 @@ import { SPECIALTIES, cityUrl, districtUrl, providerUrl, regionUrl } from '../li
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site!.toString().replace(/\/$/, '');
-  const urls = ['/', ...SPECIALTIES.flatMap((s) => [`/${s.slug}`, cityUrl(s.slug, 'praha'),
+  const urls = ['/', ...SPECIALTIES.map((s) => `/dostupnost?obor=${s.slug}`), ...SPECIALTIES.flatMap((s) => [`/${s.slug}`, cityUrl(s.slug, 'praha'),
     ...REGIONS.filter((r) => r.slug !== 'hlavni-mesto-praha').map((r) => regionUrl(s.slug, r.slug)),
     ...Object.keys(data.okresy).map((o) => districtUrl(s.slug, o))])];
   for (const e of await sitemapEntries()) {
