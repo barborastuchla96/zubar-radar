@@ -7,6 +7,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import PlaceSearch from '../../components/PlaceSearch.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import Tile from '../../components/Tile.astro';
+import AlertForm from '../../components/AlertForm.astro';
 import { cities, pragueAccepting } from '../../lib/db';
 import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
@@ -48,6 +49,8 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
   <div class="grid grid-cards">
     {districts.map((d) => <Tile href={cityUrl(spec.slug, d.city_slug)} title={d.city} n={d.n} accepting={d.accepting} />)}
   </div>
+
+  <AlertForm {spec} lat={50.0755} lng={14.4378} place="Praha" radius={10} />
 
   <h2>Další obory v Praze</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={cityUrl(s.slug, 'praha')}>{s.plural}</a></li>)}</ul>

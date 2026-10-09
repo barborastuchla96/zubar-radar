@@ -100,7 +100,7 @@ form.report fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: .4r
 form.report legend { font-weight: 600; margin-bottom: .3rem; }
 form.report label.opt { display: flex; gap: .5rem; align-items: center; padding: .5rem .7rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
 form.report label.opt:has(input:checked) { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 8%, var(--surface)); }
-input[type="date"], textarea, select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .5rem .6rem; width: 100%; }
+input[type="date"], input[type="email"], textarea, select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .5rem .6rem; width: 100%; }
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
 .notice { border-radius: var(--radius); padding: .8rem 1rem; margin: 1rem 0; }
@@ -186,3 +186,11 @@ input[type="radio"] { width: 1.2rem; height: 1.2rem; }
 /* headline: each half on its own line, balanced when it has to wrap */
 .hero-title span { display: inline-block; text-wrap: balance; }
 h1, h2, h3, label, legend { text-wrap: balance; }
+
+/* email alert sign-up */
+.alert-signup { margin: 1.5rem 0; border-color: color-mix(in srgb, var(--brand) 40%, var(--border)); }
+.alert-form { display: grid; grid-template-columns: 1fr auto auto; gap: .75rem; align-items: end; }
+.alert-form label { display: block; font-weight: 700; margin-bottom: .3rem; }
+.alert-form input[type=email] { width: 100%; }
+@media (max-width: 640px) { .alert-form { grid-template-columns: 1fr; } .alert-form .btn { width: 100%; } }
+.alert-form input, .alert-form select, .alert-form .btn { min-height: 48px; }

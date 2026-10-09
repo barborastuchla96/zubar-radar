@@ -22,4 +22,5 @@ docker compose run --rm importer initdb          # schema is idempotent
 docker compose up -d --remove-orphans
 docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile   # pick up domain/redirect changes
 docker image prune -f >/dev/null
+if [ "$(id -u)" = 0 ]; then ./cron.sh >/dev/null; fi   # keep scheduled jobs up to date
 docker compose ps

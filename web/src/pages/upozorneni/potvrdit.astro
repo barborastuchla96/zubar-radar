@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import { confirm, findByToken } from '../../lib/alerts';
+import { specialty } from '../../lib/site';
+
+// The link in the email opens this page; the button does the confirming. That way mail
+// scanners that pre-open links can't confirm a sign-up for someone else.
+const post = Astro.request.method === 'POST';
+const token = post ? String((await Astro.request.formData()).get('t') ?? '') : (Astro.url.searchParams.get('t') ?? '');
+let sub = await findByToken(token);
+let done = false;
+if (post && sub) { done = await confirm(token); sub = await findByToken(token); }
+const spec = sub ? specialty(sub.specialty_slug) : undefined;
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+<Base title="Potvrzení upozornění" description="Potvrzení e-mailového upozornění" noindex>
+  <h1>Upozornění na volné ordinace</h1>
+  {!sub && (
+    <div class="card"><p>Tento odkaz už neplatí. Možná jste se mezitím odhlásili, nebo od přihlášení uběhl víc než týden.</p>
+      <p><a href="/">Zpět na hlavní stránku</a></p></div>
+  )}
+  {sub && (sub.verified_at || done) && (
+    <div class="card"><p class="notice ok" role="status">Hotovo, upozornění je zapnuté.</p>
+      <p>Jakmile {spec?.some} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong> začne přijímat
+        nové pacienty, pošleme vám e-mail. Obvykle ráno, nejvýš jednou denně.</p>
+      <p><a href="/">Zpět na hlavní stránku</a></p></div>
+  )}
+  {sub && !sub.verified_at && !done && (
+    <form class="card" method="post">
+      <p>Chcete, abychom vám napsali, až {spec?.some} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong> začne přijímat nové pacienty?</p>
+      <input type="hidden" name="t" value={token} />
+      <button class="btn" type="submit">Ano, chci upozornění</button>
+    </form>
+  )}
+</Base>

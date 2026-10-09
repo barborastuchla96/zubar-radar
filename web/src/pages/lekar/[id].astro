@@ -5,6 +5,7 @@ import ReportForm from '../../components/ReportForm.astro';
 import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
+import AlertForm from '../../components/AlertForm.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
 import { STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, formatPhone, providerUrl, specialty, telHref, webHref } from '../../lib/site';
 
@@ -97,6 +98,9 @@ const jsonLd = [
 
   <AdSlot name="provider" />
 
+  {main && p.lat != null && p.lng != null && p.status !== 'accepting' && (
+    <AlertForm spec={main} lat={p.lat} lng={p.lng} place={p.city ?? 'této ordinace'} radius={p.city_slug?.startsWith('praha') ? 2 : 5} />
+  )}
   {alts.length > 0 && main && (
     <section>
       <h2>{main.nearby}</h2>

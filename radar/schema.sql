@@ -114,6 +114,28 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 CREATE INDEX IF NOT EXISTS subscriptions_active_idx
     ON subscriptions (specialty_slug) WHERE verified_at IS NOT NULL AND unsubscribed_at IS NULL;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS place_label text;     -- "Praha 6", shown in emails
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS requester_hash text;  -- salted IP hash, for rate limits
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS confirm_sends smallint NOT NULL DEFAULT 1;  -- confirmation emails sent
+CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_token_idx ON subscriptions (verify_token);
+CREATE INDEX IF NOT EXISTS subscriptions_email_idx ON subscriptions (lower(email));
+
+-- Which practice a subscriber has already been told about (so nobody gets the same news twice).
+CREATE TABLE IF NOT EXISTS subscription_notifications (
+    subscription_id uuid   NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+    provider_id     bigint NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+    sent_at         timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (subscription_id, provider_id)
+);
+
+-- Every email we send, so the web app and the alert job share one daily limit
+-- (Wedos allows 500 a day). Nothing personal is stored here.
+CREATE TABLE IF NOT EXISTS mail_log (
+    id      bigserial PRIMARY KEY,
+    kind    text NOT NULL CHECK (kind IN ('confirm', 'alert')),
+    sent_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS mail_log_sent_idx ON mail_log (sent_at);
 
 -- ---------------------------------------------------------------------------
 -- Derived status.

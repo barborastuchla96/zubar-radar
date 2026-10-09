@@ -17,7 +17,7 @@ export function formToken(now = Date.now()): string {
   return `${t}.${sign(t)}`;
 }
 
-function tokenOk(token: string, now = Date.now()): boolean {
+export function formTokenOk(token: string, now = Date.now()): boolean {
   const [t, sig] = token.split('.');
   if (!t || !sig) return false;
   const want = Buffer.from(sign(t));
@@ -46,7 +46,7 @@ const SCOPES = new Set(['adults', 'children', 'all']);
 export function parseReport(form: FormData, now = new Date()): Parsed {
   const get = (k: string) => (form.get(k) ?? '').toString().trim();
   if (get('web') !== '') return { ok: false, reason: 'bot' };          // honeypot
-  if (!tokenOk(get('t'), now.getTime())) return { ok: false, reason: 'bot' };
+  if (!formTokenOk(get('t'), now.getTime())) return { ok: false, reason: 'bot' };
 
   const providerId = Number(get('provider_id'));
   const status = get('status');

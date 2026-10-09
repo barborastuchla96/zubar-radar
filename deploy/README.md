@@ -57,6 +57,7 @@ ssh root@YOUR_SERVER_IP 'cd /opt/zubar-radar/deploy && docker compose run --rm i
 | When | What | Log |
 |---|---|---|
 | Daily at 03:17 | `backup.sh`: database dump into `backups/`, last 14 days kept | `/var/log/berepacienty/backup.log` |
+| Daily at 07:41 | `alerts`: emails subscribers about practices near them that started accepting (only when `SMTP_HOST` is set) | `/var/log/berepacienty/alerts.log` |
 | 2nd of each month at 04:23 | `import-monthly.sh`: downloads `NRPZS_URL` and imports it | `/var/log/berepacienty/import.log` |
 | Sundays at 05:11 | `crawl`: checks Prague clinic websites for new-patient notices | `/var/log/berepacienty/crawl.log` |
 
@@ -87,6 +88,29 @@ docker compose logs -f web                    # watch the app logs
 docker compose ps                             # is everything healthy?
 docker compose run --rm importer sponsor list # sponsored listings (see below)
 ```
+
+## Email alerts
+
+Visitors can ask to be emailed when a practice near them starts accepting new patients. The form
+appears on city pages, Prague pages and practice pages, **only once `SMTP_HOST` is set** in `deploy/.env`:
+
+```
+SMTP_HOST=wes1-smtp.wedos.net
+SMTP_PORT=465
+SMTP_USER=info@prijimanovepacienty.cz
+SMTP_PASSWORD=...      # the mailbox password
+```
+
+Then run `./deploy.sh`. How it works:
+- Sign-up is double opt-in. The email link opens a page with a confirm button, so mail scanners can't confirm for someone else.
+- Unconfirmed sign-ups are deleted after 7 days. Unsubscribing deletes the row.
+- The daily job sends one email per subscriber, listing practices within their radius that got a *new*
+  "accepting" report after they signed up. The same practice isn't announced to them again for 60 days.
+- All mail (confirmations and alerts) shares `MAIL_DAILY_LIMIT` (default 450; Wedos allows 500 a day).
+  Alerts that don't fit wait for the next day.
+- Limits against abuse: 5 sign-ups per visitor and 3 per address in 24 h, 10 active per address, and at most 3 confirmation emails per sign-up, sent at least 10 minutes apart.
+
+Try it without sending anything: `docker compose run --rm importer alerts --dry-run`.
 
 ## Ads & cookies
 

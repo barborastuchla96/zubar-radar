@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+import { findByToken, unsubscribe } from '../../lib/alerts';
+import { specialty } from '../../lib/site';
+
+const post = Astro.request.method === 'POST';
+const token = post ? String((await Astro.request.formData()).get('t') ?? '') : (Astro.url.searchParams.get('t') ?? '');
+const sub = await findByToken(token);
+if (post && sub) await unsubscribe(token);
+const spec = sub ? specialty(sub.specialty_slug) : undefined;
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+<Base title="Odhlášení upozornění" description="Odhlášení e-mailového upozornění" noindex>
+  <h1>Odhlášení upozornění</h1>
+  {(post || !sub) ? (
+    <div class="card"><p class="notice ok" role="status">Jste odhlášeni. Už vám nic nepošleme a vaši adresu jsme smazali.</p>
+      <p><a href="/">Zpět na hlavní stránku</a></p></div>
+  ) : (
+    <form class="card" method="post">
+      <p>Opravdu už nechcete upozornění ({spec?.plural.toLowerCase()} do {sub.radius_km} km od místa <strong>{sub.place_label}</strong>)?</p>
+      <input type="hidden" name="t" value={token} />
+      <button class="btn" type="submit">Ano, odhlásit</button>
+    </form>
+  )}
+</Base>

@@ -37,6 +37,12 @@ services:
       CONTACT_EMAIL: ${CONTACT_EMAIL:-}
       SEZNAM_WMT: ${SEZNAM_WMT:-}
       GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-450}
     depends_on:
       db:
         condition: service_healthy
@@ -59,7 +65,7 @@ services:
     depends_on:
       - web
 
-  # One-off tool: docker compose run --rm importer <initdb|import ...|sponsor ...>
+  # One-off tool: docker compose run --rm importer <initdb|import ...|sponsor ...|crawl|alerts>
   importer:
     build:
       context: ..
@@ -67,6 +73,13 @@ services:
     profiles: ["tools"]
     environment:
       DATABASE_URL: *db_url
+      SITE_URL: https://${DOMAIN}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-450}
     volumes:
       - ../data:/data:ro
     depends_on:

@@ -68,6 +68,7 @@ If the total weight is below 0.3 the status is `unknown`; a score ≥ 0.5 is `ac
 | `/lekar/{id}-{slug}` | Practice detail page and the report form. Other slugs 301-redirect to the canonical URL |
 | `/blizko` | Results near a location (`noindex`) |
 | `POST /api/report` | Saves a user report |
+| `POST /api/upozorneni`, `/upozorneni/potvrdit`, `/upozorneni/odhlasit` | Email alert sign-up, confirmation, unsubscribe (see [deploy/README.md](deploy/README.md#email-alerts)) |
 | `/sitemap.xml`, `/robots.txt` | SEO |
 
 **How reports are protected from spam and abuse**

@@ -185,6 +185,24 @@ def cmd_crawl(args) -> None:
         print(f"wrote {record_crawl(conn, results)} web_crawl signals")
 
 
+def cmd_alerts(args) -> None:
+    """Email subscribers about practices near them that started accepting."""
+    import psycopg
+    from . import alerts
+    site = os.environ.get("SITE_URL", "https://prijimanovepacienty.cz")
+    mail_from = os.environ.get("MAIL_FROM") or os.environ.get("SMTP_USER") or ""
+    if not args.dry_run and not mail_from:
+        sys.exit("set MAIL_FROM (or SMTP_USER)")
+    with psycopg.connect(_dsn(args), autocommit=True) as conn:
+        sender = None if args.dry_run else alerts.sender_from_env()
+        try:
+            st = alerts.run(conn, sender, site, mail_from or "info@example.cz", dry_run=args.dry_run)
+        finally:
+            if sender:
+                sender.close()
+    print(" ".join(f"{k}={v}" for k, v in st.items()))
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="radar", description="Zubař radar data tools")
     ap.add_argument("--dsn", help="Postgres DSN (default: $DATABASE_URL)")
@@ -243,6 +261,10 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--dry-run", action="store_true", help="print findings, write nothing")
     p.add_argument("--verbose", action="store_true", help="also print fetch errors")
     p.set_defaults(func=cmd_crawl)
+
+    p = sub.add_parser("alerts", help="send email alerts to subscribers (run daily)")
+    p.add_argument("--dry-run", action="store_true", help="print the emails instead of sending them")
+    p.set_defaults(func=cmd_alerts)
 
     args = ap.parse_args(argv)
     args.func(args)

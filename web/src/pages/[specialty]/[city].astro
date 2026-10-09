@@ -5,6 +5,7 @@ import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
+import AlertForm from '../../components/AlertForm.astro';
 import { cityProviders, sponsored } from '../../lib/db';
 import { SPECIALTIES, breadcrumbLd, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
@@ -18,6 +19,10 @@ const sponsors = await sponsored(spec.slug, Astro.params.city!);
 const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed: 0 } as Record<string, number>;
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const known = rows.length - counts.unknown;
+const located = rows.filter((r) => r.lat != null && r.lng != null);
+const center = located.length
+  ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
+  : null;
 const title = `${spec.plural} ${city} – kdo přijímá nové pacienty`;
 const description = `${spec.plural} – ${city}: ${ordinaci(rows.length)}. ` +
   (counts.accepting ? `Podle hlášení ${prijima(counts.accepting)} nové pacienty. ` : '') +
@@ -60,6 +65,8 @@ const jsonLd = breadcrumbLd(Astro.site, [
     {rows.slice(6).map((p) => <ProviderCard p={p} />)}
   </div>
   <p class="notice ok" id="empty" hidden>V tomto filtru nic není.</p>
+
+  {center && <AlertForm {spec} lat={center.lat} lng={center.lng} place={city} radius={isPragueSlug(Astro.params.city!) ? 2 : 5} />}
 
   <h2>Další obory – {city}</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={cityUrl(s.slug, Astro.params.city!)}>{s.plural}</a></li>)}</ul>

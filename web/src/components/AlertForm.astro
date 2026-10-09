@@ -1,0 +1,51 @@
+---
+import { RADII } from '../lib/alerts';
+import { mailEnabled } from '../lib/mail';
+import { formToken } from '../lib/report';
+import type { SpecialtyInfo } from '../lib/site';
+
+interface Props { spec: SpecialtyInfo; lat: number; lng: number; place: string; radius?: number }
+const { spec, lat, lng, place, radius = 5 } = Astro.props;
+const result = Astro.url.searchParams.get('u');
+const MESSAGES: Record<string, [string, string]> = {
+  sent: ['ok', 'Hotovo. Poslali jsme vám e-mail s odkazem. Upozornění začne platit, až na něj kliknete. (Když e-mail nepřijde, podívejte se do složky Spam nebo Hromadné.)'],
+  too_many: ['bad', 'Dnes už jsme na tuto adresu nebo z tohoto zařízení posílali hodně e-mailů. Zkuste to prosím zítra.'],
+  invalid: ['bad', 'Tohle nevypadá jako e-mailová adresa. Zkontrolujte ji prosím.'],
+  error: ['bad', 'E-mail se nám teď nepodařilo odeslat. Zkuste to prosím za chvíli.'],
+};
+const msg = result ? MESSAGES[result] : null;
+const back = Astro.url.pathname;
+---
+{mailEnabled() && (
+  <section id="upozorneni" class="card alert-signup">
+    <h2 style="margin-top:0">Pošleme vám e-mail, až se uvolní místo</h2>
+    <p>Jakmile {spec.some} v okolí místa <strong>{place}</strong> začne přijímat nové pacienty,
+      dáme vám vědět.</p>
+    {msg && <p class={`notice ${msg[0]}`} role="status">{msg[1]}</p>}
+    <form method="post" action="/api/upozorneni" class="alert-form">
+      <input type="hidden" name="s" value={spec.slug} />
+      <input type="hidden" name="lat" value={lat.toFixed(5)} />
+      <input type="hidden" name="lng" value={lng.toFixed(5)} />
+      <input type="hidden" name="place" value={place} />
+      <input type="hidden" name="back" value={back} />
+      <input type="hidden" name="t" value={formToken()} />
+      <div class="hp" aria-hidden="true">
+        <label>Web <input type="text" name="web" tabindex="-1" autocomplete="off" /></label>
+      </div>
+      <div>
+        <label for="al-email">Váš e-mail</label>
+        <input id="al-email" type="email" name="email" required maxlength="254" autocomplete="email"
+          inputmode="email" placeholder="jmeno@example.cz" />
+      </div>
+      <div>
+        <label for="al-radius">Jak daleko?</label>
+        <select id="al-radius" name="radius">
+          {RADII.map((r) => <option value={r} selected={r === radius}>do {r} km</option>)}
+        </select>
+      </div>
+      <div><button class="btn" type="submit">Chci upozornění</button></div>
+    </form>
+    <p class="small muted">Nejdřív vám pošleme e-mail s odkazem na potvrzení. Adresu použijeme jen pro tato upozornění
+      a v každém e-mailu najdete odkaz, kterým se z odběru odhlásíte.</p>
+  </section>
+)}
