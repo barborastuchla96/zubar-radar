@@ -197,3 +197,13 @@ def test_crawl_remembers_and_forgets_self_pay(conn):
     r.error = None
     db.record_crawl(conn, [r])
     assert flags() == 0                     # site no longer says it: forget it
+
+
+def test_crawl_skips_hospitals_and_many_field_places(conn):
+    db.import_providers(conn, providers())
+    a, b = pid(conn, "1001"), pid(conn, "1002")
+    conn.execute("UPDATE providers SET web = 'www.a-test.cz' WHERE id = %s", (a,))
+    conn.execute("UPDATE providers SET web = 'www.b-test.cz', facility_type = 'Nemocnice' WHERE id = %s", (b,))
+    assert list(db.crawl_targets(conn, "^brno$")) == ["http://www.a-test.cz/"]      # the hospital is left out
+    conn.execute("INSERT INTO provider_specialties VALUES (%s, 'ocni') ON CONFLICT DO NOTHING", (a,))
+    assert db.crawl_targets(conn, "^brno$") == {}                                    # zubar + hygiena + oční: 3 fields

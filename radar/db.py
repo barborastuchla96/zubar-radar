@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from importlib import resources
 from typing import Iterable
@@ -129,7 +130,8 @@ def crawl_targets(
 
     rows = conn.execute(
         """
-        SELECT DISTINCT p.id, p.web
+        SELECT DISTINCT p.id, p.web, p.name, p.facility_type,
+               (SELECT count(*) FROM provider_specialties x WHERE x.provider_id = p.id) AS n_spec
           FROM providers p JOIN provider_specialties ps ON ps.provider_id = p.id
          WHERE p.active AND p.web IS NOT NULL AND p.city_slug ~ %s
            AND (%s::text[] IS NULL OR ps.specialty_slug = ANY(%s::text[]))
@@ -138,7 +140,11 @@ def crawl_targets(
         (city_regex, specialties, specialties),
     ).fetchall()
     sites: dict[str, list[int]] = {}
-    for pid, web in rows:
+    for pid, web, name, facility_type, n_spec in rows:
+        # A hospital or big outpatient centre is one register entry for many departments: a sentence
+        # on its website ("přijímáme nové pacienty do diabetologie") can't be pinned to the right one.
+        if n_spec >= MAX_SPECIALTIES_PER_PLACE or BIG_FACILITY.search(f"{facility_type or ''} {name or ''}"):
+            continue
         url = normalize_site(web)
         if url:
             sites.setdefault(url, []).append(pid)
@@ -149,7 +155,7 @@ def crawl_targets(
         # Practices whose site we no longer check (a directory, a shared hospital page):
         # what we read there before shouldn't linger.
         checked = {pid for ids in sites.values() for pid in ids}
-        dropped = sorted({pid for pid, _ in rows} - checked)
+        dropped = sorted({r[0] for r in rows} - checked)
         conn.execute("DELETE FROM availability_signals WHERE source = 'web_crawl' AND provider_id = ANY(%s)", (dropped,))
         conn.execute("DELETE FROM provider_flags WHERE source = 'web_crawl' AND provider_id = ANY(%s)", (dropped,))
         conn.commit()
@@ -187,6 +193,8 @@ def _record_flags(conn: psycopg.Connection, r) -> None:
 
 RECHECK_DAYS = 6
 MAX_PRACTICES_PER_SITE = 5
+MAX_SPECIALTIES_PER_PLACE = 3
+BIG_FACILITY = re.compile(r"nemocnic|nad 5 obor|poliklinik|centrum duševního zdraví|zařízení lps", re.I)
 
 
 def record_crawl(conn: psycopg.Connection, results) -> int:

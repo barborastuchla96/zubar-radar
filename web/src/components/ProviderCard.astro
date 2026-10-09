@@ -11,9 +11,11 @@ const when = en ? agoEn(p.last_signal_at) : ago(p.last_signal_at);
 const email = emailsOf(p.email)[0];
 const web = firstWeb(p.web);
 const url = doctorUrl(en ? 'en' : 'cs', p);
+// The register lists hospital clinics under the hospital's name: say so, so it doesn't look like a mistake.
+const hospital = /nemocnic/i.test(`${p.facility_type ?? ''} ${p.name}`);
 const T = en
-  ? { crawl: 'from their website,', seen: 'confirmed', km: 'km away', english: 'Speaks English', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
-  : { crawl: 'podle webu ordinace, zkontrolováno', seen: 'ověřeno', km: 'km od vás', english: 'Mluví anglicky', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
+  ? { crawl: 'from their website,', seen: 'confirmed', km: 'km away', english: 'Speaks English', hospital: 'Clinic at a hospital', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
+  : { crawl: 'podle webu ordinace, zkontrolováno', seen: 'ověřeno', km: 'km od vás', english: 'Mluví anglicky', hospital: 'Ambulance v nemocnici', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
 ---
 <article class="card provider" data-status={p.status} data-english={p.english ? "1" : undefined}>
   <h3><a href={url}>{p.name}</a></h3>
@@ -22,8 +24,9 @@ const T = en
     {when && <span>{p.last_source === 'web_crawl' ? `${T.crawl} ${when}` : `${T.seen} ${when}`}</span>}
     {p.km != null && <span>{p.km.toLocaleString(en ? 'en' : 'cs')} {T.km}</span>}
   </div>
-  {(p.self_pay || p.english) && (
+  {(p.self_pay || p.english || hospital) && (
     <div class="facts">
+      {hospital && <span class="fact-tag hospital">🏥 {T.hospital}</span>}
       {p.english && <span class="fact-tag english">🗣️ {T.english}</span>}
       {p.self_pay && <span class="fact-tag self-pay">💳 {T.selfPay}</span>}
     </div>
