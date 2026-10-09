@@ -77,16 +77,15 @@ const points = Astro.props.providers
         maxZoom: 19, attribution: '&copy; OpenStreetMap',
       }).addTo(map);
     }
-    // Known statuses are pins with the same symbol as the labels; "don't know yet" stays a small quiet dot.
+    // Known statuses are small text tags ("✓ Přijímá"); "don't know yet" stays a small quiet dot.
+    const TAG: Record<string, string> = { accepting: '✓ Přijímá', waitlist: '⏳ Pořadník', mixed: '! Nejasné', not_accepting: '✗ Nepřijímá' };
     const group = L.featureGroup();
     for (const p of pts) {
       const known = p.status !== 'unknown';
-      const html = known
-        ? `<span class="pin pin-${p.status}"><span>${p.icon}</span></span>`
-        : '<span class="pin-dot"></span>';
-      const icon = L.divIcon({
-        html, className: 'pin-wrap', iconSize: known ? [34, 42] : [16, 16], iconAnchor: known ? [17, 40] : [8, 8], popupAnchor: known ? [0, -38] : [0, -6],
-      });
+      const icon = known
+        ? L.divIcon({ html: `<span class="map-tag tag-${p.status}">${TAG[p.status] ?? p.label}</span>`, className: 'tag-wrap',
+                      iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -36] })
+        : L.divIcon({ html: '<span class="pin-dot"></span>', className: 'tag-wrap', iconSize: [16, 16], iconAnchor: [8, 8], popupAnchor: [0, -6] });
       const m = L.marker([p.lat, p.lng], { icon, title: `${p.name}: ${p.label}`, zIndexOffset: p.status === 'accepting' ? 1000 : known ? 500 : 0, riseOnHover: true });
       m.bindPopup(popup(p), { minWidth: 220, maxWidth: 280 });
       group.addLayer(m);

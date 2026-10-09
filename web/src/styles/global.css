@@ -274,16 +274,21 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 .map-toggle[open] > summary { display: none; }
 @media (max-width: 640px) { .map-toggle[open] > summary { display: inline-flex; } }
 
-/* map pins: same colours and symbols as the status labels */
-.pin-wrap { background: none; border: 0; }
-.pin { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg); border: 3px solid #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .35); }
-.pin > span { transform: rotate(45deg); color: #fff; font-weight: 800; font-size: 17px; line-height: 1; }
-.pin-accepting { background: var(--ok); width: 38px; height: 38px; margin: -4px 0 0 -2px; }
-.pin-waitlist, .pin-mixed { background: var(--warn); }
-.pin-not_accepting { background: var(--bad); }
+/* map markers: text tags for known statuses (anchored at the tip of the little arrow), grey dots otherwise */
+.tag-wrap { background: none; border: 0; }
+.map-tag { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 7px)); white-space: nowrap;
+  padding: .3rem .65rem; border-radius: 999px; border: 2px solid #fff; color: #fff; font: 700 14px/1.2 Inter, system-ui, sans-serif;
+  box-shadow: 0 2px 6px rgb(0 0 0 / .3); cursor: pointer; }
+.map-tag::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-width: 7px; }
+.tag-accepting { background: var(--ok); font-size: 15px; }
+.tag-waitlist, .tag-mixed { background: var(--warn); }
+.tag-not_accepting { background: var(--bad); }
+.map-tag.tag-accepting::after { border-top-color: var(--ok); }
+.map-tag.tag-waitlist::after, .map-tag.tag-mixed::after { border-top-color: var(--warn); }
+.map-tag.tag-not_accepting::after { border-top-color: var(--bad); }
 .pin-dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: #7d868d; border: 2px solid #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .4); }
-.leaflet-marker-icon:hover .pin, .leaflet-marker-icon:focus .pin { filter: brightness(1.1); box-shadow: 0 3px 10px rgb(0 0 0 / .45); }
+.leaflet-marker-icon:hover .map-tag, .leaflet-marker-icon:focus .map-tag { filter: brightness(1.12); box-shadow: 0 3px 10px rgb(0 0 0 / .45); }
 .leaflet-marker-icon:hover .pin-dot { background: var(--brand); }
 .map-popup { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; font-family: inherit; font-size: .95rem; }
 .map-popup .mp-name { font-weight: 800; font-size: 1.05rem; color: var(--text); }
