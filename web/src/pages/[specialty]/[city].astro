@@ -6,7 +6,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import AlertForm from '../../components/AlertForm.astro';
-import { cityProviders, sponsored } from '../../lib/db';
+import { cityProviders, nearby, sponsored } from '../../lib/db';
 import { SPECIALTIES, breadcrumbLd, cityUrl, factLine, isPragueSlug, monthYear, placeLabel, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
@@ -24,6 +24,13 @@ const located = rows.filter((r) => r.lat != null && r.lng != null);
 const center = located.length
   ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
   : null;
+// The register's town is often the postal one (Radotín filed as "Praha 5"), so also list
+// practices just over the border that people here would count as theirs.
+const here = new Set(rows.map((r) => r.id));
+const around = center
+  ? (await nearby(spec.slug, center.lat, center.lng, isPragueSlug(Astro.params.city!) ? 2 : 5, rows.length + 6))
+      .filter((r) => !here.has(r.id)).slice(0, 6).map(({ km, ...r }) => r)
+  : [];
 const title = `${spec.seo ?? spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(city, spec.plural, counts.accepting, rows.length);
 const description = `${fact} Kontakty, mapa a hlášení od lidí, kteří tam volali.`;
@@ -80,6 +87,15 @@ const jsonLd = breadcrumbLd(Astro.site, [
     {rows.slice(6).map((p) => <ProviderCard p={p} />)}
   </div>
   <p class="notice ok" id="empty" hidden>V tomto filtru nic není.</p>
+
+  {around.length > 0 && (
+    <>
+      <h2>Nedaleko – mimo {city}</h2>
+      <div class="grid grid-2" id="list-around">
+        {around.map((p) => <ProviderCard p={p} />)}
+      </div>
+    </>
+  )}
 
   {center && <AlertForm {spec} lat={center.lat} lng={center.lng} place={city} radius={isPragueSlug(Astro.params.city!) ? 2 : 5} />}
 
