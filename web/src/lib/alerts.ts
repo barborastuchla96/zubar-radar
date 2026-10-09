@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { sql } from './db';
 import { formTokenOk } from './report';
 import { specialty } from './site';
-import { aDoctorEn } from './i18n';
+import { SPECIALTY_EN, aDoctorEn } from './i18n';
 
 export const RADII = [2, 5, 10, 20] as const;
 const DAILY_LIMIT = Number(process.env.MAIL_DAILY_LIMIT ?? 450);   // shared with `radar alerts`
@@ -108,8 +108,16 @@ export async function unsubscribe(token: string): Promise<void> {
   await sql`DELETE FROM subscriptions WHERE verify_token = ${token}`;
 }
 
-export const confirmationSubject = (lang: 'cs' | 'en') =>
-  lang === 'en' ? 'Please confirm your alert for practices accepting new patients' : 'Potvrďte prosím odběr upozornění – prijimanovepacienty.cz';
+/** Same words as the start of the alert subject (radar/alerts.py SPECIALTY_PLURAL). */
+const SUBJECT_LABEL: Record<string, string> = {
+  zubar: 'Zubař', praktik: 'Praktický lékař', pediatr: 'Dětský lékař', gynekolog: 'Gynekologie', hygienistka: 'Dentální hygiena',
+  ocni: 'Oční lékař', orl: 'ORL lékař', kozni: 'Kožní lékař', psychiatr: 'Psychiatrie', neurolog: 'Neurologie',
+};
+/** Names the specialty and place, so Gmail doesn't fold several sign-ups into one conversation. */
+export const confirmationSubject = (v: Pick<SignupInput, 'specialty' | 'place' | 'lang'>) =>
+  v.lang === 'en'
+    ? `Please confirm your alert: ${SPECIALTY_EN[v.specialty]?.plural ?? 'practices'} near ${v.place}`
+    : `Potvrďte prosím odběr upozornění: ${SUBJECT_LABEL[v.specialty] ?? 'ordinace'}, ${v.place}`;
 
 /** "…jakmile některá {FROM_PRACTICES} v lokalitě Praha 6…" */
 const FROM_PRACTICES: Record<string, string> = {

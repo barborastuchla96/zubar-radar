@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect, site })
   if (result.kind === 'too_many') return back('too_many');
   if (result.kind === 'send') {
     try {
-      await sendMail(parsed.value.email, confirmationSubject(parsed.value.lang),
+      await sendMail(parsed.value.email, confirmationSubject(parsed.value),
         confirmationText(String(site ?? process.env.SITE_URL), result.token, parsed.value), {},
         parsed.value.lang === 'en' ? 'Accepting new patients?' : MAIL_FROM_NAME_CS);
       await logMail('confirm');
