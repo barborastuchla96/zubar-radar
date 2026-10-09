@@ -13,6 +13,7 @@ export async function sendMail(to: string, subject: string, text: string, header
     host: process.env.SMTP_HOST,
     port,
     secure: port === 465,
+    requireTLS: port !== 465 && !['localhost', '127.0.0.1'].includes(process.env.SMTP_HOST ?? ''),  // 587: STARTTLS or nothing
     auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD ?? '' } : undefined,
     connectionTimeout: 15_000,
   });
