@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import AdSlot from '../components/AdSlot.astro';
 import RegionMap from '../components/RegionMap.astro';
+import Suggest from '../components/Suggest.astro';
 import { cities } from '../lib/db';
 import { SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, ordinaci, prijima } from '../lib/site';
 
@@ -48,7 +49,10 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
       <legend><span class="step-no">2</span> Kde?</legend>
       <label for="home-q">Napište město, obec nebo část Prahy</label>
       <div class="search-row">
-        <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="Např. Praha 6, Kladno, Brno" />
+        <div class="suggest-wrap">
+          <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="Např. Praha 6, Kladno, Brno"
+                 data-suggest data-spec-from="home-search" />
+        </div>
         <button class="btn big" type="submit">Hledat</button>
       </div>
       <ul class="pills big-cities" aria-label="Krajská města">
@@ -67,6 +71,8 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
   <h2 class="map-title">Nebo klikněte na svůj kraj</h2>
   <RegionMap specialty="zubar" syncWith="home-search" />
+
+  <Suggest />
 
   <AdSlot name="home-mid" />
 

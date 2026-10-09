@@ -243,3 +243,13 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 .search-row input:focus { border-color: var(--brand); outline: none; }
 .big-cities { margin-top: .9rem; }
 @media (max-width: 640px) { .search-row .btn { width: 100%; } }
+
+/* našeptávač */
+.suggest-wrap { position: relative; flex: 1 1 260px; min-width: 0; }
+.suggest-wrap input { width: 100%; }
+.suggest { position: absolute; z-index: 50; left: 0; right: 0; top: calc(100% + 4px); list-style: none; margin: 0; padding: .3rem;
+  background: var(--surface); border: 2px solid var(--brand); border-radius: 12px; box-shadow: 0 10px 30px rgb(0 0 0 / .15); max-height: 70vh; overflow-y: auto; }
+.suggest li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; padding: .65rem .75rem; border-radius: 8px; cursor: pointer; min-height: 44px; }
+.suggest li strong { font-size: 1.1rem; }
+.suggest li .muted { font-size: .95rem; }
+.suggest li:hover, .suggest li[aria-selected="true"] { background: color-mix(in srgb, var(--brand) 12%, var(--surface)); }

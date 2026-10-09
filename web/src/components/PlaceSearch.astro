@@ -1,6 +1,7 @@
 ---
 // "Where are you looking?" search by town or Prague district. Works without JavaScript.
 import { SPECIALTIES } from '../lib/site';
+import Suggest from './Suggest.astro';
 interface Props { specialty?: string; q?: string; compact?: boolean }
 const { specialty = 'zubar', q = '', compact = false } = Astro.props;
 ---
@@ -13,8 +14,11 @@ const { specialty = 'zubar', q = '', compact = false } = Astro.props;
   </div>
   <div class="field grow">
     <label for="ps-q">Kde? Napište město nebo část Prahy</label>
-    <input id="ps-q" name="q" type="search" value={q} required autocomplete="off"
-           placeholder="Např. Praha 6, Kladno, Brno" />
+    <div class="suggest-wrap">
+      <input id="ps-q" name="q" type="search" value={q} required autocomplete="off"
+             placeholder="Např. Praha 6, Kladno, Brno" data-suggest data-spec-from="ps-s" />
+    </div>
   </div>
   <button class="btn big" type="submit">Hledat</button>
 </form>
+<Suggest />

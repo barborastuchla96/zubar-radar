@@ -1,0 +1,81 @@
+---
+// "Našeptávač" for place inputs: <input data-suggest data-spec-from="id of a select or form with name=s">.
+// Without JavaScript the inputs still work as a normal search.
+---
+<script>
+  // Small copies of the helpers in lib/site.ts (which also reads server settings, so it stays out of the browser).
+  const pr = new Intl.PluralRules('cs');
+  const pick = (n: number, one: string, few: string, many: string) => { const c = pr.select(n); return c === 'one' ? one : c === 'few' ? few : many; };
+  const ordinaci = (n: number) => `${n.toLocaleString('cs')} ${pick(n, 'ordinace', 'ordinace', 'ordinací')}`;
+  const prijima = (n: number) => `${n.toLocaleString('cs')} ${pick(n, 'přijímá', 'přijímají', 'přijímá')}`;
+
+  interface Hit { name: string; url: string; n: number; accepting: number; where: string | null }
+
+  document.querySelectorAll<HTMLInputElement>('input[data-suggest]').forEach((input, idx) => {
+    const specEl = document.getElementById(input.dataset.specFrom ?? '');
+    const spec = () => specEl instanceof HTMLSelectElement ? specEl.value
+      : ((specEl as HTMLFormElement | null)?.elements.namedItem('s') as RadioNodeList | null)?.value || 'zubar';
+
+    const list = document.createElement('ul');
+    list.className = 'suggest';
+    list.id = `suggest-${idx}`;
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    input.after(list);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', list.id);
+    input.setAttribute('aria-expanded', 'false');
+
+    let hits: Hit[] = [];
+    let active = -1;
+    let timer: number | undefined;
+    let seq = 0;
+
+    const close = () => { list.hidden = true; active = -1; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); };
+    const highlight = (i: number) => {
+      active = i;
+      [...list.children].forEach((li, j) => li.setAttribute('aria-selected', String(j === i)));
+      if (i >= 0) input.setAttribute('aria-activedescendant', `${list.id}-${i}`); else input.removeAttribute('aria-activedescendant');
+    };
+    const render = () => {
+      list.replaceChildren(...hits.map((h, i) => {
+        const li = document.createElement('li');
+        li.id = `${list.id}-${i}`;
+        li.setAttribute('role', 'option');
+        const name = document.createElement('strong'); name.textContent = h.name;
+        const meta = document.createElement('span'); meta.className = 'muted';
+        meta.textContent = [h.where, h.n ? ordinaci(h.n) : null].filter(Boolean).join(' · ');
+        li.append(name, meta);
+        if (h.accepting) { const ok = document.createElement('span'); ok.className = 'tile-ok'; ok.textContent = `✓ ${prijima(h.accepting)}`; li.append(ok); }
+        li.addEventListener('mousedown', (e) => { e.preventDefault(); location.href = h.url; });
+        return li;
+      }));
+      list.hidden = hits.length === 0;
+      input.setAttribute('aria-expanded', String(!list.hidden));
+      highlight(-1);
+    };
+    const lookup = async () => {
+      const q = input.value.trim();
+      if (q.length < 2) { hits = []; render(); return; }
+      const my = ++seq;
+      try {
+        const r = await fetch(`/api/mista?s=${encodeURIComponent(spec())}&q=${encodeURIComponent(q)}`);
+        const data = (await r.json()) as Hit[];
+        if (my === seq) { hits = data; render(); }   // ignore answers that arrive out of order
+      } catch { /* offline: plain search still works */ }
+    };
+
+    input.addEventListener('input', () => { clearTimeout(timer); timer = window.setTimeout(lookup, 150); });
+    input.addEventListener('focus', () => { if (hits.length) { list.hidden = false; input.setAttribute('aria-expanded', 'true'); } });
+    input.addEventListener('blur', () => setTimeout(close, 100));
+    specEl?.addEventListener('change', () => { if (input.value.trim().length >= 2) lookup(); });
+    input.addEventListener('keydown', (e) => {
+      if (list.hidden || !hits.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlight((active + 1) % hits.length); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active <= 0 ? hits.length - 1 : active - 1); }
+      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); location.href = hits[active].url; }
+      else if (e.key === 'Escape') { close(); }
+    });
+  });
+</script>
