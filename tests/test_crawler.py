@@ -162,3 +162,20 @@ def test_not_the_practices_own_site(web):
 def test_portal_pages_stay_with_their_doctor(base):
     links = [("/novak/kontakt", "Kontakt"), ("/svoboda/novi-pacienti", "Noví pacienti"), ("/kontakt", "Kontakt")]
     assert crawler.pick_links(base, links) == ["http://www.gynekolog.cz/novak/kontakt"]
+
+
+def test_variants_try_the_usual_fixes():
+    assert crawler._variants("http://zubar.cz/o-nas") == [
+        "http://zubar.cz/o-nas", "https://zubar.cz/o-nas", "http://www.zubar.cz/o-nas", "https://www.zubar.cz/o-nas"]
+
+
+def test_falls_back_to_http_when_https_is_broken(site):
+    https = site.replace("http://", "https://")          # the test server speaks plain http only
+    r = crawler.check_site(https + "/", allow_private=True, delay=0)
+    assert r.error is None and r.verdict.status == "accepting"
+
+
+@pytest.mark.parametrize("err,kind", [("HTTP 404", "HTTP 404"), ("URLError: <urlopen error [Errno -2] Name or service not known>", "DNS: domain not found"),
+                                      ("URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]>", "TLS/certificate"), ("TimeoutError: timed out", "timeout")])
+def test_error_kinds(err, kind):
+    assert crawler.error_kind(err) == kind

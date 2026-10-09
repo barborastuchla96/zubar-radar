@@ -315,6 +315,62 @@ class SiteResult:
     provider_ids: list[int] = field(default_factory=list)
 
 
+def _variants(url: str) -> list[str]:
+    """The address as listed, then the usual fixes: other scheme, with/without www."""
+    u = urllib.parse.urlsplit(url)
+    host = u.netloc
+    try:
+        ipaddress.ip_address(u.hostname or "")
+        hosts_differ = False                    # no "www." for a bare IP address
+    except ValueError:
+        hosts_differ = True
+    other_host = host[4:] if host.startswith("www.") else "www." + host
+    other_scheme = "https" if u.scheme == "http" else "http"
+    seen, out = set(), []
+    combos = [(u.scheme, host), (other_scheme, host)]
+    if hosts_differ:
+        combos += [(u.scheme, other_host), (other_scheme, other_host)]
+    for scheme, h in combos:
+        v = urllib.parse.urlunsplit((scheme, h, u.path, u.query, ""))
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
+
+
+def _fetch_any(url: str, allow_private: bool) -> tuple[str, str]:
+    """Fetch, retrying the usual address fixes when the site can't be reached as listed
+    (dead http, broken certificate, missing www). Slow sites (timeouts) are not retried."""
+    first: Exception | None = None             # if nothing works, report what the listed address said
+    for cand in _variants(url):
+        try:
+            return fetch(cand, allow_private)
+        except BlockedURL:
+            raise
+        except Exception as e:
+            first = first or e
+            if isinstance(e, urllib.error.HTTPError) and e.code < 500 and e.code not in (403, 404):
+                break                           # the server answered clearly; another address won't help
+            if isinstance(e, (TimeoutError, socket.timeout)) or "timed out" in str(e):
+                break                           # slow site: retrying only doubles the wait
+    assert first is not None
+    raise first
+
+
+def error_kind(error: str) -> str:
+    """Group crawl errors for the run summary."""
+    e = error.lower()
+    for needle, kind in (("http 4", error.split(":")[0]), ("http 5", "HTTP 5xx"), ("timed out", "timeout"),
+                         ("timeout", "timeout"), ("certificate", "TLS/certificate"), ("ssl", "TLS/certificate"),
+                         ("name or service", "DNS: domain not found"), ("nodename", "DNS: domain not found"),
+                         ("getaddrinfo", "DNS: domain not found"), ("no address", "DNS: domain not found"),
+                         ("refused", "connection refused"), ("reset", "connection reset"),
+                         ("not html", "not HTML"), ("robots", "blocked by robots.txt"), ("non-public", "non-public address")):
+        if needle in e:
+            return kind
+    return error.split(":")[0][:40]
+
+
 def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY) -> SiteResult:
     res = SiteResult(url)
     robots = urllib.robotparser.RobotFileParser()
@@ -327,7 +383,7 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
         if not robots.can_fetch(USER_AGENT, url):
             res.error = "blocked by robots.txt"
             return res
-        final_url, html = fetch(url, allow_private)
+        final_url, html = _fetch_any(url, allow_private)
         text, links = extract(html)
         best = classify(text)
         best_page = final_url

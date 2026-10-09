@@ -161,6 +161,7 @@ def cmd_crawl(args) -> None:
     print(f"checking {len(sites)} websites ({n_prov} practices), {args.workers} at a time…", flush=True)
 
     stats: Counter[str] = Counter()
+    errors: Counter[str] = Counter()
     done = 0
 
     def progress(r):
@@ -169,6 +170,8 @@ def cmd_crawl(args) -> None:
         v = r.verdict
         key = r.error and "error" or (v.status if v and v.status else ("conflicting" if v and v.conflicting else "nothing"))
         stats[key] += 1
+        if r.error:
+            errors[crawler.error_kind(r.error)] += 1
         if key in ("accepting", "not_accepting", "waitlist", "conflicting") or (args.verbose and r.error):
             detail = r.error or f"[{v.scope}] {v.snippet[:110]}"
             print(f"  {key:<13} {r.page_url or r.url}\n                {detail}", flush=True)
@@ -185,6 +188,8 @@ def cmd_crawl(args) -> None:
                 written += record_crawl(conn, results)
     print("\nsummary: " + ", ".join(f"{k} {stats[k]}" for k in
           ("accepting", "waitlist", "not_accepting", "conflicting", "nothing", "error")))
+    if errors:
+        print("errors by type: " + ", ".join(f"{k} {n}" for k, n in errors.most_common(10)))
     print("dry run: nothing written" if args.dry_run else f"wrote {written} web_crawl signals")
 
 
