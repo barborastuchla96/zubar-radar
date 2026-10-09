@@ -13,6 +13,7 @@ import csv
 import io
 import re
 import unicodedata
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator
@@ -147,6 +148,25 @@ class Provider:
     web: str | None = None
     care_form: str | None = None
     _merged_labels: list[str] = field(default_factory=list, repr=False)
+
+
+def disambiguate_slugs(provs: list[Provider]) -> list[Provider]:
+    """Towns that share a name ("Benešov" in two regions) must not share a page.
+
+    The district with the most practices keeps the plain slug, so existing URLs stay;
+    the others get the district appended: benesov-blansko.
+    """
+    by_slug: dict[str, Counter] = defaultdict(Counter)
+    for p in provs:
+        if p.city_slug and p.district:
+            by_slug[p.city_slug][p.district] += 1
+    for p in provs:
+        districts = by_slug.get(p.city_slug or "")
+        if districts and len(districts) > 1:
+            main = max(districts.items(), key=lambda kv: (kv[1], kv[0]))[0]
+            if p.district and p.district != main:
+                p.city_slug = f"{p.city_slug}-{slugify(p.district)}"
+    return provs
 
 
 def open_csv(path: Path) -> tuple[csv.DictReader, io.TextIOBase]:

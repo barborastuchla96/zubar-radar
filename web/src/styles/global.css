@@ -194,3 +194,22 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 .alert-form input[type=email] { width: 100%; }
 @media (max-width: 640px) { .alert-form { grid-template-columns: 1fr; } .alert-form .btn { width: 100%; } }
 .alert-form input, .alert-form select, .alert-form .btn { min-height: 48px; }
+
+/* region map */
+.map-title { margin-top: 1.75rem; }
+.region-map svg { display: block; width: 100%; max-width: 820px; height: auto; margin: .5rem 0 1rem; }
+.region-map .kraj { fill: color-mix(in srgb, var(--brand) 14%, var(--surface)); stroke: var(--surface); stroke-width: 1.5; stroke-linejoin: round; transition: fill .15s; }
+.region-map .kraj.praha { fill: color-mix(in srgb, var(--brand) 30%, var(--surface)); }
+.region-map a:hover .kraj, .region-map a:focus-visible .kraj { fill: var(--brand); }
+.region-map a[aria-current="page"] .kraj { fill: var(--brand); }
+.region-map a:focus-visible { outline: none; }
+.region-map a:focus-visible .kraj { stroke: var(--text); stroke-width: 2.5; }
+.region-map .kraj-label { font-size: 12px; font-weight: 700; fill: var(--text); pointer-events: none; paint-order: stroke; stroke: color-mix(in srgb, var(--brand) 14%, var(--surface)); stroke-width: 3px; }
+.region-map .kraj-label.praha { font-size: 10px; }
+.region-map a:hover .kraj-label, .region-map a:focus-visible .kraj-label, .region-map a[aria-current="page"] .kraj-label { fill: var(--brand-ink); stroke: var(--brand); }
+.region-pills a[aria-current="page"] { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); }
+/* on phones the map is too small for names: show it as a picture, and the buttons below do the work */
+@media (max-width: 640px) { .region-map .kraj-label { display: none; } }
+@media (min-width: 641px) { .region-pills { display: none; } }
+.map-credit { margin: .6rem 0 1rem; font-size: .8rem; }
+.map-credit a { color: inherit; }

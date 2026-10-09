@@ -9,7 +9,7 @@ from typing import Iterable
 import psycopg
 from psycopg.rows import dict_row
 
-from .nrpzs import Provider
+from .nrpzs import Provider, disambiguate_slugs
 
 PROVIDER_COLS = (
     "nrpzs_place_id", "facility_id", "ico", "name", "facility_type", "street", "house_no",
@@ -37,7 +37,7 @@ class ImportStats:
 
 def import_providers(conn: psycopg.Connection, providers: Iterable[Provider]) -> ImportStats:
     """Upsert providers in one transaction and deactivate ones no longer listed."""
-    provs = list(providers)
+    provs = disambiguate_slugs(list(providers))
     with conn.transaction(), conn.cursor() as cur:
         cur.execute(
             "CREATE TEMP TABLE stage (LIKE providers INCLUDING DEFAULTS) ON COMMIT DROP;"

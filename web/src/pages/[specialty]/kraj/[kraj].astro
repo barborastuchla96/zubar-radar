@@ -1,0 +1,69 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ProviderCard from '../../../components/ProviderCard.astro';
+import PlaceSearch from '../../../components/PlaceSearch.astro';
+import RegionMap from '../../../components/RegionMap.astro';
+import StatusLegend from '../../../components/StatusLegend.astro';
+import { cities, regionAccepting } from '../../../lib/db';
+import { regionBySlug } from '../../../lib/regions';
+import { SPECIALTIES, breadcrumbLd, cityUrl, ordinaci, placeCompare, prijima, regionUrl, specialty } from '../../../lib/site';
+
+const spec = specialty(Astro.params.specialty ?? '');
+const region = regionBySlug(Astro.params.kraj ?? '');
+if (!spec || !region) return Astro.rewrite('/404');
+if (region.slug === 'hlavni-mesto-praha') return Astro.redirect(cityUrl(spec.slug, 'praha'), 301);
+
+const places = (await cities(spec.slug, 1)).filter((c) => c.region === region.name)
+  .sort((a, b) => placeCompare(a.city, b.city));
+const total = places.reduce((t, c) => t + c.n, 0);
+const acceptingTotal = places.reduce((t, c) => t + c.accepting, 0);
+const accepting = await regionAccepting(spec.slug, region.name);
+const biggest = [...places].sort((a, b) => b.n - a.n).slice(0, 8);
+
+const title = `${spec.plural} – ${region.name} – kdo přijímá nové pacienty`;
+const description = `${spec.plural} v kraji ${region.name}: ${ordinaci(total)} v ${places.length} obcích. ` +
+  (acceptingTotal ? `Podle hlášení ${prijima(acceptingTotal)} nové pacienty.` : 'Podívejte se, kdo přijímá nové pacienty.');
+Astro.response.headers.set('Cache-Control', 'public, max-age=600');
+const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`], [region.name, regionUrl(spec.slug, region.slug)]]);
+---
+<Base {title} {description} activeSpecialty={spec.slug} {jsonLd}>
+  <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › {region.name}</div>
+  <h1>{spec.plural} – {region.name}</h1>
+  <p class="muted">
+    {ordinaci(total)} v {places.length.toLocaleString('cs')} obcích
+    {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
+  </p>
+
+  <PlaceSearch specialty={spec.slug} compact />
+
+  {accepting.length > 0 && (
+    <>
+      <h2>Kde teď přijímají</h2>
+      <StatusLegend />
+      <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
+    </>
+  )}
+
+  {biggest.length > 0 && (
+    <>
+      <h2>Největší města</h2>
+      <ul class="pills">{biggest.map((c) => <li><a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a></li>)}</ul>
+    </>
+  )}
+
+  <h2>Všechny obce v kraji</h2>
+  <ul class="place-list">
+    {places.map((c) => (
+      <li>
+        <a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a> <span class="muted nowrap">({c.n})</span>
+        {c.accepting > 0 && <span class="nowrap tile-ok"> ✓ {prijima(c.accepting)}</span>}
+      </li>
+    ))}
+  </ul>
+
+  <h2>Jiný kraj</h2>
+  <RegionMap specialty={spec.slug} active={region.slug} />
+
+  <h2>Další obory – {region.name}</h2>
+  <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={regionUrl(s.slug, region.slug)}>{s.plural}</a></li>)}</ul>
+</Base>

@@ -2,7 +2,9 @@
 import Base from '../../layouts/Base.astro';
 import { cities } from '../../lib/db';
 import PlaceSearch from '../../components/PlaceSearch.astro';
-import { cityUrl, ordinaci, placeCompare, plural, specialty } from '../../lib/site';
+import RegionMap from '../../components/RegionMap.astro';
+import { regionByName } from '../../lib/regions';
+import { cityUrl, ordinaci, placeCompare, plural, regionUrl, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -26,9 +28,11 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
   <h1>{spec.plural} podle měst</h1>
   <p class="muted">{ordinaci(all.reduce((s, c) => s + c.n, 0))} v {all.length.toLocaleString('cs')} {plural(all.length, 'obci', 'obcích', 'obcích')}.</p>
   <PlaceSearch specialty={spec.slug} compact />
+  <h2>Vyberte kraj</h2>
+  <RegionMap specialty={spec.slug} />
   {regions.map(([region, list]) => (
     <section>
-      <h2>{region}</h2>
+      <h2>{regionByName(region) ? <a href={regionUrl(spec.slug, regionByName(region)!.slug)}>{region}</a> : region}</h2>
       <ul class="place-list">
         {list.map((c) => <li><a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a> <span class="muted nowrap">({c.n})</span></li>)}
       </ul>

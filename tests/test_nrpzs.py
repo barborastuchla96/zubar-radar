@@ -73,3 +73,10 @@ def test_map_override_and_errors():
 ])
 def test_gps_parsing(gps, expected):
     assert nrpzs.parse_coords(None, None, gps) == expected
+
+
+def test_same_named_towns_get_separate_slugs():
+    mk = lambda pid, district: nrpzs.Provider(pid, "x", {"zubar"}, "", city="Benešov", city_slug="benesov", district=district)
+    provs = [mk("1", "Benešov"), mk("2", "Benešov"), mk("3", "Blansko"), mk("4", None)]
+    nrpzs.disambiguate_slugs(provs)
+    assert [p.city_slug for p in provs] == ["benesov", "benesov", "benesov-blansko", "benesov"]

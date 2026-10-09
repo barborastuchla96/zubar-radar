@@ -73,8 +73,15 @@ export function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+/** "Benešov (okres Blansko)" for a town that shares its name with a bigger one elsewhere. */
+export const placeLabel = (city: string, slug: string, district: string | null) =>
+  district && slug !== slugify(city) ? `${city} (okres ${district})` : city;
+
 export const providerUrl = (p: { id: number; name: string }) => `/lekar/${p.id}-${slugify(p.name)}`;
 export const cityUrl = (spec: string, city: string) => `/${spec}/${city}`;
+/** Region page; Prague is both a city and a region and already has its own page. */
+export const regionUrl = (spec: string, kraj: string) =>
+  kraj === 'hlavni-mesto-praha' ? cityUrl(spec, 'praha') : `/${spec}/kraj/${kraj}`;
 
 export function address(p: { street: string | null; house_no: string | null; city: string | null; postcode?: string | null }) {
   const street = [p.street, p.house_no].filter(Boolean).join(' ');

@@ -1,0 +1,44 @@
+---
+// Clickable map of the 14 regions. Plain links, so it works without JavaScript.
+// Region boundaries © ČÚZK (INSPIRE), CC BY 4.0 — see tools/region_map.py.
+import { REGIONS, REGION_VIEWBOX } from '../lib/regions';
+import { regionUrl } from '../lib/site';
+
+interface Props { specialty: string; active?: string; syncWith?: string }
+const { specialty, active, syncWith } = Astro.props;
+---
+<div class="region-map" data-sync={syncWith}>
+  <svg viewBox={REGION_VIEWBOX} role="group" aria-label="Mapa krajů České republiky">
+    {REGIONS.map((r) => (
+      <a href={regionUrl(specialty, r.slug)} data-kraj={r.slug} aria-label={r.name}
+         aria-current={r.slug === active ? 'page' : undefined}>
+        <title>{r.name}</title>
+        <path d={r.d} class={`kraj${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`} />
+        <text x={r.lx} y={r.ly} class={`kraj-label${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`}
+              text-anchor="middle" dominant-baseline="middle">{r.label}</text>
+      </a>
+    ))}
+  </svg>
+  <ul class="pills region-pills">
+    {[...REGIONS].sort((a, b) => (a.slug === 'hlavni-mesto-praha' ? -1 : b.slug === 'hlavni-mesto-praha' ? 1
+        : a.name.localeCompare(b.name, 'cs'))).map((r) => (
+      <li><a href={regionUrl(specialty, r.slug)} data-kraj={r.slug} aria-current={r.slug === active ? 'page' : undefined}>{r.name}</a></li>
+    ))}
+  </ul>
+  <p class="small muted map-credit">Hranice krajů © <a href="/o-projektu">ČÚZK, CC BY 4.0</a></p>
+</div>
+
+<script>
+  // On the homepage the map follows the "Koho hledáte?" select.
+  document.querySelectorAll<HTMLElement>('.region-map[data-sync]').forEach((map) => {
+    const select = document.getElementById(map.dataset.sync!) as HTMLSelectElement | null;
+    if (!select) return;
+    // setAttribute, not .href: inside the SVG these are SVG links, whose href is read-only
+    const update = () => map.querySelectorAll<HTMLElement>('a[data-kraj]').forEach((a) => {
+      const k = a.dataset.kraj;
+      a.setAttribute('href', k === 'hlavni-mesto-praha' ? `/${select.value}/praha` : `/${select.value}/kraj/${k}`);
+    });
+    select.addEventListener('change', update);
+    update();
+  });
+</script>

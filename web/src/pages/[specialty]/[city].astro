@@ -7,14 +7,14 @@ import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { cityProviders, sponsored } from '../../lib/db';
-import { SPECIALTIES, breadcrumbLd, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
+import { SPECIALTIES, breadcrumbLd, cityUrl, isPragueSlug, ordinaci, placeLabel, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
 const rows = await cityProviders(spec.slug, Astro.params.city ?? '');
 if (rows.length === 0) return Astro.rewrite('/404');
 
-const city = rows[0].city!;
+const city = placeLabel(rows[0].city!, rows[0].city_slug!, rows[0].district);
 const sponsors = await sponsored(spec.slug, Astro.params.city!);
 const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed: 0 } as Record<string, number>;
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;

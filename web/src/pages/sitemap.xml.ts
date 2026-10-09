@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
 import { sitemapEntries } from '../lib/db';
-import { SPECIALTIES, cityUrl, providerUrl } from '../lib/site';
+import { REGIONS } from '../lib/regions';
+import { SPECIALTIES, cityUrl, providerUrl, regionUrl } from '../lib/site';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site!.toString().replace(/\/$/, '');
-  const urls = ['/', ...SPECIALTIES.flatMap((s) => [`/${s.slug}`, cityUrl(s.slug, 'praha')])];
+  const urls = ['/', ...SPECIALTIES.flatMap((s) => [`/${s.slug}`, cityUrl(s.slug, 'praha'),
+    ...REGIONS.filter((r) => r.slug !== 'hlavni-mesto-praha').map((r) => regionUrl(s.slug, r.slug))])];
   for (const e of await sitemapEntries()) {
     urls.push(e.kind === 'city' ? cityUrl(e.specialty!, e.slug) : providerUrl({ id: Number(e.slug), name: e.name }));
   }

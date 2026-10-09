@@ -1,0 +1,142 @@
+"""Generate web/src/lib/regions.ts: simplified SVG outlines of the 14 Czech regions (kraje).
+
+Source: ČÚZK INSPIRE administrative units via github.com/siwekm/czech-geojson (CC BY 4.0).
+Usage:  python tools/region_map.py [kraje.json]   (downloads the file when no path is given)
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import sys
+import urllib.request
+from pathlib import Path
+
+URL = "https://raw.githubusercontent.com/siwekm/czech-geojson/master/kraje.json"
+OUT = Path(__file__).resolve().parent.parent / "web/src/lib/regions.ts"
+WIDTH = 640                 # viewBox width; height follows from the projection
+TOLERANCE = 0.7             # simplification, in viewBox units
+LABEL = {                   # short names shown on the map
+    "Hlavní město Praha": "Praha", "Kraj Vysočina": "Vysočina",
+}
+
+
+def slugify(s: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+    return "-".join("".join(c if c.isalnum() else " " for c in s).split())
+
+
+def thin(pts, min_step):
+    """Drop points closer than min_step to the last kept one (cheap pre-pass before Douglas–Peucker)."""
+    out = [pts[0]]
+    for p in pts[1:-1]:
+        if math.hypot(p[0] - out[-1][0], p[1] - out[-1][1]) >= min_step:
+            out.append(p)
+    return out + [pts[-1]]
+
+
+def douglas_peucker(pts, tol):
+    pts = thin(pts, tol / 2)
+    if len(pts) < 3:
+        return pts
+    keep = [False] * len(pts)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(pts) - 1)]
+    while stack:
+        a, b = stack.pop()
+        (x1, y1), (x2, y2) = pts[a], pts[b]
+        dx, dy = x2 - x1, y2 - y1
+        norm = math.hypot(dx, dy) or 1e-12
+        best, idx = 0.0, -1
+        for i in range(a + 1, b):
+            x, y = pts[i]
+            d = abs(dy * x - dx * y + x2 * y1 - y2 * x1) / norm if (dx or dy) else math.hypot(x - x1, y - y1)
+            if d > best:
+                best, idx = d, i
+        if best > tol:
+            keep[idx] = True
+            stack += [(a, idx), (idx, b)]
+    return [p for p, k in zip(pts, keep) if k]
+
+
+def inside(x, y, ring):
+    c = False
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            c = not c
+    return c
+
+
+def seg_dist(px, py, ring):
+    best = float("inf")
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+        dx, dy = x2 - x1, y2 - y1
+        t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy or 1e-12)))
+        best = min(best, math.hypot(px - x1 - t * dx, py - y1 - t * dy))
+    return best
+
+
+def label_point(ring, holes):
+    """Point deepest inside the shape (rough pole of inaccessibility) — where the name fits best."""
+    xs, ys = [p[0] for p in ring], [p[1] for p in ring]
+    best, at = -1.0, (sum(xs) / len(xs), sum(ys) / len(ys))
+    step = 3.0
+    y = min(ys)
+    while y < max(ys):
+        x = min(xs)
+        while x < max(xs):
+            if inside(x, y, ring) and not any(inside(x, y, h) for h in holes):
+                # horizontal room matters more than vertical for a text label
+                d = min(seg_dist(x, y, r) for r in [ring, *holes])
+                if d > best:
+                    best, at = d, (x, y)
+            x += step
+        y += step
+    return at
+
+
+def main() -> None:
+    src = sys.argv[1] if len(sys.argv) > 1 else None
+    data = json.loads(Path(src).read_text() if src else urllib.request.urlopen(URL, timeout=60).read())
+    feats = data["features"]
+    rings_ll = []
+    for f in feats:
+        g = f["geometry"]
+        polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
+        rings_ll.append([r for p in polys for r in p])
+    lons = [x for rs in rings_ll for r in rs for x, _ in r]
+    lats = [y for rs in rings_ll for r in rs for _, y in r]
+    k = math.cos(math.radians((min(lats) + max(lats)) / 2))
+    scale = WIDTH / ((max(lons) - min(lons)) * k)
+    height = round((max(lats) - min(lats)) * scale)
+    lon0, lat1 = min(lons), max(lats)
+    proj = lambda lon, lat: ((lon - lon0) * k * scale, (lat1 - lat) * scale)
+
+    out = []
+    for f, rings in zip(feats, rings_ll):
+        rings = [douglas_peucker([proj(*p) for p in r], TOLERANCE) for r in rings]
+        rings = [r[:-1] if r[0] == r[-1] else r for r in rings]
+        d = " ".join("M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in r) + " Z" for r in rings)
+        lx, ly = label_point(rings[0], rings[1:])
+        name = f["name"]
+        out.append({"name": name, "slug": slugify(name), "label": LABEL.get(name, name.replace(" kraj", "")),
+                    "d": d, "lx": round(lx, 1), "ly": round(ly, 1)})
+        print(f"{name:<22} {sum(len(r) for r in rings):>5} pts", file=sys.stderr)
+    # Prague last, so it is drawn on top of (and clickable inside) Středočeský kraj
+    out.sort(key=lambda r: r["slug"] == "hlavni-mesto-praha")
+
+    OUT.write_text(
+        "// Generated by tools/region_map.py — do not edit by hand.\n"
+        "// Region boundaries: © ČÚZK (INSPIRE), via github.com/siwekm/czech-geojson, CC BY 4.0.\n"
+        f"export const REGION_VIEWBOX = '0 0 {WIDTH} {height}';\n\n"
+        "export interface Region { name: string; slug: string; label: string; d: string; lx: number; ly: number }\n\n"
+        "export const REGIONS: Region[] = " + json.dumps(out, ensure_ascii=False, indent=1) + ";\n\n"
+        "export const regionBySlug = (slug: string) => REGIONS.find((r) => r.slug === slug);\n"
+        "export const regionByName = (name: string) => REGIONS.find((r) => r.name === name);\n"
+    )
+    print(f"wrote {OUT} ({OUT.stat().st_size // 1024} kB)", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

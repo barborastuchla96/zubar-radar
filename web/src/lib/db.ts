@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { placeLabel } from './site';
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL is not set');
@@ -90,10 +91,13 @@ export async function alternatives(p: ProviderRow, specialty: string, limit = 5)
 
 export interface CityCount { city_slug: string; city: string; region: string | null; n: number; accepting: number }
 
+const labelled = (rows: (CityCount & { district: string | null })[]): CityCount[] =>
+  rows.map(({ district, ...c }) => ({ ...c, city: placeLabel(c.city, c.city_slug, district) }));
+
 /** Cities ranked by number of providers for a specialty. */
 export async function cities(specialty: string, minProviders = 1, limit = 10000): Promise<CityCount[]> {
-  return sql<CityCount[]>`
-    SELECT p.city_slug, min(p.city) AS city, min(p.region) AS region, count(*)::int AS n,
+  return labelled(await sql<(CityCount & { district: string | null })[]>`
+    SELECT p.city_slug, min(p.city) AS city, min(p.region) AS region, min(p.district) AS district, count(*)::int AS n,
            count(*) FILTER (WHERE s.status = 'accepting')::int AS accepting
       FROM providers p
       JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
@@ -102,7 +106,7 @@ export async function cities(specialty: string, minProviders = 1, limit = 10000)
      GROUP BY p.city_slug
     HAVING count(*) >= ${minProviders}
      ORDER BY count(*) DESC, min(p.city)
-     LIMIT ${limit}`;
+     LIMIT ${limit}`);
 }
 
 export interface ReportInput {
@@ -172,6 +176,18 @@ export async function pragueAccepting(specialty: string, limit = 24): Promise<Pr
       JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
       JOIN provider_status s ON s.provider_id = p.id AND s.status IN ('accepting', 'waitlist')
      WHERE p.active AND p.city_slug ~ ${PRAGUE_SLUG}
+     ORDER BY ${STATUS_ORDER}, s.last_signal_at DESC
+     LIMIT ${limit}`;
+}
+
+/** Practices in one region (kraj) that are (or may be) taking patients, freshest first. */
+export async function regionAccepting(specialty: string, region: string, limit = 12): Promise<ProviderRow[]> {
+  return sql<ProviderRow[]>`
+    SELECT ${PROVIDER_COLS}
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
+      JOIN provider_status s ON s.provider_id = p.id AND s.status IN ('accepting', 'waitlist')
+     WHERE p.active AND p.region = ${region}
      ORDER BY ${STATUS_ORDER}, s.last_signal_at DESC
      LIMIT ${limit}`;
 }
