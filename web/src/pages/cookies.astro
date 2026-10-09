@@ -3,13 +3,14 @@ import Base from '../layouts/Base.astro';
 import { adsProvider, analytics } from '../lib/site';
 const ads = adsProvider();
 const stats = analytics();
+const mapy = Boolean((process.env.MAPY_API_KEY ?? '').trim());
 ---
 <Base title="Cookies" description="Jaké cookies a podobné technologie web používá.">
   <h1>Cookies</h1>
   {ads !== 'sklik' ? (
     <>
-      <p><strong>Tento web nepoužívá žádné cookies</strong> ani jiné technologie, které by ukládaly
-         informace do vašeho zařízení. Proto se vás na nic neptáme a nezobrazujeme cookie lištu.</p>
+      <p><strong>Tento web nepoužívá žádné cookies</strong> a nic, co by vás sledovalo. Proto se vás na nic
+         neptáme a nezobrazujeme cookie lištu.</p>
       {ads === 'direct' && (
         <p>Reklamy označené „Reklama“ jsou doporučené ordinace, které si zde zaplatily zobrazení.
            Nesledují vás a nepoužívají cookies.</p>
@@ -27,7 +28,10 @@ const stats = analytics();
   <h2>Co dalšího</h2>
   <ul>
     {stats && <li>Návštěvnost měříme anonymně bez cookies (nástroj Umami). Neukládá nic do vašeho zařízení a nesleduje vás napříč weby.</li>}
-    <li>Mapy načítáme z OpenStreetMap. Váš prohlížeč při tom stahuje mapové dlaždice z jejich serverů.</li>
+    <li>Když v ordinaci klepnete na telefonní číslo, prohlížeč si do zavření okna zapamatuje, kam jste volali,
+        abychom se vás po návratu mohli zeptat „Jak to dopadlo?“. Zůstává jen ve vašem zařízení, nikam se neposílá
+        a po zavření okna zmizí.</li>
+    <li>Mapy načítáme z {mapy ? 'Mapy.com (Seznam.cz)' : 'OpenStreetMap'}. Váš prohlížeč při tom stahuje mapové dlaždice z jejich serverů.</li>
     <li>Funkce „Najít v mém okolí“ použije vaši polohu, jen když ji v prohlížeči povolíte. Polohu neukládáme.</li>
     <li>Hlášení o ordinacích ukládáme bez jména a bez IP adresy (viz <a href="/o-projektu">ochrana údajů</a>).</li>
   </ul>
