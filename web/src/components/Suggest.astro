@@ -28,6 +28,8 @@
     input.setAttribute('aria-controls', list.id);
     input.setAttribute('aria-expanded', 'false');
 
+    // English pages: "only English speakers" travels with the chosen place.
+    const go = (url: string) => input.form?.querySelector<HTMLInputElement>('input[name=english]:checked') ? `${url}?english=1` : url;
     let hits: Hit[] = [];
     let active = -1;
     let timer: number | undefined;
@@ -49,7 +51,7 @@
         meta.textContent = [h.where, h.n ? ordinaci(h.n) : null].filter(Boolean).join(' · ');
         li.append(name, meta);
         if (h.accepting) { const ok = document.createElement('span'); ok.className = 'tile-ok'; ok.textContent = `✓ ${prijima(h.accepting)}`; li.append(ok); }
-        li.addEventListener('mousedown', (e) => { e.preventDefault(); location.href = h.url; });
+        li.addEventListener('mousedown', (e) => { e.preventDefault(); location.href = go(h.url); });
         return li;
       }));
       list.hidden = hits.length === 0;
@@ -75,7 +77,7 @@
       if (list.hidden || !hits.length) return;
       if (e.key === 'ArrowDown') { e.preventDefault(); highlight((active + 1) % hits.length); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active <= 0 ? hits.length - 1 : active - 1); }
-      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); location.href = hits[active].url; }
+      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); location.href = go(hits[active].url); }
       else if (e.key === 'Escape') { close(); }
     });
   });

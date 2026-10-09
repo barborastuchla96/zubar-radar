@@ -185,6 +185,8 @@ input[type="radio"] { width: 1.2rem; height: 1.2rem; }
 .grid-cards.compact .spec-tile { padding: .7rem .8rem; }
 .grid-cards.compact .icon { font-size: 1.25rem; }
 .grid-cards.compact .tile-title { font-size: 1rem; }
+.grid-cards.compact .tile-stats { font-size: .92rem; }
+.grid-cards.compact .spec-tile { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 640px) { .grid-cards.compact { grid-template-columns: 1fr 1fr; } }
 
 /* short link lists as chips (no "·" separators that wrap badly) */
@@ -423,3 +425,5 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .site-header .wrap { max-width: 1200px; }
 .notice.unknown-english { background: var(--surface); border: 1px dashed var(--border); color: var(--text); font-size: .95rem; }
 .list-part + .list-part { margin-top: 1.5rem; }
+.english-only { margin-top: .8rem; }
+.place-search .english-only { flex-basis: 100%; margin-top: 0; }

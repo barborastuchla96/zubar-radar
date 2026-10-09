@@ -8,11 +8,13 @@ import { acceptingN, enOf, placeUrl, practices, regionEn } from '../../lib/i18n'
 const spec = specialty(Astro.url.searchParams.get('s') ?? '') ?? SPECIALTIES[0];
 const E = enOf(spec.slug);
 const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
+const englishOnly = Astro.url.searchParams.get('english') === '1';
+const withFilter = (u: string) => (englishOnly ? `${u}?english=1` : u);
 const needle = slugify(q).replace(/-/g, '');
 
 let matches: Awaited<ReturnType<typeof cities>> = [];
 if (needle) {
-  if (needle === 'praha' || needle === 'prague' || needle === 'prag') return Astro.redirect(placeUrl('en', spec.slug, 'praha'), 302);
+  if (needle === 'praha' || needle === 'prague' || needle === 'prag') return Astro.redirect(withFilter(placeUrl('en', spec.slug, 'praha')), 302);
   const all = await cities(spec.slug, 1);
   const flat = (s: string) => s.replace(/-/g, '');
   // "Prague 6" works like "Praha 6"
@@ -21,13 +23,13 @@ if (needle) {
   matches = all.filter((c) => flat(c.city_slug).includes(n2))
     .sort((a, b) => rank(a.city_slug) - rank(b.city_slug) || b.n - a.n).slice(0, 30);
   if (matches.length === 1 || (matches.length > 0 && rank(matches[0].city_slug) === 0 && rank(matches[1]?.city_slug ?? '') !== 0)) {
-    return Astro.redirect(placeUrl('en', spec.slug, matches[0].city_slug), 302);
+    return Astro.redirect(withFilter(placeUrl('en', spec.slug, matches[0].city_slug)), 302);
   }
 }
 ---
 <Base title={`Search: ${q || E.plural}`} description={`${E.plural} – search by town.`} noindex activeSpecialty={spec.slug} alt={`/hledat?s=${spec.slug}&q=${encodeURIComponent(q)}`}>
   <h1>{E.plural}: where are you looking?</h1>
-  <PlaceSearch specialty={spec.slug} {q} />
+  <PlaceSearch specialty={spec.slug} {q} english={englishOnly} />
   {q && matches.length === 0 && (
     <p class="notice bad">Nothing found for “{q}”. Try a town name (e.g. “Kladno”) or a part of Prague (e.g. “Praha 6”).
       Or see <a href={`/en/${E.en}`}>all towns</a>.</p>
@@ -37,7 +39,7 @@ if (needle) {
       <h2>Choose a place</h2>
       <ul class="result-list">
         {matches.map((c) => (
-          <li><a href={placeUrl('en', spec.slug, c.city_slug)}>
+          <li><a href={withFilter(placeUrl('en', spec.slug, c.city_slug))}>
             <strong>{c.city.replace(/ \(okres .*\)$/, '')}</strong>
             <span class="muted">{[isPragueSlug(c.city_slug) ? 'Prague' : c.district ? `${c.district} district` : c.region && regionEn(c.region), practices(c.n)].filter(Boolean).join(' · ')}</span>
             {c.accepting > 0 && <span class="tile-ok">✓ {acceptingN(c.accepting)}</span>}

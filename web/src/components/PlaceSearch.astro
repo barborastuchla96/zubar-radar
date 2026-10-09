@@ -3,14 +3,14 @@
 import { SPECIALTIES } from '../lib/site';
 import { SPECIALTY_EN } from '../lib/i18n';
 import Suggest from './Suggest.astro';
-interface Props { specialty?: string; q?: string; compact?: boolean }
-const { specialty = 'zubar', q = '', compact = false } = Astro.props;
+interface Props { specialty?: string; q?: string; compact?: boolean; english?: boolean }
+const { specialty = 'zubar', q = '', compact = false, english = false } = Astro.props;
 const en = Astro.url.pathname.startsWith('/en');
 const T = en
   ? { action: '/en/search', who: 'Who are you looking for?', where: 'Where? Type a town or a part of Prague', ph: 'E.g. Praha 6, Kladno, Brno', go: 'Search' }
   : { action: '/hledat', who: 'Koho hledáte?', where: 'Kde? Napište město nebo část Prahy', ph: 'Např. Praha 6, Kladno, Brno', go: 'Hledat' };
 ---
-<form class={`place-search card${compact ? ' compact' : ''}`} method="get" action={T.action} role="search">
+<form class={`place-search card${compact ? ' compact' : ''}`} id="place-search" method="get" action={T.action} role="search">
   <div class="field">
     <label for="ps-s">{T.who}</label>
     <select id="ps-s" name="s">
@@ -25,5 +25,6 @@ const T = en
     </div>
   </div>
   <button class="btn big" type="submit">{T.go}</button>
+  {en && <label class="opt english-only"><input type="checkbox" name="english" value="1" checked={english} /> 🗣️ Only practices where we know you can speak English</label>}
 </form>
 <Suggest />

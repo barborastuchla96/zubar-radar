@@ -26,6 +26,9 @@ const open = (counts.accepting ?? 0) + (counts.waitlist ?? 0);
 const speaks = rows.filter((r) => r.english);
 const others = rows.filter((r) => !r.english);
 const english = speaks.length;
+// ?english=1 (the search checkbox): only practices where we know you can speak English,
+// and when there are none in this town, the nearest ones within 25 km.
+const englishOnly = Astro.url.searchParams.get('english') === '1';
 const located = rows.filter((r) => r.lat != null && r.lng != null);
 const center = located.length
   ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
@@ -36,6 +39,10 @@ const around = center
       .filter((r) => !here.has(r.id)).slice(0, 6).map(({ km, ...r }) => r)
   : [];
 const prague = isPragueSlug(citySlug);
+const englishNearby = englishOnly && english === 0 && center
+  ? (await nearby(spec.slug, center.lat, center.lng, 25, 1000)).filter((r) => r.english && !here.has(r.id)).slice(0, 12)
+  : [];
+const allUrl = placeUrl('en', spec.slug, citySlug);
 const fact = factLineEn(city, E.plural, counts.accepting ?? 0, rows.length, english);
 const title = `${E.plural} in ${city} accepting new patients, incl. English-speaking (${monthYearEn()})`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
@@ -45,7 +52,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   [city, placeUrl('en', spec.slug, citySlug)],
 ]);
 ---
-<Base {title} description={`${fact} Contacts, map and which practices speak English.`} noindex={rows.length < 3}
+<Base {title} description={`${fact} Contacts, map and which practices speak English.`} noindex={rows.length < 3 || englishOnly}
       activeSpecialty={spec.slug} {jsonLd} alt={cityUrl(spec.slug, citySlug)}>
   <div class="crumbs"><a href="/en">Home</a> › <a href={specUrl('en', spec.slug)}>{E.plural}</a> ›
     {prague && <> <a href={placeUrl('en', spec.slug, 'praha')}>Prague</a> ›</>} {city}</div>
@@ -53,6 +60,25 @@ const jsonLd = breadcrumbLd(Astro.site, [
   <p class="muted fact">{fact}</p>
   <SpecialistNote {spec} />
 
+  {englishOnly ? (
+    <>
+      <p class="notice english-note">🗣️ Showing only practices where we know <strong>you can speak English</strong>.{' '}
+        <a href={allUrl}>Show all {rows.length} practices</a> (many others speak English too; we just don't know yet).</p>
+      {english > 0 ? (
+        <div class="grid grid-2 list">{speaks.map((p) => <ProviderCard p={p} />)}</div>
+      ) : englishNearby.length > 0 ? (
+        <>
+          <h2>None known in {city} yet. Nearest English-speaking practices</h2>
+          <p class="small muted">Distance from the centre of {city}.</p>
+          <div class="grid grid-2 list">{englishNearby.map((p) => <ProviderCard p={p} />)}</div>
+        </>
+      ) : (
+        <p class="card">We don't know yet of any English-speaking practice of this kind within 25 km.
+          Our data on English is new and growing every week. <a href={allUrl}>See all practices in {city}</a> and ask:
+          many doctors speak English.</p>
+      )}
+    </>
+  ) : (<>
   <p class="intro">
     {english > 0
       ? <>First the {english === 1 ? 'practice' : `${english} practices`} where we know <strong>you can speak English</strong>, then all the others.</>
@@ -96,6 +122,8 @@ const jsonLd = breadcrumbLd(Astro.site, [
       <div class="grid grid-2">{around.map((p) => <ProviderCard p={p} />)}</div>
     </>
   )}
+
+  </>)}
 
   <h2>Other doctors – {city}</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={placeUrl('en', s.slug, citySlug)}>{enOf(s.slug).plural}</a></li>)}</ul>

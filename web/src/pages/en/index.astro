@@ -63,6 +63,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
         </div>
         <button class="btn big" type="submit">Search</button>
       </div>
+      <label class="opt english-only"><input type="checkbox" name="english" value="1" /> 🗣️ Only practices where we know you can speak English</label>
       <ul class="pills big-cities" aria-label="Big cities">
         {BIG.map(([slug, name]) => <li><a href={placeUrl('en', 'praktik', slug)} data-city={slug}>{name}</a></li>)}
       </ul>
@@ -71,7 +72,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
   <form method="get" action="/en/near" class="near" id="near-form">
     <input type="hidden" name="s" value="praktik" />
-    <input type="hidden" name="lat" /><input type="hidden" name="lng" />
+    <input type="hidden" name="lat" /><input type="hidden" name="lng" /><input type="hidden" name="english" />
     <span class="muted">or</span>
     <button class="btn secondary" type="submit" id="near-btn">📍 Show practices near me</button>
   </form>
@@ -97,8 +98,9 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 <script>
   const search = document.getElementById('home-search') as HTMLFormElement;
   const checked = () => search.querySelector<HTMLInputElement>('input[name=s]:checked');
+  const englishOnly = () => !!search.querySelector<HTMLInputElement>('input[name=english]:checked');
   const syncCities = () => search.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
-    a.href = `/en/${checked()?.dataset.en ?? 'gp'}/${a.dataset.city}`;
+    a.href = `/en/${checked()?.dataset.en ?? 'gp'}/${a.dataset.city}${englishOnly() ? '?english=1' : ''}`;
   });
   search.addEventListener('change', syncCities);
   syncCities();
@@ -108,6 +110,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     (form.elements.namedItem('s') as HTMLInputElement).value = checked()?.value ?? 'praktik';
+    (form.elements.namedItem('english') as HTMLInputElement).value = englishOnly() ? '1' : '';
     if (!navigator.geolocation) { msg.hidden = false; msg.textContent = "Your browser can't share your location."; return; }
     msg.hidden = false; msg.textContent = 'Finding your location… Your browser may ask for permission.';
     navigator.geolocation.getCurrentPosition(

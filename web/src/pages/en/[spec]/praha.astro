@@ -8,7 +8,7 @@ import Tile from '../../../components/Tile.astro';
 import AreaMap from '../../../components/AreaMap.astro';
 import SpecialistNote from '../../../components/SpecialistNote.astro';
 import { pragueDetail, toMap } from '../../../lib/areas';
-import { cities, pragueAccepting } from '../../../lib/db';
+import { cities, nearby, pragueAccepting } from '../../../lib/db';
 import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug } from '../../../lib/site';
 import { acceptingN, enOf, factLineEn, monthYearEn, placeUrl, practices, specUrl, specialtyFromEn } from '../../../lib/i18n';
 
@@ -20,11 +20,18 @@ districts.sort((a, b) => Number(a.city_slug === 'praha') - Number(b.city_slug ==
 const total = districts.reduce((t, c) => t + c.n, 0);
 const acceptingTotal = districts.reduce((t, c) => t + c.accepting, 0);
 const accepting = (await pragueAccepting(spec.slug)).sort((a, b) => Number(b.english) - Number(a.english));
+// ?english=1 from the search checkbox: every practice in Prague where we know you can speak English.
+const englishOnly = Astro.url.searchParams.get('english') === '1';
+const RANK: Record<string, number> = { accepting: 0, waitlist: 1, mixed: 2, unknown: 3, not_accepting: 4 };
+const englishAll = englishOnly
+  ? (await nearby(spec.slug, 50.0755, 14.4378, 25, 3000)).filter((p) => p.english && isPragueSlug(p.city_slug ?? ''))
+      .sort((a, b) => (RANK[a.status] ?? 3) - (RANK[b.status] ?? 3))
+  : [];
 
 const dots = districts.filter((c) => c.lat != null && c.lng != null && c.city_slug !== 'praha').map((c) => {
   const [x, y] = toMap(pragueDetail, c.lat!, c.lng!);
   return {
-    href: placeUrl('en', spec.slug, c.city_slug), label: c.city, x, y, r: 19, ok: c.accepting > 0, showLabel: false,
+    href: placeUrl('en', spec.slug, c.city_slug) + (englishOnly ? '?english=1' : ''), label: c.city, x, y, r: 19, ok: c.accepting > 0, showLabel: false,
     inner: c.city.replace('Praha ', ''), title: `${c.city}: ${practices(c.n)}${c.accepting ? `, ${acceptingN(c.accepting)}` : ''}`,
   };
 });
@@ -40,20 +47,32 @@ const title = `${E.plural} in Prague accepting new patients, incl. English-speak
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [['Home', '/en'], [E.plural, specUrl('en', spec.slug)], ['Prague', placeUrl('en', spec.slug, 'praha')]]);
 ---
-<Base {title} description={`${fact} By district, with contacts and which practices speak English.`} activeSpecialty={spec.slug} {jsonLd} alt={cityUrl(spec.slug, 'praha')}>
+<Base {title} description={`${fact} By district, with contacts and which practices speak English.`} noindex={englishOnly} activeSpecialty={spec.slug} {jsonLd} alt={cityUrl(spec.slug, 'praha')}>
   <div class="crumbs"><a href="/en">Home</a> › <a href={specUrl('en', spec.slug)}>{E.plural}</a> › Prague</div>
   <h1>{E.plural} – Prague</h1>
   <p class="muted fact">{fact}</p>
   <SpecialistNote {spec} />
 
+  {englishOnly && (
+    <section>
+      <p class="notice english-note">🗣️ Showing practices in Prague where we know <strong>you can speak English</strong>.{' '}
+        <a href={placeUrl('en', spec.slug, 'praha')}>Show all practices</a> (many others speak English too; we just don't know yet).</p>
+      {englishAll.length > 0
+        ? <div class="grid grid-2">{englishAll.map(({ km, ...p }) => <ProviderCard p={p} />)}</div>
+        : <p class="card">We don't know yet of any English-speaking practice of this kind in Prague. Our data on English is new
+            and growing every week. Pick your district below and ask: many doctors speak English.</p>}
+    </section>
+  )}
+
   <h2>Choose your part of Prague</h2>
   <p class="small muted">Tap your district number. <span class="tile-ok">Green</span> means someone there accepts new patients.</p>
   <AreaMap viewBox={pragueDetail.viewBox} label="Prague districts" outline={pragueDetail.d} {dots} />
   <div class="grid grid-cards compact prague-districts">
-    {districts.map((d) => <Tile href={placeUrl('en', spec.slug, d.city_slug)} title={d.city === 'Praha' ? 'Prague (no district)' : d.city} n={d.n} accepting={d.accepting} />)}
+    {districts.map((d) => <Tile href={placeUrl('en', spec.slug, d.city_slug) + (englishOnly ? '?english=1' : '')} title={d.city === 'Praha' ? 'Prague (no district)' : d.city} n={d.n} accepting={d.accepting} />)}
   </div>
-  <PlaceSearch specialty={spec.slug} q="Praha " compact />
+  <PlaceSearch specialty={spec.slug} q="Praha " compact english={englishOnly} />
 
+  {!englishOnly && (<>
   <h2>Accepting in Prague right now</h2>
   {accepting.length > 0 ? (
     <>
@@ -71,6 +90,8 @@ const jsonLd = breadcrumbLd(Astro.site, [['Home', '/en'], [E.plural, specUrl('en
   ) : (
     <p class="card">No report yet of anyone accepting. Pick your district to see all practices and their contacts.</p>
   )}
+
+  </>)}
 
   <h2>Other doctors in Prague</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={placeUrl('en', s.slug, 'praha')}>{enOf(s.slug).plural}</a></li>)}</ul>
