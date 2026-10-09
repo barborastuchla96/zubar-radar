@@ -21,7 +21,7 @@ const url = providerUrl(p);
   <!-- Same layout on every card: every contact the register has, then the same two links. -->
   <div class="actions">
     {p.phone && (
-      <a class="btn call contact" href={telHref(p.phone)} aria-label={`Zavolat do ordinace ${p.name}: ${formatPhone(p.phone)}`}>📞 <span class="nowrap">{formatPhone(p.phone)}</span></a>
+      <a class="btn call contact" href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name} aria-label={`Zavolat do ordinace ${p.name}: ${formatPhone(p.phone)}`}>📞 <span class="nowrap">{formatPhone(p.phone)}</span></a>
     )}
     {(email || web) && (
       <div class="contact-row">

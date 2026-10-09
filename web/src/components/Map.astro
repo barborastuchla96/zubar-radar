@@ -12,7 +12,7 @@ const points = Astro.props.providers
   .map((p) => {
     const st = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
     return {
-      lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status, label: st.label, icon: st.icon,
+      id: p.id, lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status, label: st.label, icon: st.icon,
       addr: address(p), phone: p.phone ? formatPhone(p.phone) : null, tel: p.phone ? telHref(p.phone) : null,
     };
   });
@@ -23,7 +23,7 @@ const points = Astro.props.providers
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
 
-  interface Pt { lat: number; lng: number; name: string; url: string; status: string; label: string; icon: string; addr: string; phone: string | null; tel: string | null }
+  interface Pt { id: number; lat: number; lng: number; name: string; url: string; status: string; label: string; icon: string; addr: string; phone: string | null; tel: string | null }
 
   /** Small card shown when a pin is tapped: built from DOM nodes, so names can't inject HTML. */
   function popup(p: Pt): HTMLElement {
@@ -35,6 +35,7 @@ const points = Astro.props.providers
     div.append(h, badge, addr);
     if (p.tel && p.phone) {
       const call = document.createElement('a'); call.href = p.tel; call.className = 'btn call mp-call'; call.textContent = `📞 ${p.phone}`;
+      call.dataset.callId = String(p.id); call.dataset.callName = p.name;
       div.append(call);
     }
     const more = document.createElement('a'); more.href = p.url; more.className = 'mp-more'; more.textContent = 'Podrobnosti a kontakt →';

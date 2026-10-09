@@ -64,9 +64,11 @@ ssh root@YOUR_SERVER_IP 'cd /opt/zubar-radar/deploy && docker compose run --rm i
 For the monthly import, put the direct CSV download link (from nrpzs.uzis.cz or data.gov.cz) into
 `NRPZS_URL` in `deploy/.env`. Until you do, the job does nothing and logs a message saying so.
 
-**Off-site backups.** Backups on the same server don't help if the server dies. Copy them elsewhere,
-for example a Hetzner Storage Box via `rsync`, or any S3 bucket via `rclone`, by adding that to the
-crontab after `backup.sh`. To restore:
+**Off-site backups.** Backups on the same server don't help if the server dies. Order a Hetzner
+Storage Box (the smallest is plenty), turn on SSH access in its settings, then run once:
+`./deploy/setup-offsite-backup.sh u123456@u123456.your-storagebox.de`. It creates a backup-only key,
+installs it on the box (asks for the box password once) and from then on `backup.sh` mirrors
+`backups/` to the box every night. To restore:
 `docker compose exec -T db pg_restore -U radar -d radar --clean < backups/radar-YYYY-MM-DD.dump`.
 
 ## Clinic website checker

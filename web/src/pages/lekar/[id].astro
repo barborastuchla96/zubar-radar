@@ -79,7 +79,7 @@ const jsonLd = [
   <div class="two-col">
     <div>
       {p.phone && (
-        <a class="btn call big full" href={telHref(p.phone)}>📞 Zavolat<span class="wide-only">&nbsp;do ordinace</span> <span class="nowrap">{formatPhone(p.phone)}</span></a>
+        <a class="btn call big full" href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name}>📞 Zavolat<span class="wide-only">&nbsp;do ordinace</span> <span class="nowrap">{formatPhone(p.phone)}</span></a>
       )}
       {(emails.length > 0 || web) && (
         <div class="contact-row detail">
@@ -90,7 +90,7 @@ const jsonLd = [
       <div class="card">
         <dl class="facts">
           <dt>Adresa</dt><dd>{address(p)}</dd>
-          {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)}>{formatPhone(p.phone)}</a></dd></>}
+          {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name}>{formatPhone(p.phone)}</a></dd></>}
           {emails.length > 0 && <><dt>E-mail</dt><dd>{emails.map((e, i) => <>{i > 0 && <br />}<a href={`mailto:${e}`}>{e}</a></>)}</dd></>}
           {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
           <dt>Obory</dt><dd>{specs.map((s) => s.singular).join(', ')}</dd>

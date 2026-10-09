@@ -1,0 +1,84 @@
+---
+// "Jak to dopadlo?" — after someone taps a phone number and comes back to the page,
+// ask for the outcome with three big buttons. Only when they really left to call
+// (the page was hidden), so desktop visitors are not bothered.
+import { formToken } from '../lib/report';
+---
+<dialog id="call-followup" class="followup" data-t={formToken()} aria-labelledby="cf-title">
+  <form method="dialog" class="followup-body">
+    <h2 id="cf-title">Volali jste do ordinace <span data-name></span>?</h2>
+    <p class="muted">Jak to dopadlo? Jedním klepnutím pomůžete dalším lidem.</p>
+    <div class="followup-buttons">
+      <button type="button" class="btn ok" data-status="accepting">✓ Přijímají nové pacienty</button>
+      <button type="button" class="btn warn" data-status="waitlist">⏳ Zapsali mě do pořadníku</button>
+      <button type="button" class="btn bad" data-status="not_accepting">✗ Nové pacienty nepřijímají</button>
+    </div>
+    <p class="followup-msg" role="status" hidden></p>
+    <div class="followup-close">
+      <button type="submit" class="btn secondary" value="later">Nikdo to nevzal / Teď ne</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  const KEY = 'callFollowup';
+  const MAX_AGE = 2 * 3600_000;               // after two hours it's no longer "just called"
+  interface Pending { id: string; name: string; at: number; left?: boolean }
+
+  const read = (): Pending | null => { try { return JSON.parse(sessionStorage.getItem(KEY) ?? 'null'); } catch { return null; } };
+  const write = (p: Pending | null) => { try { p ? sessionStorage.setItem(KEY, JSON.stringify(p)) : sessionStorage.removeItem(KEY); } catch { /* private mode */ } };
+
+  document.addEventListener('click', (e) => {
+    const a = (e.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="tel:"][data-call-id]');
+    if (a) write({ id: a.dataset.callId!, name: a.dataset.callName ?? '', at: Date.now() });
+  });
+  document.addEventListener('visibilitychange', () => {
+    const p = read();
+    if (!p) return;
+    if (document.hidden) write({ ...p, left: true });     // the phone app took over
+    else maybeAsk();
+  });
+
+  const dlg = document.getElementById('call-followup') as HTMLDialogElement;
+  const msg = dlg.querySelector<HTMLElement>('.followup-msg')!;
+  const buttons = dlg.querySelector<HTMLElement>('.followup-buttons')!;
+
+  function maybeAsk() {
+    const p = read();
+    if (!p || !p.left || dlg.open) return;
+    if (Date.now() - p.at > MAX_AGE) { write(null); return; }
+    write(null);                                          // ask only once per call
+    dlg.dataset.id = p.id;
+    dlg.querySelector('[data-name]')!.textContent = p.name;
+    msg.hidden = true; buttons.hidden = false;
+    dlg.showModal();
+  }
+  maybeAsk();                                             // the browser may have reloaded the page meanwhile
+
+  const MESSAGES: Record<string, string> = {
+    ok: 'Díky! Vaše zpráva pomůže dalším lidem.',
+    duplicate: 'Tuto ordinaci jste dnes už nahlásili. Díky!',
+    too_many: 'Dnes jste toho nahlásili už hodně. Díky!',
+  };
+  buttons.addEventListener('click', async (e) => {
+    const b = (e.target as Element).closest<HTMLButtonElement>('button[data-status]');
+    if (!b) return;
+    buttons.hidden = true;
+    msg.hidden = false; msg.textContent = 'Ukládám…';
+    const body = new FormData();
+    body.set('provider_id', dlg.dataset.id ?? '');
+    body.set('status', b.dataset.status!);
+    body.set('scope', 'all');
+    body.set('date', new Date().toISOString().slice(0, 10));
+    body.set('t', dlg.dataset.t ?? '');
+    body.set('web', '');
+    try {
+      const r = await fetch('/api/report', { method: 'POST', body, headers: { Accept: 'application/json' } });
+      const { result } = await r.json();
+      msg.textContent = MESSAGES[result] ?? 'Něco se nepovedlo. Zkuste to prosím na stránce ordinace.';
+    } catch {
+      msg.textContent = 'Něco se nepovedlo. Zkuste to prosím na stránce ordinace.';
+    }
+    setTimeout(() => dlg.close(), 2500);
+  });
+</script>
