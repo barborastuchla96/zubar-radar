@@ -24,7 +24,7 @@ const located = rows.filter((r) => r.lat != null && r.lng != null);
 const center = located.length
   ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
   : null;
-const title = `${spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
+const title = `${spec.seo ?? spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(city, spec.plural, counts.accepting, rows.length);
 const description = `${fact} Kontakty, mapa a hlášení od lidí, kteří tam volali.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
@@ -71,6 +71,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   </script>
 
   <Sponsored rows={sponsors} />
+  <h2 class="sr-only">Ordinace</h2>
   <div class="grid grid-2" id="list">
     {rows.slice(0, 6).map((p) => <ProviderCard p={p} />)}
   </div>

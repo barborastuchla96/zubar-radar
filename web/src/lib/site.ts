@@ -23,13 +23,14 @@ export interface SpecialtyInfo {
   acc: string;          // 4th case, after "hledáte": "zubaře"
   nearby: string;       // "Další zubaři v okolí"
   some: string;         // "některý zubař" (… začne přijímat)
+  seo?: string;         // name used in page titles when people also search another word
   icon: string;
 }
 
 export const SPECIALTIES: SpecialtyInfo[] = [
   { slug: 'zubar', singular: 'Zubař', plural: 'Zubaři', short: 'Zubaři', acc: 'zubaře', nearby: 'Další zubaři v okolí', some: 'některý zubař', icon: '🦷' },
   { slug: 'praktik', singular: 'Praktický lékař', plural: 'Praktičtí lékaři', short: 'Praktičtí lékaři', acc: 'praktického lékaře', nearby: 'Další praktičtí lékaři v okolí', some: 'některý praktický lékař', icon: '🩺' },
-  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Dětští lékaři', acc: 'dětského lékaře', nearby: 'Další dětští lékaři v okolí', some: 'některý dětský lékař', icon: '🧸' },
+  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Dětští lékaři', acc: 'dětského lékaře', nearby: 'Další dětští lékaři v okolí', some: 'některý dětský lékař', seo: 'Dětští lékaři (pediatři)', icon: '🧸' },
   { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekologové', acc: 'gynekologa', nearby: 'Další gynekologové v okolí', some: 'některý gynekolog', icon: '🌸' },
   { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Dentální hygiena', acc: 'dentální hygienu', nearby: 'Další dentální hygiena v okolí', some: 'některá ordinace dentální hygieny', icon: '✨' },
 ];

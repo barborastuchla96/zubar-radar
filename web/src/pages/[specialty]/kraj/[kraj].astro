@@ -38,7 +38,7 @@ const areas = detail.okresy.map((o) => ({
   title: o.slug === 'praha' ? 'Praha' : `okres ${o.name}: ${ordinaci(perDistrict.get(o.name)?.n ?? 0)}`,
 }));
 
-const title = `${spec.plural} – ${region.name} – kdo přijímá nové pacienty (${monthYear()})`;
+const title = `${spec.seo ?? spec.plural} – ${region.name} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(region.name, spec.plural, acceptingTotal, total);
 const description = `${fact} Ordinace v ${places.length} obcích, mapa okresů a kontakty.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=600');

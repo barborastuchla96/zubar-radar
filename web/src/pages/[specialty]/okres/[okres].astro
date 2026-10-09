@@ -38,7 +38,7 @@ const dots = towns.filter((c) => c.lat != null && c.lng != null).map((c) => {
 }).sort((a, b) => b.r - a.r);                  // small dots on top, so they stay clickable
 const neighbours = districtsOf(okres.kraj).filter((o) => o.slug !== slug).sort((a, b) => placeCompare(a.name, b.name));
 
-const title = `${spec.plural} – okres ${okres.name} – kdo přijímá nové pacienty (${monthYear()})`;
+const title = `${spec.seo ?? spec.plural} – okres ${okres.name} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(`Okres ${okres.name}`, spec.plural, acceptingTotal, total);
 const description = `${fact} Ordinace v ${towns.length} obcích, mapa a kontakty.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=600');

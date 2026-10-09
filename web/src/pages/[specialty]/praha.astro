@@ -18,7 +18,7 @@ const districts = (await cities(spec.slug, 1)).filter((c) => isPragueSlug(c.city
 const total = districts.reduce((t, c) => t + c.n, 0);
 const acceptingTotal = districts.reduce((t, c) => t + c.accepting, 0);
 const accepting = await pragueAccepting(spec.slug);
-const title = `${spec.plural} Praha – kdo přijímá nové pacienty (${monthYear()})`;
+const title = `${spec.seo ?? spec.plural} Praha – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine('Praha', spec.plural, acceptingTotal, total);
 const description = `${fact} Přehled podle městských částí, kontakty a hlášení od lidí, kteří tam volali.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
