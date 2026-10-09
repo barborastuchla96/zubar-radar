@@ -4,7 +4,7 @@ import Base from '../layouts/Base.astro';
 import RegionMap from '../components/RegionMap.astro';
 import { availability } from '../lib/db';
 import { REGIONS, regionByName } from '../lib/regions';
-import { SPECIALTIES, districtUrl, ordinaci, placeCompare, regionUrl, slugify, specialty } from '../lib/site';
+import { SITE_NAME, SPECIALTIES, dayLong, districtUrl, ordinaci, placeCompare, plural, regionUrl, slugify, specialty } from '../lib/site';
 
 const spec = specialty(Astro.url.searchParams.get('obor') ?? '') ?? SPECIALTIES[0];
 const rows = await availability(spec.slug);
@@ -43,11 +43,27 @@ for (const r of REGIONS) {
   fills[r.slug] = colour(pct(t.accepting, t.n));
   titles[r.slug] = `${r.name}: přijímá ${t.accepting} z ${ordinaci(t.n)} (${fmt(pct(t.accepting, t.n))})`;
 }
-const today = new Date().toLocaleDateString('cs', { day: 'numeric', month: 'long', year: 'numeric' });
+const today = dayLong();
+const pageUrl = new URL(`/dostupnost?obor=${spec.slug}`, Astro.site).toString();
+// Described as a dataset, so search engines and AI assistants can find and cite the numbers.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `Dostupnost péče v Česku – ${spec.plural.toLowerCase()}, kteří přijímají nové pacienty`,
+  description: `Počet ordinací (${spec.plural.toLowerCase()}), které podle hlášení pacientů, ordinací a jejich webů přijímají nebo nepřijímají nové pacienty, po krajích a okresech. Stav k ${today}: ${total.accepting.toLocaleString('cs')} z ${total.n.toLocaleString('cs')} ordinací ${plural(total.accepting, 'přijímá', 'přijímají', 'přijímá')} nové pacienty.`,
+  url: pageUrl,
+  inLanguage: 'cs',
+  isAccessibleForFree: true,
+  dateModified: new Date().toISOString().slice(0, 10),
+  spatialCoverage: { '@type': 'Place', name: 'Česká republika' },
+  variableMeasured: ['počet ordinací', 'přijímá nové pacienty', 'nepřijímá nové pacienty', 'pořadník', 'podíl ordinací se známým stavem'],
+  isBasedOn: 'https://nrpzs.uzis.cz/',
+  creator: { '@type': 'Organization', name: SITE_NAME, url: new URL('/', Astro.site).toString() },
+};
 Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
 ---
 <Base title={`Dostupnost péče – ${spec.plural.toLowerCase()} podle krajů a okresů`}
-      description={`Kolik ordinací (${spec.plural.toLowerCase()}) podle posledních zpráv přijímá nové pacienty, po krajích a okresech.`}>
+      description={`Kolik ordinací (${spec.plural.toLowerCase()}) podle posledních zpráv přijímá nové pacienty, po krajích a okresech. Stav k ${today}.`} {jsonLd}>
   <div class="crumbs"><a href="/">Úvod</a> › Dostupnost péče</div>
   <h1>Kde přijímají nové pacienty</h1>
   <p class="intro">Přehled po krajích a okresech: kolik ordinací podle posledních zpráv přijímá nové pacienty.

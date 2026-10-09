@@ -7,7 +7,7 @@ import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { cityProviders, sponsored } from '../../lib/db';
-import { SPECIALTIES, breadcrumbLd, cityUrl, isPragueSlug, ordinaci, placeLabel, prijima, specialty } from '../../lib/site';
+import { SPECIALTIES, breadcrumbLd, cityUrl, factLine, isPragueSlug, monthYear, placeLabel, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -24,10 +24,9 @@ const located = rows.filter((r) => r.lat != null && r.lng != null);
 const center = located.length
   ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
   : null;
-const title = `${spec.plural} ${city} – kdo přijímá nové pacienty`;
-const description = `${spec.plural} – ${city}: ${ordinaci(rows.length)}. ` +
-  (counts.accepting ? `Podle hlášení ${prijima(counts.accepting)} nové pacienty. ` : '') +
-  'Ověřeno lidmi, kteří tam volali.';
+const title = `${spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
+const fact = factLine(city, spec.plural, counts.accepting, rows.length);
+const description = `${fact} Kontakty, mapa a hlášení od lidí, kteří tam volali.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [
   ['Úvod', '/'], [spec.plural, `/${spec.slug}`],
@@ -39,10 +38,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> ›
     {isPragueSlug(Astro.params.city!) && <> <a href={cityUrl(spec.slug, 'praha')}>Praha</a> ›</>} {city}</div>
   <h1>{spec.plural} – {city}</h1>
-  <p class="muted">
-    {ordinaci(rows.length)}
-    {counts.accepting > 0 && <> · <strong style="color:var(--ok)">{prijima(counts.accepting)} nové pacienty</strong></>}
-  </p>
+  <p class="muted fact">{fact}</p>
 
   {open > 0 ? (
     <>

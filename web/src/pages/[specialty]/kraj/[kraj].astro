@@ -8,8 +8,8 @@ import { regionDetail } from '../../../lib/areas';
 import { cities, regionAccepting } from '../../../lib/db';
 import { regionBySlug } from '../../../lib/regions';
 import {
-  SPECIALTIES, breadcrumbLd, cityUrl, districtUrl, ordinaci, placeCompare, prijima, regionUrl, specialty,
-} from '../../../lib/site';
+  SPECIALTIES, breadcrumbLd, cityUrl, districtUrl, ordinaci, placeCompare, regionUrl,
+  factLine, monthYear, specialty } from '../../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 const region = regionBySlug(Astro.params.kraj ?? '');
@@ -38,19 +38,16 @@ const areas = detail.okresy.map((o) => ({
   title: o.slug === 'praha' ? 'Praha' : `okres ${o.name}: ${ordinaci(perDistrict.get(o.name)?.n ?? 0)}`,
 }));
 
-const title = `${spec.plural} – ${region.name} – kdo přijímá nové pacienty`;
-const description = `${spec.plural} v kraji ${region.name}: ${ordinaci(total)} v ${places.length} obcích. ` +
-  (acceptingTotal ? `Podle hlášení ${prijima(acceptingTotal)} nové pacienty.` : 'Podívejte se, kdo přijímá nové pacienty.');
+const title = `${spec.plural} – ${region.name} – kdo přijímá nové pacienty (${monthYear()})`;
+const fact = factLine(region.name, spec.plural, acceptingTotal, total);
+const description = `${fact} Ordinace v ${places.length} obcích, mapa okresů a kontakty.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=600');
 const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`], [region.name, regionUrl(spec.slug, region.slug)]]);
 ---
 <Base {title} {description} activeSpecialty={spec.slug} {jsonLd}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › {region.name}</div>
   <h1>{spec.plural} – {region.name}</h1>
-  <p class="muted">
-    {ordinaci(total)} v {places.length.toLocaleString('cs')} obcích
-    {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
-  </p>
+  <p class="muted fact">{fact}</p>
 
   <h2>Vyberte okres</h2>
   <AreaMap viewBox={detail.viewBox} label={`Okresy – ${region.name}`} {areas} />

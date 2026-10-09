@@ -9,7 +9,7 @@ import StatusLegend from '../../components/StatusLegend.astro';
 import Tile from '../../components/Tile.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { cities, pragueAccepting } from '../../lib/db';
-import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
+import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, factLine, isPragueSlug, monthYear, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -18,20 +18,16 @@ const districts = (await cities(spec.slug, 1)).filter((c) => isPragueSlug(c.city
 const total = districts.reduce((t, c) => t + c.n, 0);
 const acceptingTotal = districts.reduce((t, c) => t + c.accepting, 0);
 const accepting = await pragueAccepting(spec.slug);
-const title = `${spec.plural} Praha – kdo přijímá nové pacienty`;
-const description = `${spec.plural} v Praze podle městských částí: ${ordinaci(total)}. ` +
-  (acceptingTotal ? `Podle hlášení ${prijima(acceptingTotal)} nové pacienty. ` : '') +
-  'Ověřeno lidmi, kteří tam volali.';
+const title = `${spec.plural} Praha – kdo přijímá nové pacienty (${monthYear()})`;
+const fact = factLine('Praha', spec.plural, acceptingTotal, total);
+const description = `${fact} Přehled podle městských částí, kontakty a hlášení od lidí, kteří tam volali.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`], ['Praha', cityUrl(spec.slug, 'praha')]]);
 ---
 <Base {title} {description} activeSpecialty={spec.slug} {jsonLd}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › Praha</div>
   <h1>{spec.plural} – Praha</h1>
-  <p class="muted">
-    {ordinaci(total)} po celé Praze
-    {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
-  </p>
+  <p class="muted fact">{fact}</p>
 
   <PlaceSearch specialty={spec.slug} q="Praha " compact />
   <h2>Kde teď přijímají</h2>

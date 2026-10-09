@@ -30,6 +30,10 @@ const desc = `${p.name}, ${address(p)}. ${specs.map((s) => s.singular).join(', '
   `Přijímá nové pacienty? ${status.label}${when ? ` (${crawl ? 'podle webu ordinace' : 'ověřeno'} ${when})` : ''}.`;
 Astro.response.headers.set('Cache-Control', 'private, no-cache');
 
+const SCHEMA_SPECIALTY: Record<string, string> = {
+  zubar: 'https://schema.org/Dentistry', hygienistka: 'https://schema.org/Dentistry',
+  praktik: 'https://schema.org/PrimaryCare', pediatr: 'https://schema.org/Pediatric', gynekolog: 'https://schema.org/Gynecologic',
+};
 // schema.org: what this practice is and where (public register data only).
 const isDental = specs.some((s) => s.slug === 'zubar' || s.slug === 'hygienistka');
 const jsonLd = [
@@ -40,6 +44,10 @@ const jsonLd = [
     url: new URL(canonical, Astro.site).toString(),
     ...(p.phone ? { telephone: p.phone.replace(/\s+/g, '') } : {}),
     ...(web ? { sameAs: web } : {}),
+    ...(emails[0] ? { email: emails[0] } : {}),
+    // schema.org's own property for exactly this; only when we have a clear current answer
+    ...(p.status === 'accepting' ? { isAcceptingNewPatients: true } : p.status === 'not_accepting' ? { isAcceptingNewPatients: false } : {}),
+    ...(specs.length ? { medicalSpecialty: specs.map((s) => SCHEMA_SPECIALTY[s.slug]).filter(Boolean) } : {}),
     address: {
       '@type': 'PostalAddress',
       streetAddress: [p.street, p.house_no].filter(Boolean).join(' ') || undefined,

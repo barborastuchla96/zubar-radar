@@ -130,6 +130,24 @@ export function contactEmail(): string | null {
 }
 
 /** Breadcrumb trail as schema.org JSON-LD (helps search engines show the path). */
+// --- dated, quotable facts (search engines and AI assistants quote sentences like these) ---
+const TZ = 'Europe/Prague';
+/** "říjen 2026" */
+export const monthYear = (d = new Date()) => d.toLocaleDateString('cs', { month: 'long', year: 'numeric', timeZone: TZ });
+/** "9. října 2026" */
+export const dayLong = (d = new Date()) => d.toLocaleDateString('cs', { day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ });
+/** "z 1 ordinace", "z 79 ordinací" (genitive after "z") */
+const zOrdinaci = (n: number) => `z ${num(n)} ${n === 1 ? 'ordinace' : 'ordinací'}`;
+/** "Brno, zubaři: k 9. října 2026 podle posledních zpráv přijímá nové pacienty 12 z 331 ordinací." */
+export function factLine(place: string, specPlural: string, accepting: number, total: number, d = new Date()) {
+  const head = `${place}, ${specPlural.toLowerCase()}: k ${dayLong(d)}`;
+  return accepting > 0
+    ? `${head} podle posledních zpráv ${plural(accepting, 'přijímá', 'přijímají', 'přijímá')} nové pacienty ${num(accepting)} ${zOrdinaci(total)}.`
+    : total === 1
+      ? `${head} zatím nemáme zprávu, že by jediná ordinace v seznamu přijímala nové pacienty.`
+      : `${head} zatím nemáme zprávu, že by některá ${zOrdinaci(total)} přijímala nové pacienty.`;
+}
+
 export function breadcrumbLd(site: URL | undefined, items: [string, string][]) {
   return {
     '@context': 'https://schema.org',

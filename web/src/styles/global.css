@@ -357,3 +357,4 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .district-table { margin: .5rem 0; }
 .district-table > summary { font-weight: 700; cursor: pointer; min-height: 32px; }
 .pills a[aria-current="page"] { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); font-weight: 700; }
+.fact { font-size: 1.05rem; max-width: 48rem; }
