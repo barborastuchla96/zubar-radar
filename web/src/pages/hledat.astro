@@ -1,36 +1,25 @@
 ---
 import Base from '../layouts/Base.astro';
 import PlaceSearch from '../components/PlaceSearch.astro';
-import { cities } from '../lib/db';
-import { SPECIALTIES, cityUrl, isPragueSlug, ordinaci, prijima, slugify, specialty } from '../lib/site';
+import { findPlace } from '../lib/places';
+import { SPECIALTIES, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../lib/site';
 
 const spec = specialty(Astro.url.searchParams.get('s') ?? '') ?? SPECIALTIES[0];
 const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
-const needle = slugify(q).replace(/-/g, '');
-
-let matches: Awaited<ReturnType<typeof cities>> = [];
-if (needle) {
-  // Plain "Praha" goes to the Prague overview.
-  if (needle === 'praha' || needle === 'prague') return Astro.redirect(cityUrl(spec.slug, 'praha'), 302);
-  const all = await cities(spec.slug, 1);
-  const flat = (s: string) => s.replace(/-/g, '');
-  const rank = (slug: string) => (flat(slug) === needle ? 0 : flat(slug).startsWith(needle) ? 1 : 2);
-  matches = all
-    .filter((c) => flat(c.city_slug).includes(needle))
-    .sort((a, b) => rank(a.city_slug) - rank(b.city_slug) || b.n - a.n)
-    .slice(0, 30);
-  // One clear hit: go straight there.
-  if (matches.length === 1 || (matches.length > 0 && rank(matches[0].city_slug) === 0 && rank(matches[1]?.city_slug ?? '') !== 0)) {
-    return Astro.redirect(cityUrl(spec.slug, matches[0].city_slug), 302);
-  }
+const found = q ? await findPlace(spec.slug, q) : { kind: 'none' as const };
+if (found.kind === 'city') return Astro.redirect(cityUrl(spec.slug, found.slug), 302);
+if (found.kind === 'near') {
+  const p = new URLSearchParams({ s: spec.slug, lat: found.lat.toFixed(4), lng: found.lng.toFixed(4), km: '3', misto: found.label });
+  return Astro.redirect(`/blizko?${p}`, 302);
 }
+const matches = found.kind === 'list' ? found.matches : [];
 ---
 <Base title={`Hledat: ${q || spec.plural}`} description={`${spec.plural} – vyhledávání podle obce.`} noindex activeSpecialty={spec.slug} alt={`/en/search${Astro.url.search}`}>
   <h1>Kde hledáte {spec.acc}?</h1>
   <PlaceSearch specialty={spec.slug} {q} />
   {q && matches.length === 0 && (
-    <p class="notice bad">Pro „{q}“ jsme nic nenašli. Zkuste název města (třeba „Kladno“) nebo část Prahy (třeba „Praha 6“).
-      Případně se podívejte na <a href={`/${spec.slug}`}>seznam všech obcí</a>.</p>
+    <p class="notice bad">Pro „{q}“ jsme nic nenašli. Zkuste název města (třeba „Kladno“), část Prahy (třeba „Praha 6“ nebo „Dejvice“),
+      PSČ nebo ulici. Případně se podívejte na <a href={`/${spec.slug}`}>seznam všech obcí</a>.</p>
   )}
   {matches.length > 0 && (
     <>

@@ -245,3 +245,13 @@ def test_find_flags_collects_both():
 ])
 def test_paused_intake_is_not_accepting(text):
     assert crawler.classify(text).status == "not_accepting"
+
+
+def test_old_dated_news_is_not_todays_state():
+    from datetime import date
+    old, now = date.today().year - 3, date.today().year
+    assert crawler.classify(f"Aktuality {old}: Od 1. 3. {old} přijímáme nové pacienty.").status is None
+    assert crawler.classify(f"Od září {now} přijímáme nové pacienty.").status == "accepting"
+    assert crawler.classify("Přijímáme nové pacienty.").status == "accepting"
+    # a stop dated years ago is still a stop
+    assert crawler.classify(f"Od 1. 2. {old} z kapacitních důvodů nepřijímáme nové pacienty.").status == "not_accepting"

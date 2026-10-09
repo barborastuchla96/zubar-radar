@@ -9,7 +9,7 @@ import AdSlot from '../../components/AdSlot.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
 import { doctorUrl } from '../../lib/i18n';
-import { STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, emailsOf, firstWeb, formatPhone, providerUrl, specialty, telHref } from '../../lib/site';
+import { SPECIALTIES, STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, emailsOf, firstWeb, formatPhone, providerUrl, telHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
 const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
@@ -19,7 +19,7 @@ if (!p) return Astro.rewrite('/404');
 const canonical = providerUrl(p);
 if (Astro.url.pathname !== canonical) return Astro.redirect(canonical + Astro.url.search, 301);
 
-const specs = (p.specialties ?? []).map(specialty).filter((s) => s != null);
+const specs = SPECIALTIES.filter((s) => (p.specialties ?? []).includes(s.slug));   // register order: Zubař before Dentální hygiena
 const main = specs[0];
 const alts = main ? await alternatives(p, main.slug) : [];
 const when = ago(p.last_signal_at);
@@ -29,7 +29,7 @@ const emails = emailsOf(p.email);
 const result = Astro.url.searchParams.get('r');
 const status = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
 const desc = `${p.name}, ${address(p)}. ${specs.map((s) => s.singular).join(', ')}. ` +
-  `Přijímá nové pacienty? ${status.label}${when ? ` (${crawl ? 'podle webu ordinace' : 'ověřeno'} ${when})` : ''}.`;
+  `Přijímá nové pacienty? ${status.label}${when ? ` (${crawl ? 'podle webu ordinace' : 'nahlášeno'} ${when})` : ''}.`;
 Astro.response.headers.set('Cache-Control', 'private, no-cache');
 
 const SCHEMA_SPECIALTY: Record<string, string> = {
@@ -78,7 +78,7 @@ const jsonLd = [
   <h1>{p.name}</h1>
   <p style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
     <StatusBadge status={p.status} />
-    <span class="muted small">{when ? (crawl ? `podle webu ordinace, zkontrolováno ${when}` : `poslední hlášení ${when}`) : status.hint}</span>
+    <span class="muted small">{when ? (crawl ? `na webu ordinace, kontrola ${when}` : p.last_source === 'clinic' ? `potvrdila ordinace ${when}` : `poslední hlášení ${when}`) : status.hint}</span>
   </p>
   {p.english && <p class="notice english-note">🗣️ <strong>Domluvíte se anglicky.</strong> Podle webu ordinace nebo zpráv pacientů tu někdo mluví anglicky.</p>}
   {p.self_pay && (
@@ -129,7 +129,7 @@ const jsonLd = [
   {alts.length > 0 && main && (
     <section>
       <h2>{main.nearby}</h2>
-      <div class="grid grid-2">{alts.map((a) => <ProviderCard p={a} />)}</div>
+      <div class="grid grid-2">{alts.map((a) => <ProviderCard p={a} kmFrom="here" />)}</div>
     </section>
   )}
 </Base>

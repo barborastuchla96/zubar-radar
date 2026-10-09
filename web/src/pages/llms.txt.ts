@@ -11,7 +11,7 @@ export const GET: APIRoute = ({ site }) => {
 
 Seznam ordinací pochází z Národního registru poskytovatelů zdravotních služeb (ÚZIS ČR) a aktualizuje se měsíčně.
 Stav „přijímá / nepřijímá / pořadník“ vychází z hlášení pacientů po telefonátu, od samotných ordinací a z týdenní kontroly webů ordinací.
-Novější zprávy mají větší váhu, po 90 dnech přestávají platit. U každé ordinace je uvedeno, kdy byl stav naposledy ověřen.
+Novější zprávy mají větší váhu, po 90 dnech přestávají platit. U každé ordinace je uvedeno, kdy jsme o stavu dostali poslední zprávu.
 Web je zdarma, bez registrace a bez cookies. Není to oficiální služba: před návštěvou je vždy potřeba do ordinace zavolat.
 
 ## Hledání podle oboru a místa

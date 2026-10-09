@@ -11,22 +11,24 @@ const spec = specialty(q.get('s') ?? '') ?? SPECIALTIES[0];
 const lat = Number(q.get('lat')), lng = Number(q.get('lng'));
 const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat > 48 && lat < 51.5 && lng > 12 && lng < 19.5;
 const km = Math.min(Math.max(Number(q.get('km')) || 5, 1), 30);
+// From the search box ("Dejvice", "160 00"): the place they typed, not their own location.
+const misto = (q.get('misto') ?? '').slice(0, 80);
 const rows = valid ? await nearby(spec.slug, lat, lng, km) : [];
 ---
 <Base title={`${spec.plural} v okolí`} description={`${spec.plural} ve vašem okolí, kteří přijímají nové pacienty.`} noindex activeSpecialty={spec.slug} alt={`/en/near${Astro.url.search}`}>
-  <h1>{spec.plural} do {km} km od vás</h1>
+  <h1>{spec.plural} do {km} km {misto ? `od místa ${misto}` : 'od vás'}</h1>
   <SpecialistNote {spec} />
   {!valid && <p class="notice bad">Poloha chybí nebo je mimo Česko. <a href="/">Zkuste to znovu</a> nebo vyberte město.</p>}
   {valid && rows.length === 0 && (
-    <p>Nic jsme nenašli. <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}`}>Zkusit větší okruh</a>.</p>
+    <p>Nic jsme nenašli. <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}${misto ? `&misto=${encodeURIComponent(misto)}` : ''}`}>Zkusit větší okruh</a>.</p>
   )}
   {rows.length > 0 && (
     <>
       <p class="muted">Nahoře jsou ordinace, které podle hlášení přijímají. Ostatní jsou seřazené podle vzdálenosti.
-        {km < 30 && <> <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}`}>Rozšířit na {Math.min(km * 2, 30)} km</a></>}
+        {km < 30 && <> <a href={`?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}${misto ? `&misto=${encodeURIComponent(misto)}` : ''}`}>Rozšířit na {Math.min(km * 2, 30)} km</a></>}
       </p>
       <Map providers={rows} />
-      <div class="grid grid-2">{rows.map((p) => <ProviderCard p={p} />)}</div>
+      <div class="grid grid-2">{rows.map((p) => <ProviderCard p={p} kmFrom={misto ? 'place' : 'you'} />)}</div>
     </>
   )}
 </Base>

@@ -428,3 +428,5 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .english-only { margin-top: .8rem; }
 .place-search .english-only { flex-basis: 100%; margin-top: 0; }
 .fact-tag.hospital { color: var(--muted); background: var(--surface); }
+.near-accepting { margin: 1.25rem 0 0; }
+.near-accepting > .grid { margin-bottom: 1rem; }

@@ -24,6 +24,7 @@ import urllib.robotparser
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from datetime import date
 from html.parser import HTMLParser
 
 USER_AGENT = "PrijimaNovePacientyBot/1.0 (+https://prijimanovepacienty.cz/o-projektu)"
@@ -111,6 +112,13 @@ def self_pay(raw_text: str) -> str | None:
     return None
 
 
+def _stale(sentence: str) -> bool:
+    """A sentence dated only with years before last year ("Od ledna 2019 přijímáme nové pacienty")
+    is an old news item, not today's state."""
+    years = [int(y) for y in re.findall(r"\b(20[0-4]\d)\b", sentence)]
+    return bool(years) and max(years) < date.today().year - 1
+
+
 def _sentence(text: str, m: re.Match) -> str:
     start = max(text.rfind(c, 0, m.start()) for c in ".!?\n") + 1
     ends = [i for i in (text.find(c, m.end()) for c in ".!?\n") if i != -1]
@@ -181,12 +189,13 @@ def classify(raw_text: str) -> Verdict:
     """Decide what a page says about taking new patients."""
     text, src = _normalize_with_map(raw_text)
     neg = next((m for p in NEGATIVE for m in p.finditer(text)), None)
-    wait = next((m for p in WAITLIST for m in p.finditer(text)), None)
+    wait = next((m for p in WAITLIST for m in p.finditer(text) if not _stale(_sentence(text, m))), None)
     # Blank out negative matches so "nepřijímáme" text can't also count as positive.
     masked = text
     for p in NEGATIVE:
         masked = p.sub(lambda m: " " * len(m.group(0)), masked)
-    pos = next((m for p in POSITIVE for m in p.finditer(masked) if not NOT_REGISTRATION.search(_sentence(masked, m))), None)
+    pos = next((m for p in POSITIVE for m in p.finditer(masked)
+                if not NOT_REGISTRATION.search(_sentence(masked, m)) and not _stale(_sentence(masked, m))), None)
 
     found = [(s, m) for s, m in (("not_accepting", neg), ("waitlist", wait), ("accepting", pos)) if m]
     if not found:

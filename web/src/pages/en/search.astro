@@ -1,8 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PlaceSearch from '../../components/PlaceSearch.astro';
-import { cities, englishCounts } from '../../lib/db';
-import { SPECIALTIES, isPragueSlug, slugify, specialty } from '../../lib/site';
+import { englishCounts } from '../../lib/db';
+import { findPlace } from '../../lib/places';
+import { SPECIALTIES, isPragueSlug, specialty } from '../../lib/site';
 import { acceptingN, enOf, placeUrl, practices, regionEn } from '../../lib/i18n';
 
 const spec = specialty(Astro.url.searchParams.get('s') ?? '') ?? SPECIALTIES[0];
@@ -11,28 +12,21 @@ const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
 const englishOnly = Astro.url.searchParams.get('english') === '1';
 const englishKnown = (await englishCounts())[spec.slug] ?? 0;
 const withFilter = (u: string) => (englishOnly ? `${u}?english=1` : u);
-const needle = slugify(q).replace(/-/g, '');
 
-let matches: Awaited<ReturnType<typeof cities>> = [];
-if (needle) {
-  if (needle === 'praha' || needle === 'prague' || needle === 'prag') return Astro.redirect(withFilter(placeUrl('en', spec.slug, 'praha')), 302);
-  const all = await cities(spec.slug, 1);
-  const flat = (s: string) => s.replace(/-/g, '');
-  // "Prague 6" works like "Praha 6"
-  const n2 = needle.replace(/^prague/, 'praha');
-  const rank = (slug: string) => (flat(slug) === n2 ? 0 : flat(slug).startsWith(n2) ? 1 : 2);
-  matches = all.filter((c) => flat(c.city_slug).includes(n2))
-    .sort((a, b) => rank(a.city_slug) - rank(b.city_slug) || b.n - a.n).slice(0, 30);
-  if (matches.length === 1 || (matches.length > 0 && rank(matches[0].city_slug) === 0 && rank(matches[1]?.city_slug ?? '') !== 0)) {
-    return Astro.redirect(withFilter(placeUrl('en', spec.slug, matches[0].city_slug)), 302);
-  }
+const found = q ? await findPlace(spec.slug, q) : { kind: 'none' as const };
+if (found.kind === 'city') return Astro.redirect(withFilter(placeUrl('en', spec.slug, found.slug)), 302);
+if (found.kind === 'near') {
+  const p = new URLSearchParams({ s: spec.slug, lat: found.lat.toFixed(4), lng: found.lng.toFixed(4), km: '3', misto: found.label });
+  if (englishOnly) p.set('english', '1');
+  return Astro.redirect(`/en/near?${p}`, 302);
 }
+const matches = found.kind === 'list' ? found.matches : [];
 ---
 <Base title={`Search: ${q || E.plural}`} description={`${E.plural} – search by town.`} noindex activeSpecialty={spec.slug} alt={`/hledat?s=${spec.slug}&q=${encodeURIComponent(q)}`}>
   <h1>{E.plural}: where are you looking?</h1>
   <PlaceSearch specialty={spec.slug} {q} english={englishOnly} {englishKnown} />
   {q && matches.length === 0 && (
-    <p class="notice bad">Nothing found for “{q}”. Try a town name (e.g. “Kladno”) or a part of Prague (e.g. “Praha 6”).
+    <p class="notice bad">Nothing found for “{q}”. Try a town name (e.g. “Kladno”), a part of Prague (e.g. “Praha 6” or “Dejvice”), a postcode or a street.
       Or see <a href={`/en/${E.en}`}>all towns</a>.</p>
   )}
   {matches.length > 0 && (

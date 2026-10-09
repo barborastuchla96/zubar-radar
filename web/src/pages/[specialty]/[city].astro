@@ -34,6 +34,11 @@ const around = center
   ? (await nearby(spec.slug, center.lat, center.lng, isPragueSlug(Astro.params.city!) ? 2 : 5, rows.length + 6))
       .filter((r) => !here.has(r.id)).slice(0, 6).map(({ km, ...r }) => r)
   : [];
+// Nobody here is known to accept: the visitor's real question is "who nearest does?".
+const nearAccepting = open === 0 && center
+  ? (await nearby(spec.slug, center.lat, center.lng, 30, 12))
+      .filter((r) => !here.has(r.id) && (r.status === 'accepting' || r.status === 'waitlist')).slice(0, 4)
+  : [];
 const title = `${spec.seo ?? spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(city, spec.plural, counts.accepting, rows.length);
 const description = `${fact} Kontakty, mapa a zprávy od pacientů.`;
@@ -71,6 +76,14 @@ const jsonLd = breadcrumbLd(Astro.site, [
         Ostatní to pak uvidí.</p>
       {center && <p><a href="#upozorneni">📧 Pošleme vám e-mail, až tu někdo začne přijímat</a></p>}
     </div>
+  )}
+  {nearAccepting.length > 0 && (
+    <section class="near-accepting">
+      <h2>Nejbližší, kde přijímají</h2>
+      <p class="small muted">Do 30 km od středu místa {city}, podle posledních zpráv.</p>
+      <div class="grid grid-2">{nearAccepting.map((p) => <ProviderCard p={p} kmFrom="centre" />)}</div>
+      <h2>Všechny ordinace – {city}</h2>
+    </section>
   )}
 
   <details class="map-toggle" open>

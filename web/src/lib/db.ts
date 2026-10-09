@@ -103,8 +103,25 @@ export interface CityCount {
 const labelled = (rows: CityCount[]): CityCount[] =>
   rows.map((c) => ({ ...c, city: placeLabel(c.city, c.city_slug, c.district) }));
 
+// Counts per town change slowly (reports trickle in), but every homepage, region and search
+// page needs them for all specialties. Keep them for a few minutes so a traffic spike
+// (a shared post) doesn't recompute the same aggregates hundreds of times.
+const CACHE_MS = 5 * 60_000;
+const memo = new Map<string, { at: number; value: Promise<unknown> }>();
+function cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = memo.get(key);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.value as Promise<T>;
+  const value = load();
+  memo.set(key, { at: Date.now(), value });
+  value.catch(() => memo.delete(key));             // never keep a failure
+  return value;
+}
+
 /** Cities ranked by number of providers for a specialty. */
-export async function cities(specialty: string, minProviders = 1, limit = 10000): Promise<CityCount[]> {
+export function cities(specialty: string, minProviders = 1, limit = 10000): Promise<CityCount[]> {
+  return cached(`cities:${specialty}:${minProviders}:${limit}`, () => citiesUncached(specialty, minProviders, limit));
+}
+async function citiesUncached(specialty: string, minProviders: number, limit: number): Promise<CityCount[]> {
   return labelled(await sql<CityCount[]>`
     SELECT p.city_slug, min(p.city) AS city, min(p.region) AS region, min(p.district) AS district, count(*)::int AS n,
            avg(p.lat) AS lat, avg(p.lng) AS lng,
@@ -234,7 +251,10 @@ export async function latestCrawlNote(providerId: number): Promise<{ note: strin
 }
 
 /** Practices per specialty where someone speaks English (from websites or patients' reports). */
-export async function englishCounts(): Promise<Record<string, number>> {
+export function englishCounts(): Promise<Record<string, number>> {
+  return cached('english', englishCountsUncached);
+}
+async function englishCountsUncached(): Promise<Record<string, number>> {
   const rows = await sql<{ slug: string; n: number }[]>`
     SELECT ps.specialty_slug AS slug, count(DISTINCT p.id)::int AS n
       FROM providers p
@@ -244,4 +264,12 @@ export async function englishCounts(): Promise<Record<string, number>> {
      WHERE p.active
      GROUP BY 1`;
   return Object.fromEntries(rows.map((r) => [r.slug, r.n]));
+}
+
+/** Where a postcode is: the middle of the practices registered with it (any specialty). */
+export async function postcodePlace(postcode: string): Promise<{ lat: number; lng: number } | undefined> {
+  const [row] = await sql<{ lat: number | null; lng: number | null }[]>`
+    SELECT avg(lat)::float AS lat, avg(lng)::float AS lng FROM providers
+     WHERE active AND postcode = ${postcode} AND lat IS NOT NULL`;
+  return row && row.lat != null && row.lng != null ? { lat: row.lat, lng: row.lng } : undefined;
 }
