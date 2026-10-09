@@ -83,18 +83,22 @@ export async function findPlace(specialty: string, q: string): Promise<PlaceResu
 async function geocode(q: string): Promise<{ lat: number; lng: number; label: string } | null> {
   const key = (process.env.MAPY_API_KEY ?? '').trim();
   if (!key || q.trim().length < 3) return null;
-  const url = `https://api.mapy.com/v1/geocode?lang=cs&limit=5&query=${encodeURIComponent(q.trim())}&apikey=${encodeURIComponent(key)}`;
+  const base = process.env.MAPY_GEOCODE_URL ?? 'https://api.mapy.com/v1/geocode';   // overridable for tests
+  const url = `${base}?lang=cs&limit=5&query=${encodeURIComponent(q.trim())}&apikey=${encodeURIComponent(key)}`;
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
     if (!r.ok) return null;
-    const data = (await r.json()) as { items?: { name?: string; location?: string; position?: { lon?: number; lat?: number } }[] };
-    // first hit inside Czechia
+    // v1 answer: { items: [{ name, location, position: { lon, lat } }] }; also accept lat/lon at the top level.
+    const data = (await r.json()) as { items?: Record<string, any>[] };
+    const pos = (i: Record<string, any>) => ({ lat: Number(i.position?.lat ?? i.lat), lng: Number(i.position?.lon ?? i.position?.lng ?? i.lon ?? i.lng) });
     const hit = (data.items ?? []).find((i) => {
-      const { lat, lon } = i.position ?? {};
-      return typeof lat === 'number' && typeof lon === 'number' && lat > 48.5 && lat < 51.1 && lon > 12 && lon < 18.9;
+      const { lat, lng } = pos(i);
+      return lat > 48.5 && lat < 51.1 && lng > 12 && lng < 18.9;   // first hit inside Czechia
     });
     if (!hit) return null;
-    return { lat: hit.position!.lat!, lng: hit.position!.lon!, label: [hit.name, hit.location].filter(Boolean).join(', ') };
+    const { lat, lng } = pos(hit);
+    const where = typeof hit.location === 'string' ? hit.location.replace(/,\s*Česko$/, '') : '';
+    return { lat, lng, label: [hit.name, where].filter((x) => typeof x === 'string' && x).join(', ') || q.trim() };
   } catch {
     return null;
   }
