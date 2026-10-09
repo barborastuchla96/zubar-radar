@@ -7,3 +7,4 @@ data/
 backups/
 deploy/.env
 deploy/caddy.d/
+.DS_Store
