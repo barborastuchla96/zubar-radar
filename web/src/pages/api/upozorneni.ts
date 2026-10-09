@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { confirmationSubject, confirmationText, createSignup, logMail, parseSignup, sendFailed } from '../../lib/alerts';
-import { mailEnabled, sendMail } from '../../lib/mail';
+import { MAIL_FROM_NAME_CS, mailEnabled, sendMail } from '../../lib/mail';
 import { clientIp, reporterHash } from '../../lib/report';
 
 export const POST: APIRoute = async ({ request, clientAddress, redirect, site }) => {
@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect, site })
     try {
       await sendMail(parsed.value.email, confirmationSubject(parsed.value.lang),
         confirmationText(String(site ?? process.env.SITE_URL), result.token, parsed.value), {},
-        parsed.value.lang === 'en' ? 'Accepting new patients?' : undefined);
+        parsed.value.lang === 'en' ? 'Accepting new patients?' : MAIL_FROM_NAME_CS);
       await logMail('confirm');
     } catch (e) {
       console.error('confirmation email failed:', e);

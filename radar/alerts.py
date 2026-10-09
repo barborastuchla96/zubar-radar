@@ -20,6 +20,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 SITE_NAME = "Přijímá nové pacienty?"
+MAIL_FROM_NAME = "Barbora z Přijímá nové pacienty?"   # sender on Czech e-mails
 DAILY_LIMIT = int(os.environ.get("MAIL_DAILY_LIMIT", "450"))   # Wedos: 500/day, keep a margin
 RENOTIFY_DAYS = 60       # the same practice may be announced again after this long
 PENDING_DAYS = 7         # unconfirmed sign-ups are deleted after this long
@@ -94,7 +95,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     lines = [
         "Dobrý den,",
         "",
-        f"dobrá zpráva: do {a.radius_km} km od místa {a.place} teď podle posledních hlášení"
+        f"dobrá zpráva: v lokalitě {a.place} teď podle posledních hlášení"
         f" {'přijímá' if n == 1 else 'přijímají'} nové pacienty {these}:",
         "",
     ]
@@ -111,13 +112,14 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  Na našem webu: {site}/lekar/{p['id']}")
         lines.append("")
     lines += [
-        "Než se do ordinace vydáte, ověřte si to přímo u nich. Zprávy pocházejí od pacientů, ordinací a z jejich webů"
-        " a nemusí být úplně aktuální.",
+        "Než se do ordinace vydáte, ověřte si to přímo u nich. Zprávy o přijímání nových pacientů pocházejí"
+        " od ostatních pacientů, přímo od ordinací a z jejich webů a nemusí být vždy aktuální.",
         "",
         "Až zjistíte, jak to je, dejte prosím vědět na stránce ordinace. Pomůžete tím dalším.",
         "",
         "Hezký den",
-        f"{SITE_NAME} ({site.split('//')[-1]})",
+        "Barbora z Přijímá nové pacienty?",
+        f"({site.split('//')[-1]})",
         "",
         "--",
         f"Upozornění už nechcete? Odhlásíte se tady: {unsubscribe}",
@@ -126,7 +128,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     # long lines allowed in headers, so the unsubscribe URL isn't encoded into gibberish
     msg = EmailMessage(policy=SMTP_POLICY.clone(max_line_length=998))
     msg["Subject"] = f"{spec} – {a.place} a okolí: {n} {noun} {verb} nové pacienty"
-    msg["From"] = formataddr((SITE_NAME, sender))
+    msg["From"] = formataddr((MAIL_FROM_NAME, sender))
     msg["To"] = a.email
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain=sender.rsplit("@", 1)[-1])
