@@ -82,7 +82,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
       ) : englishNearby.length > 0 ? (
         <>
           <p class="notice english-note">🗣️ We don't know of an English-speaking practice in {city} yet. These are the nearest ones
-            (distance from the centre of {city}). <a href={allUrl}>Show all {rows.length} practices in {city}</a></p>
+            (distance from {city}). <a href={allUrl}>Show all {rows.length} practices in {city}</a></p>
           <div class="grid grid-2 list">{englishNearby.map((p) => <ProviderCard p={p} kmFrom="centre" />)}</div>
         </>
       ) : (
@@ -106,7 +106,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   {nearAccepting.length > 0 && (
     <section class="near-accepting">
       <h2>Nearest practices that accept new patients</h2>
-      <p class="small muted">Within 30 km of the centre of {city}, according to recent reports.</p>
+      <p class="small muted">Practices within 30 km of {city} that accept new patients, according to recent reports.</p>
       <div class="grid grid-2">{nearAccepting.map((p) => <ProviderCard p={p} kmFrom="centre" />)}</div>
     </section>
   )}

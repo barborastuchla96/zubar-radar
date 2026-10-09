@@ -85,7 +85,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   {nearAccepting.length > 0 && (
     <section class="near-accepting">
       <h2>Nejbližší, kde přijímají</h2>
-      <p class="small muted">Do 30 km od středu místa {city}, podle posledních zpráv.</p>
+      <p class="small muted">Ordinace do 30 km od místa {city}, které podle posledních zpráv přijímají.</p>
       <div class="grid grid-2">{nearAccepting.map((p) => <ProviderCard p={p} kmFrom="centre" />)}</div>
       <h2>Všechny ordinace – {city}</h2>
     </section>
