@@ -394,3 +394,9 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
   .btn.call.full { flex-wrap: wrap; }
   .btn .nowrap { white-space: normal; }
 }
+
+/* Prague: numbered district dots */
+.area-map .dot.numbered { fill: var(--muted); stroke: var(--surface); stroke-width: 2; }
+.area-map .dot.numbered.ok { fill: var(--ok); }
+.area-map .dot-inner { font-size: 17px; font-weight: 800; fill: var(--surface); pointer-events: none; }
+.area-map .dot-link:hover .dot.numbered, .area-map .dot-link:focus-visible .dot.numbered { fill: var(--brand); stroke: var(--text); }

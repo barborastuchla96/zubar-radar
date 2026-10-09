@@ -1,7 +1,7 @@
 ---
 // A zoomed map: clickable areas (districts) and/or clickable dots (towns). Plain links, no JavaScript.
 export interface MapArea { href: string; label: string; title?: string; d: string; lx: number; ly: number; alt?: boolean }
-export interface MapDot { href: string; label: string; title: string; x: number; y: number; r: number; ok: boolean; showLabel: boolean }
+export interface MapDot { href: string; label: string; title: string; x: number; y: number; r: number; ok: boolean; showLabel: boolean; inner?: string }
 interface Props { viewBox: string; label: string; areas?: MapArea[]; outline?: string; dots?: MapDot[] }
 const { viewBox, label, areas = [], outline, dots = [] } = Astro.props;
 const width = Number(viewBox.split(' ')[2]);
@@ -21,7 +21,8 @@ const width = Number(viewBox.split(' ')[2]);
       <a href={d.href} aria-label={d.title} class="dot-link">
         <title>{d.title}</title>
         <circle cx={d.x} cy={d.y} r={Math.max(d.r, 9)} class="dot-hit" />
-        <circle cx={d.x} cy={d.y} r={d.r} class={`dot${d.ok ? ' ok' : ''}`} />
+        <circle cx={d.x} cy={d.y} r={d.r} class={`dot${d.ok ? ' ok' : ''}${d.inner ? ' numbered' : ''}`} />
+        {d.inner && <text x={d.x} y={d.y} class="dot-inner" text-anchor="middle" dominant-baseline="central">{d.inner}</text>}
         {d.showLabel && (d.x > width * 0.7
           ? <text x={d.x - d.r - 4} y={d.y} class="dot-label" text-anchor="end" dominant-baseline="middle">{d.label}</text>
           : <text x={d.x + d.r + 4} y={d.y} class="dot-label" dominant-baseline="middle">{d.label}</text>)}

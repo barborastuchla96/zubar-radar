@@ -98,6 +98,10 @@ def main() -> None:
         result["okresy"][slugify(oname)] = {"name": oname, "kraj": slugify(okres_kraj[oname]),
                                             **fr, "d": path_d(local(orings, fr))}
 
+    # Prague alone, for the Praha 1–22 map on the Prague page.
+    fr = frame([okres_nat[PRAGUE_OKRES][0]])
+    result["praha"] = {"name": "Praha", **fr, "d": path_d(local(okres_nat[PRAGUE_OKRES], fr))}
+
     OUT.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} kB)", file=sys.stderr)
 

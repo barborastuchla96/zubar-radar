@@ -8,9 +8,11 @@ import AdSlot from '../../components/AdSlot.astro';
 import PlaceSearch from '../../components/PlaceSearch.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import Tile from '../../components/Tile.astro';
+import AreaMap from '../../components/AreaMap.astro';
+import { pragueDetail, toMap } from '../../lib/areas';
 import AlertForm from '../../components/AlertForm.astro';
 import { cities, pragueAccepting } from '../../lib/db';
-import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, factLine, isPragueSlug, monthYear, specialty } from '../../lib/site';
+import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, factLine, isPragueSlug, monthYear, ordinaci, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 if (!spec) return Astro.rewrite('/404');
@@ -19,6 +21,24 @@ const districts = (await cities(spec.slug, 1)).filter((c) => isPragueSlug(c.city
 const total = districts.reduce((t, c) => t + c.n, 0);
 const acceptingTotal = districts.reduce((t, c) => t + c.accepting, 0);
 const accepting = await pragueAccepting(spec.slug);
+// Praha 1–22 as numbered dots where their practices are; green = someone there accepts.
+const dots = districts.filter((c) => c.lat != null && c.lng != null && c.city_slug !== 'praha').map((c) => {
+  const [x, y] = toMap(pragueDetail, c.lat!, c.lng!);
+  return {
+    href: cityUrl(spec.slug, c.city_slug), label: c.city, x, y, r: 19, ok: c.accepting > 0, showLabel: false,
+    inner: c.city.replace('Praha ', ''), title: `${c.city}: ${ordinaci(c.n)}${c.accepting ? `, ${prijima(c.accepting)}` : ''}`,
+  };
+});
+// Central districts sit close together: nudge overlapping dots apart so every number stays readable.
+for (let round = 0; round < 40; round++) {
+  for (const a of dots) for (const b of dots) {
+    if (a === b) continue;
+    const dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy) || 1, min = a.r + b.r + 3;
+    if (dist < min) { const push = (min - dist) / 2; a.x -= dx / dist * push; a.y -= dy / dist * push; b.x += dx / dist * push; b.y += dy / dist * push; }
+  }
+}
+// The few practices filed under plain "Praha" (no district) go last.
+districts.sort((a, b) => Number(a.city_slug === 'praha') - Number(b.city_slug === 'praha'));
 const title = `${spec.seo ?? spec.plural} Praha – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine('Praha', spec.plural, acceptingTotal, total);
 const description = `${fact} Přehled podle městských částí, kontakty a hlášení od lidí, kteří tam volali.`;
@@ -31,22 +51,25 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
   <p class="muted fact">{fact}</p>
   <SpecialistNote {spec} />
 
+  <h2>Vyberte část Prahy</h2>
+  <p class="small muted">Klikněte na číslo své městské části. <span class="tile-ok">Zelená</span> znamená, že tam někdo přijímá.</p>
+  <AreaMap viewBox={pragueDetail.viewBox} label="Městské části Prahy" outline={pragueDetail.d} {dots} />
+  <div class="grid grid-cards compact prague-districts">
+    {districts.map((d) => <Tile href={cityUrl(spec.slug, d.city_slug)} title={d.city} n={d.n} accepting={d.accepting} />)}
+  </div>
   <PlaceSearch specialty={spec.slug} q="Praha " compact />
-  <h2>Kde teď přijímají</h2>
+
+  <h2>Kde teď v Praze přijímají</h2>
   {accepting.length > 0 ? (
-    <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
+    <>
+      <StatusLegend />
+      <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
+    </>
   ) : (
     <p class="card">Zatím nemáme žádnou zprávu, že by tu někdo přijímal. Vyberte svou část Prahy a pomozte nám.
       Po telefonátu do ordinace stačí jedno kliknutí.</p>
   )}
-
-  {accepting.length > 0 && <StatusLegend />}
   <AdSlot name={`city-${spec.slug}`} />
-
-  <h2>Podle městské části</h2>
-  <div class="grid grid-cards">
-    {districts.map((d) => <Tile href={cityUrl(spec.slug, d.city_slug)} title={d.city} n={d.n} accepting={d.accepting} />)}
-  </div>
 
   <AlertForm {spec} lat={50.0755} lng={14.4378} place="Praha" radius={10} />
 

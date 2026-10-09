@@ -11,6 +11,7 @@ const kraje = data.kraje as Record<string, RegionDetail>;
 const okresy = data.okresy as Record<string, DistrictDetail>;
 
 export const regionDetail = (slug: string): RegionDetail | undefined => kraje[slug];
+export const pragueDetail = data.praha as DistrictDetail;
 export const districtDetail = (slug: string): DistrictDetail | undefined => okresy[slug];
 export const districtsOf = (krajSlug: string) =>
   Object.entries(okresy).filter(([, o]) => o.kraj === krajSlug).map(([slug, o]) => ({ slug, ...o }));
