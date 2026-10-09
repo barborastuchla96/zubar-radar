@@ -71,6 +71,15 @@ installs it on the box (asks for the box password once) and from then on `backup
 `backups/` to the box every night. To restore:
 `docker compose exec -T db pg_restore -U radar -d radar --clean < backups/radar-YYYY-MM-DD.dump`.
 
+**Encrypted backups.** Backups contain subscribers' e-mail addresses. Run
+`./deploy/setup-backup-encryption.sh` once: it creates a key pair, keeps only the public key on the server
+(`BACKUP_AGE_RECIPIENT` in `.env`) and prints the private key once. Save it in a password manager: the
+server can't read its own backups, so a leaked backup or off-site copy is useless without it. To restore,
+put the key in a file and run
+`age -d -i key.txt backups/radar-YYYY-MM-DD.dump.age | docker compose exec -T db pg_restore -U radar -d radar --clean`.
+The server disk itself is not encrypted: full-disk encryption on a VPS means typing a password over a
+rescue console after every reboot, and the site stays down until you do.
+
 ## Clinic website checker
 
 `docker compose run --rm importer crawl --dry-run` checks the clinic websites of all practices
