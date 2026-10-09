@@ -149,7 +149,8 @@ export function confirmationText(siteUrl: string, token: string, v: Pick<SignupI
     '',
     'Pokud jste se k odběru nepřihlašovali, tento e-mail ignorujte. Bez potvrzení vám nic dalšího nepošleme a vaši e-mailovou adresu do týdne smažeme.',
     '',
-    'Hezký den',
+    'Hezký den!',
+    '',
     'Barbora',
     'prijimanovepacienty.cz',
   ].join('\n');

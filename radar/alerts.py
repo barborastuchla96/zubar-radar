@@ -120,7 +120,8 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
          "Až zjistíte, jak to dopadlo, dejte nám prosím vědět na stránce ordinace (odkazy „Na našem webu“ výše)."
          " Pomůžete tím dalším pacientům."),
         "",
-        "Hezký den",
+        "Hezký den!",
+        "",
         "Barbora",
         site.split("//")[-1],
         "",
