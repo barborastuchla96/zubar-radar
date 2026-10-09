@@ -84,8 +84,8 @@ const points = Astro.props.providers
       const known = p.status !== 'unknown';
       const icon = known
         ? L.divIcon({ html: `<span class="map-tag tag-${p.status}">${TAG[p.status] ?? p.label}</span>`, className: 'tag-wrap',
-                      iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -36] })
-        : L.divIcon({ html: '<span class="pin-dot"></span>', className: 'tag-wrap', iconSize: [16, 16], iconAnchor: [8, 8], popupAnchor: [0, -6] });
+                      iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -26] })
+        : L.divIcon({ html: '<span class="pin-dot"></span>', className: 'tag-wrap', iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -6] });
       const m = L.marker([p.lat, p.lng], { icon, title: `${p.name}: ${p.label}`, zIndexOffset: p.status === 'accepting' ? 1000 : known ? 500 : 0, riseOnHover: true });
       m.bindPopup(popup(p), { minWidth: 220, maxWidth: 280 });
       group.addLayer(m);

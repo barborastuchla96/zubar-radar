@@ -276,18 +276,18 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 
 /* map markers: text tags for known statuses (anchored at the tip of the little arrow), grey dots otherwise */
 .tag-wrap { background: none; border: 0; }
-.map-tag { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 7px)); white-space: nowrap;
-  padding: .3rem .65rem; border-radius: 999px; border: 2px solid #fff; color: #fff; font: 700 14px/1.2 Inter, system-ui, sans-serif;
-  box-shadow: 0 2px 6px rgb(0 0 0 / .3); cursor: pointer; }
-.map-tag::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
-  border: 6px solid transparent; border-top-width: 7px; }
-.tag-accepting { background: var(--ok); font-size: 15px; }
+.map-tag { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 5px)); white-space: nowrap;
+  padding: 2px 7px; border-radius: 999px; border: 1.5px solid #fff; color: #fff; font: 700 12px/1.25 Inter, system-ui, sans-serif;
+  box-shadow: 0 1px 4px rgb(0 0 0 / .3); cursor: pointer; }
+.map-tag::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%);
+  border: 4px solid transparent; border-top-width: 5px; }
+.tag-accepting { background: var(--ok); }
 .tag-waitlist, .tag-mixed { background: var(--warn); }
 .tag-not_accepting { background: var(--bad); }
 .map-tag.tag-accepting::after { border-top-color: var(--ok); }
 .map-tag.tag-waitlist::after, .map-tag.tag-mixed::after { border-top-color: var(--warn); }
 .map-tag.tag-not_accepting::after { border-top-color: var(--bad); }
-.pin-dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: #7d868d; border: 2px solid #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .4); }
+.pin-dot { display: block; width: 11px; height: 11px; border-radius: 50%; background: #7d868d; border: 1.5px solid #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .35); }
 .leaflet-marker-icon:hover .map-tag, .leaflet-marker-icon:focus .map-tag { filter: brightness(1.12); box-shadow: 0 3px 10px rgb(0 0 0 / .45); }
 .leaflet-marker-icon:hover .pin-dot { background: var(--brand); }
 .map-popup { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; font-family: inherit; font-size: .95rem; }
