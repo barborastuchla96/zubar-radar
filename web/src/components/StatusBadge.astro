@@ -4,4 +4,4 @@ interface Props { status: string }
 const { status } = Astro.props;
 const s = STATUS_LABEL[status] ?? STATUS_LABEL.unknown;
 ---
-<span class={`badge ${status}`} title={s.hint}>{s.label}</span>
+<span class={`badge ${status}`} title={s.hint}><span class="badge-icon" aria-hidden="true">{s.icon}</span>{s.label}</span>

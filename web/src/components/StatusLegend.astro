@@ -1,0 +1,19 @@
+---
+// Plain-language key to the status badges. The labels are always visible;
+// the explanations open on tap, so the list isn't pushed down on phones.
+import StatusBadge from './StatusBadge.astro';
+---
+<details class="legend card">
+  <summary>
+    <span class="legend-title">Štítky:</span>
+    <StatusBadge status="accepting" /> <StatusBadge status="waitlist" />
+    <StatusBadge status="not_accepting" /> <StatusBadge status="unknown" />
+    <span class="legend-more">Co znamenají?</span>
+  </summary>
+  <dl>
+    <dt><StatusBadge status="accepting" /></dt><dd>Podle čerstvých hlášení přijímá nové pacienty. I tak raději zavolejte.</dd>
+    <dt><StatusBadge status="waitlist" /></dt><dd>Zapisuje nové pacienty do pořadníku.</dd>
+    <dt><StatusBadge status="not_accepting" /></dt><dd>Podle čerstvých hlášení nové pacienty nepřijímá.</dd>
+    <dt><StatusBadge status="unknown" /></dt><dd>Nikdo to zatím nenahlásil. Zavolejte, a pak dejte vědět ostatním.</dd>
+  </dl>
+</details>

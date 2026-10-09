@@ -6,7 +6,7 @@ import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
-import { STATUS_LABEL, address, ago, cityUrl, providerUrl, specialty, telHref, webHref } from '../../lib/site';
+import { STATUS_LABEL, address, ago, cityUrl, formatPhone, providerUrl, specialty, telHref, webHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
 const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
@@ -49,10 +49,13 @@ Astro.response.headers.set('Cache-Control', 'private, no-cache');
 
   <div class="two-col">
     <div>
+      {p.phone && (
+        <a class="btn call big full" href={telHref(p.phone)}>📞 Zavolat do ordinace <span class="nowrap">{formatPhone(p.phone)}</span></a>
+      )}
       <div class="card">
         <dl class="facts">
           <dt>Adresa</dt><dd>{address(p)}</dd>
-          {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)}>{p.phone}</a></dd></>}
+          {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)}>{formatPhone(p.phone)}</a></dd></>}
           {p.email && <><dt>E-mail</dt><dd><a href={`mailto:${p.email}`}>{p.email}</a></dd></>}
           {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{p.web}</a></dd></>}
           <dt>Obory</dt><dd>{specs.map((s) => s.singular).join(', ')}</dd>

@@ -4,6 +4,8 @@
 import Base from '../../layouts/Base.astro';
 import ProviderCard from '../../components/ProviderCard.astro';
 import AdSlot from '../../components/AdSlot.astro';
+import PlaceSearch from '../../components/PlaceSearch.astro';
+import StatusLegend from '../../components/StatusLegend.astro';
 import { cities, pragueAccepting } from '../../lib/db';
 import { SPECIALTIES, byDistrict, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
@@ -28,6 +30,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
     {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
   </p>
 
+  <PlaceSearch specialty={spec.slug} q="Praha " compact />
   <h2>Kde teď přijímají</h2>
   {accepting.length > 0 ? (
     <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
@@ -36,6 +39,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
       po telefonátu do ordinace stačí jedno kliknutí.</p>
   )}
 
+  {accepting.length > 0 && <StatusLegend />}
   <AdSlot name={`city-${spec.slug}`} />
 
   <h2>Podle městské části</h2>

@@ -1,0 +1,20 @@
+---
+// "Where are you looking?" search by town or Prague district. Works without JavaScript.
+import { SPECIALTIES } from '../lib/site';
+interface Props { specialty?: string; q?: string; compact?: boolean }
+const { specialty = 'zubar', q = '', compact = false } = Astro.props;
+---
+<form class={`place-search card${compact ? ' compact' : ''}`} method="get" action="/hledat" role="search">
+  <div class="field">
+    <label for="ps-s">Koho hledáte?</label>
+    <select id="ps-s" name="s">
+      {SPECIALTIES.map((s) => <option value={s.slug} selected={s.slug === specialty}>{s.plural}</option>)}
+    </select>
+  </div>
+  <div class="field grow">
+    <label for="ps-q">Kde? Napište obec nebo část Prahy</label>
+    <input id="ps-q" name="q" type="search" value={q} required autocomplete="off"
+           placeholder="Např. Praha 6, Kladno, Brno" />
+  </div>
+  <button class="btn big" type="submit">Hledat</button>
+</form>

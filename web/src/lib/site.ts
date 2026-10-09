@@ -24,11 +24,11 @@ export interface SpecialtyInfo {
 }
 
 export const SPECIALTIES: SpecialtyInfo[] = [
-  { slug: 'zubar', singular: 'Zubař', plural: 'Zubaři', short: 'Zubař', icon: '🦷' },
-  { slug: 'praktik', singular: 'Praktický lékař', plural: 'Praktičtí lékaři', short: 'Praktik', icon: '🩺' },
-  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Pediatr', icon: '🧸' },
-  { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekolog', icon: '🌸' },
-  { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Hygiena', icon: '✨' },
+  { slug: 'zubar', singular: 'Zubař', plural: 'Zubaři', short: 'Zubaři', icon: '🦷' },
+  { slug: 'praktik', singular: 'Praktický lékař', plural: 'Praktičtí lékaři', short: 'Praktičtí lékaři', icon: '🩺' },
+  { slug: 'pediatr', singular: 'Dětský lékař', plural: 'Dětští lékaři', short: 'Dětští lékaři', icon: '🧸' },
+  { slug: 'gynekolog', singular: 'Gynekolog', plural: 'Gynekologové', short: 'Gynekologové', icon: '🌸' },
+  { slug: 'hygienistka', singular: 'Dentální hygiena', plural: 'Dentální hygiena', short: 'Dentální hygiena', icon: '✨' },
 ];
 
 export const specialty = (slug: string) => SPECIALTIES.find((s) => s.slug === slug);
@@ -45,12 +45,13 @@ export const ordinaci = (n: number) => `${num(n)} ${plural(n, 'ordinace', 'ordin
 /** "1 přijímá", "3 přijímají", "12 přijímá" */
 export const prijima = (n: number) => `${num(n)} ${plural(n, 'přijímá', 'přijímají', 'přijímá')}`;
 
-export const STATUS_LABEL: Record<string, { label: string; hint: string }> = {
-  accepting:     { label: 'Přijímá nové pacienty', hint: 'Podle posledních hlášení přijímá.' },
-  waitlist:      { label: 'Pořadník',           hint: 'Zapisuje do pořadníku.' },
-  mixed:         { label: 'Nejasné',            hint: 'Hlášení si odporují.' },
-  not_accepting: { label: 'Nepřijímá',          hint: 'Podle posledních hlášení nepřijímá.' },
-  unknown:       { label: 'Nevíme',             hint: 'Zatím nikdo nenahlásil. Víte víc?' },
+// Every status has a symbol too, so it can be read without relying on colour.
+export const STATUS_LABEL: Record<string, { label: string; hint: string; icon: string }> = {
+  accepting:     { icon: '✓', label: 'Přijímá nové pacienty', hint: 'Podle čerstvých hlášení přijímá nové pacienty.' },
+  waitlist:      { icon: '⏳', label: 'Pořadník',              hint: 'Zapisuje nové pacienty do pořadníku.' },
+  mixed:         { icon: '!', label: 'Nejasné',               hint: 'Hlášení si odporují. Zavolejte a ověřte.' },
+  not_accepting: { icon: '✗', label: 'Nepřijímá',             hint: 'Podle čerstvých hlášení nové pacienty nepřijímá.' },
+  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Nikdo to zatím nenahlásil. Zavolejte a dejte vědět ostatním.' },
 };
 
 const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });
@@ -80,6 +81,12 @@ export function address(p: { street: string | null; house_no: string | null; cit
 
 /** Normalise phone for tel: links ("+420 773 255 275" -> "+420773255275"). */
 export const telHref = (phone: string) => 'tel:' + phone.replace(/[^\d+]/g, '');
+
+/** Readable Czech number: "+420773255275" -> "773 255 275". Anything unusual is shown as given. */
+export function formatPhone(phone: string): string {
+  const d = phone.replace(/[^\d+]/g, '').replace(/^(\+|00)420/, '');
+  return /^\d{9}$/.test(d) ? d.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') : phone.trim();
+}
 
 export function webHref(web: string): string | null {
   const w = web.trim();

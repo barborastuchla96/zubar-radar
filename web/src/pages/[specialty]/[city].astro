@@ -4,6 +4,7 @@ import ProviderCard from '../../components/ProviderCard.astro';
 import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import Sponsored from '../../components/Sponsored.astro';
+import StatusLegend from '../../components/StatusLegend.astro';
 import { cityProviders, sponsored } from '../../lib/db';
 import { SPECIALTIES, cityUrl, isPragueSlug, ordinaci, prijima, specialty } from '../../lib/site';
 
@@ -25,7 +26,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 ---
 <Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> ›
-    {isPragueSlug(Astro.params.city!) && <><a href={cityUrl(spec.slug, 'praha')}>Praha</a> › </>}{city}</div>
+    {isPragueSlug(Astro.params.city!) && <> <a href={cityUrl(spec.slug, 'praha')}>Praha</a> ›</>} {city}</div>
   <h1>{spec.plural} – {city}</h1>
   <p class="muted">
     {ordinaci(rows.length)}
@@ -33,7 +34,11 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120');
     {known === 0 && <> · zatím bez hlášení – <strong>buďte první, kdo dá vědět</strong></>}
   </p>
 
-  <div class="filters" role="group" aria-label="Filtr">
+  <p class="intro">Nahoře jsou ordinace, které podle hlášení <strong>přijímají nové pacienty</strong>.
+    U ostatních to zatím nevíme: zavolejte, a pak dejte vědět ostatním.</p>
+  <StatusLegend />
+
+  <div class="filters" role="group" aria-label="Zobrazit">
     <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
     <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Přijímají ({counts.accepting + counts.waitlist})</button>
     <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Neověřené ({counts.unknown + counts.mixed})</button>

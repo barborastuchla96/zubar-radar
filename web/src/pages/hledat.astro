@@ -1,0 +1,49 @@
+---
+import Base from '../layouts/Base.astro';
+import PlaceSearch from '../components/PlaceSearch.astro';
+import { cities } from '../lib/db';
+import { SPECIALTIES, cityUrl, ordinaci, prijima, slugify, specialty } from '../lib/site';
+
+const spec = specialty(Astro.url.searchParams.get('s') ?? '') ?? SPECIALTIES[0];
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
+const needle = slugify(q).replace(/-/g, '');
+
+let matches: Awaited<ReturnType<typeof cities>> = [];
+if (needle) {
+  // Plain "Praha" goes to the Prague overview.
+  if (needle === 'praha' || needle === 'prague') return Astro.redirect(cityUrl(spec.slug, 'praha'), 302);
+  const all = await cities(spec.slug, 1);
+  const flat = (s: string) => s.replace(/-/g, '');
+  const rank = (slug: string) => (flat(slug) === needle ? 0 : flat(slug).startsWith(needle) ? 1 : 2);
+  matches = all
+    .filter((c) => flat(c.city_slug).includes(needle))
+    .sort((a, b) => rank(a.city_slug) - rank(b.city_slug) || b.n - a.n)
+    .slice(0, 30);
+  // One clear hit: go straight there.
+  if (matches.length === 1 || (matches.length > 0 && rank(matches[0].city_slug) === 0 && rank(matches[1]?.city_slug ?? '') !== 0)) {
+    return Astro.redirect(cityUrl(spec.slug, matches[0].city_slug), 302);
+  }
+}
+---
+<Base title={`Hledat: ${q || spec.plural}`} description={`${spec.plural} – vyhledávání podle obce.`} noindex activeSpecialty={spec.slug}>
+  <h1>{spec.plural}: kde hledáte?</h1>
+  <PlaceSearch specialty={spec.slug} {q} />
+  {q && matches.length === 0 && (
+    <p class="notice bad">Pro „{q}“ jsme nic nenašli. Zkuste název obce (např. „Kladno“) nebo část Prahy (např. „Praha 6“).
+      Případně se podívejte na <a href={`/${spec.slug}`}>seznam všech obcí</a>.</p>
+  )}
+  {matches.length > 0 && (
+    <>
+      <h2>Vyberte místo</h2>
+      <div class="grid grid-2">
+        {matches.map((c) => (
+          <a class="card spec-tile" href={cityUrl(spec.slug, c.city_slug)}>
+            <strong>{c.city}</strong>
+            <span class="muted">{c.region}</span>
+            <span>{ordinaci(c.n)}{c.accepting > 0 && <> · <span style="color:var(--ok)">{prijima(c.accepting)} nové pacienty</span></>}</span>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+</Base>

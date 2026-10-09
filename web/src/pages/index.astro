@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import AdSlot from '../components/AdSlot.astro';
+import PlaceSearch from '../components/PlaceSearch.astro';
 import { cities } from '../lib/db';
 import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, isPragueSlug, ordinaci, prijima } from '../lib/site';
 
@@ -23,12 +24,12 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
       Všechny ordinace z oficiálního registru na jednom místě. U každé vidíte, jestli podle
       posledních hlášení <strong>přijímá nové pacienty</strong> a kdy to někdo naposledy ověřil.
     </p>
-    <form method="get" action="/blizko" class="filters" id="near-form">
-      <select name="s" aria-label="Obor" style="width:auto">
-        {SPECIALTIES.map((s) => <option value={s.slug}>{s.singular}</option>)}
-      </select>
+    <PlaceSearch />
+    <form method="get" action="/blizko" class="near" id="near-form">
+      <input type="hidden" name="s" value="zubar" />
       <input type="hidden" name="lat" /><input type="hidden" name="lng" />
-      <button class="btn" type="submit" id="near-btn">📍 Najít v mém okolí</button>
+      <span class="muted">nebo</span>
+      <button class="btn secondary" type="submit" id="near-btn">📍 Ukázat ordinace v mém okolí</button>
     </form>
     <p class="small muted" id="near-msg" hidden></p>
   </section>
@@ -67,15 +68,18 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
   const msg = document.getElementById('near-msg')!;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    // Use the specialty chosen in the search box above.
+    (form.elements.namedItem('s') as HTMLInputElement).value =
+      (document.getElementById('ps-s') as HTMLSelectElement | null)?.value ?? 'zubar';
     if (!navigator.geolocation) { msg.hidden = false; msg.textContent = 'Váš prohlížeč polohu nepodporuje.'; return; }
-    msg.hidden = false; msg.textContent = 'Zjišťuji polohu…';
+    msg.hidden = false; msg.textContent = 'Zjišťuji polohu… Prohlížeč se vás možná zeptá, jestli ji smí použít.';
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         (form.elements.namedItem('lat') as HTMLInputElement).value = pos.coords.latitude.toFixed(4);
         (form.elements.namedItem('lng') as HTMLInputElement).value = pos.coords.longitude.toFixed(4);
         form.submit();
       },
-      () => { msg.textContent = 'Polohu se nepodařilo zjistit. Vyberte část Prahy nebo město níže.'; },
+      () => { msg.textContent = 'Polohu se nepodařilo zjistit. Napište prosím místo do vyhledávání výše.'; },
       { timeout: 10000, maximumAge: 600000 },
     );
   });
