@@ -1,24 +1,36 @@
 ---
 import StatusBadge from './StatusBadge.astro';
-import { address, ago, formatPhone, providerUrl, telHref } from '../lib/site';
+import { address, ago, formatPhone, providerUrl, telHref, webHref } from '../lib/site';
 import type { ProviderRow } from '../lib/db';
 
 interface Props { p: ProviderRow & { km?: number } }
 const { p } = Astro.props;
 const when = ago(p.last_signal_at);
+const web = !p.phone && p.web ? webHref(p.web) : null;
+const url = providerUrl(p);
 ---
 <article class="card provider" data-status={p.status}>
-  <h3><a href={providerUrl(p)}>{p.name}</a></h3>
+  <h3><a href={url}>{p.name}</a></h3>
   <div class="meta">
     <StatusBadge status={p.status} />
     {when && <span>{p.last_source === 'web_crawl' ? `podle webu ordinace, zkontrolováno ${when}` : `ověřeno ${when}`}</span>}
     {p.km != null && <span>{p.km.toLocaleString('cs')} km od vás</span>}
   </div>
   <div class="addr">{address(p)}</div>
+  <!-- Same layout on every card: one main contact button, then the same two links. -->
   <div class="actions">
-    {p.phone
-      ? <a class="btn call" href={telHref(p.phone)} aria-label={`Zavolat do ordinace ${p.name}: ${formatPhone(p.phone)}`}>📞 {formatPhone(p.phone)}</a>
-      : <a class="btn secondary" href={providerUrl(p)}>Kontakt a podrobnosti</a>}
-    <a class="report-link" href={`${providerUrl(p)}#nahlasit`}>Volali jste? Dejte vědět</a>
+    {p.phone ? (
+      <a class="btn call contact" href={telHref(p.phone)} aria-label={`Zavolat do ordinace ${p.name}: ${formatPhone(p.phone)}`}>📞 <span class="nowrap">{formatPhone(p.phone)}</span></a>
+    ) : web ? (
+      <a class="btn secondary contact" href={web} rel="nofollow noopener" target="_blank">🌐 Web ordinace</a>
+    ) : (
+      // Not in the register: let people look the number up instead of hitting a dead end.
+      <a class="btn secondary contact" href={`https://search.seznam.cz/?q=${encodeURIComponent(`${p.name} ${p.city ?? ''} telefon`)}`}
+         rel="nofollow noopener" target="_blank">🔍 Dohledat telefon</a>
+    )}
+    <div class="links">
+      <a href={url}>Podrobnosti a mapa</a>
+      <a class="report-link" href={`${url}#nahlasit`}>Volali jste? Dejte vědět</a>
+    </div>
   </div>
 </article>
