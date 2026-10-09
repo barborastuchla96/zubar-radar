@@ -12,6 +12,7 @@ import AreaMap from '../../components/AreaMap.astro';
 import { pragueDetail, toMap } from '../../lib/areas';
 import AlertForm from '../../components/AlertForm.astro';
 import { cities, pragueAccepting } from '../../lib/db';
+import { placeUrl } from '../../lib/i18n';
 import { SPECIALTIES, breadcrumbLd, byDistrict, cityUrl, factLine, isPragueSlug, monthYear, ordinaci, prijima, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
@@ -45,7 +46,7 @@ const description = `${fact} Přehled podle městských částí, kontakty a zpr
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`], ['Praha', cityUrl(spec.slug, 'praha')]]);
 ---
-<Base {title} {description} activeSpecialty={spec.slug} {jsonLd}>
+<Base {title} {description} activeSpecialty={spec.slug} {jsonLd} alt={placeUrl('en', spec.slug, 'praha')}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › Praha</div>
   <h1>{spec.plural} – Praha</h1>
   <p class="muted fact">{fact}</p>

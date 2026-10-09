@@ -3,19 +3,29 @@
 // ask for the outcome with three big buttons. Only when they really left to call
 // (the page was hidden), so desktop visitors are not bothered.
 import { formToken } from '../lib/report';
+const en = Astro.url.pathname.startsWith('/en');
+const T = en ? {
+  h: 'Did you call', lead: 'How did it go? One tap helps other people.', acc: '✓ They accept new patients', wait: '⏳ They put me on a waiting list',
+  not: "✗ They don't accept new patients", later: 'No answer / Not now',
+  msg: { ok: 'Thank you! Your report will help others.', duplicate: 'You already reported this practice today. Thank you!', too_many: "You've sent a lot today. Thank you!", saving: 'Saving…', fail: 'Something went wrong. Please try on the practice page.' },
+} : {
+  h: 'Volali jste do ordinace', lead: 'Jak to dopadlo? Jedním klepnutím pomůžete dalším lidem.', acc: '✓ Přijímají nové pacienty', wait: '⏳ Zapsali mě do pořadníku',
+  not: '✗ Nové pacienty nepřijímají', later: 'Nikdo to nevzal / Teď ne',
+  msg: { ok: 'Díky! Vaše zpráva pomůže dalším lidem.', duplicate: 'Tuto ordinaci jste dnes už nahlásili. Díky!', too_many: 'Dnes jste toho nahlásili už hodně. Díky!', saving: 'Ukládám…', fail: 'Něco se nepovedlo. Zkuste to prosím na stránce ordinace.' },
+};
 ---
-<dialog id="call-followup" class="followup" data-t={formToken()} aria-labelledby="cf-title">
+<dialog id="call-followup" class="followup" data-t={formToken()} data-msg={JSON.stringify(T.msg)} aria-labelledby="cf-title">
   <form method="dialog" class="followup-body">
-    <h2 id="cf-title">Volali jste do ordinace <span data-name></span>?</h2>
-    <p class="muted">Jak to dopadlo? Jedním klepnutím pomůžete dalším lidem.</p>
+    <h2 id="cf-title">{T.h} <span data-name></span>?</h2>
+    <p class="muted">{T.lead}</p>
     <div class="followup-buttons">
-      <button type="button" class="btn ok" data-status="accepting">✓ Přijímají nové pacienty</button>
-      <button type="button" class="btn warn" data-status="waitlist">⏳ Zapsali mě do pořadníku</button>
-      <button type="button" class="btn bad" data-status="not_accepting">✗ Nové pacienty nepřijímají</button>
+      <button type="button" class="btn ok" data-status="accepting">{T.acc}</button>
+      <button type="button" class="btn warn" data-status="waitlist">{T.wait}</button>
+      <button type="button" class="btn bad" data-status="not_accepting">{T.not}</button>
     </div>
     <p class="followup-msg" role="status" hidden></p>
     <div class="followup-close">
-      <button type="submit" class="btn secondary" value="later">Nikdo to nevzal / Teď ne</button>
+      <button type="submit" class="btn secondary" value="later">{T.later}</button>
     </div>
   </form>
 </dialog>
@@ -55,16 +65,12 @@ import { formToken } from '../lib/report';
   }
   maybeAsk();                                             // the browser may have reloaded the page meanwhile
 
-  const MESSAGES: Record<string, string> = {
-    ok: 'Díky! Vaše zpráva pomůže dalším lidem.',
-    duplicate: 'Tuto ordinaci jste dnes už nahlásili. Díky!',
-    too_many: 'Dnes jste toho nahlásili už hodně. Díky!',
-  };
+  const MESSAGES: Record<string, string> = JSON.parse(dlg.dataset.msg ?? '{}');
   buttons.addEventListener('click', async (e) => {
     const b = (e.target as Element).closest<HTMLButtonElement>('button[data-status]');
     if (!b) return;
     buttons.hidden = true;
-    msg.hidden = false; msg.textContent = 'Ukládám…';
+    msg.hidden = false; msg.textContent = MESSAGES.saving;
     const body = new FormData();
     body.set('provider_id', dlg.dataset.id ?? '');
     body.set('status', b.dataset.status!);
@@ -75,9 +81,9 @@ import { formToken } from '../lib/report';
     try {
       const r = await fetch('/api/report', { method: 'POST', body, headers: { Accept: 'application/json' } });
       const { result } = await r.json();
-      msg.textContent = MESSAGES[result] ?? 'Něco se nepovedlo. Zkuste to prosím na stránce ordinace.';
+      msg.textContent = MESSAGES[result] ?? MESSAGES.fail;
     } catch {
-      msg.textContent = 'Něco se nepovedlo. Zkuste to prosím na stránce ordinace.';
+      msg.textContent = MESSAGES.fail;
     }
     setTimeout(() => dlg.close(), 2500);
   });

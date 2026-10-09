@@ -2,6 +2,7 @@
 import CallFollowup from '../components/CallFollowup.astro';
 import '../styles/global.css';
 import { MAIN_SPECIALTIES, SITE_NAME, SPECIALISTS, adsProvider, analytics, contactEmail } from '../lib/site';
+import { SPECIALTY_EN, langOf, specUrl } from '../lib/i18n';
 
 const cmp = import.meta.glob<string>('../ads/cmp-head.html', { query: '?raw', import: 'default', eager: true })['../ads/cmp-head.html'];
 const cmpHtml = adsProvider() === 'sklik' ? cmp : undefined;
@@ -17,8 +18,18 @@ interface Props {
   activeSpecialty?: string;
   /** schema.org structured data for this page */
   jsonLd?: object | object[];
+  /** The same page in the other language, when there is one. */
+  alt?: string;
 }
-const { title, description, noindex = false, activeSpecialty, jsonLd } = Astro.props;
+const { title, description, noindex = false, activeSpecialty, jsonLd, alt } = Astro.props;
+// originPathname: a 404 shown for /en/… is still an English page
+const lang = langOf(new URL(Astro.originPathname ?? Astro.url.pathname, Astro.url));
+const en = lang === 'en';
+const other = alt ?? (en ? '/' : '/en');
+const name = (s: { slug: string; plural: string; short: string }, short = false) => en ? (short ? SPECIALTY_EN[s.slug].short : SPECIALTY_EN[s.slug].plural) : short ? s.short : s.plural;
+const T = en
+  ? { specialties: 'Specialties', specialists: 'Specialists', menu: 'Doctors', switchLabel: 'Česky', switchShort: 'CZ', siteName: 'Accepting new patients?' }
+  : { specialties: 'Obory', specialists: 'Specialisté', menu: 'Obory', switchLabel: 'English', switchShort: 'EN', siteName: SITE_NAME };
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL('/og.png', Astro.site);
 const contact = contactEmail();
@@ -26,7 +37,7 @@ const contact = contactEmail();
 const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
 ---
 <!doctype html>
-<html lang="cs">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -38,13 +49,15 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:site_name" content={T.siteName} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     {ld && <script type="application/ld+json" set:html={ld} />}
-    <meta property="og:locale" content="cs_CZ" />
+    <meta property="og:locale" content={en ? 'en_GB' : 'cs_CZ'} />
+    {alt && <link rel="alternate" hreflang={en ? 'cs' : 'en'} href={new URL(alt, Astro.site)} />}
+    {alt && <link rel="alternate" hreflang={lang} href={canonical} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {seznamWmt && <meta name="seznam-wmt" content={seznamWmt} />}
     {googleVerification && <meta name="google-site-verification" content={googleVerification} />}
@@ -55,31 +68,33 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a href="/" class="logo">Přijímá <span>nové pacienty?</span></a>
-        <nav class="nav nav-wide" aria-label="Obory">
+        <a href={en ? '/en' : '/'} class="logo">{en ? <>Accepting <span>new patients?</span></> : <>Přijímá <span>nové pacienty?</span></>}</a>
+        <a class="lang-switch" href={other} hreflang={en ? 'cs' : 'en'} lang={en ? 'cs' : 'en'} aria-label={T.switchLabel}>{T.switchShort}</a>
+        <nav class="nav nav-wide" aria-label={T.specialties}>
           {MAIN_SPECIALTIES.map((s) => (
-            <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}>{s.short}</a>
+            <a href={specUrl(lang, s.slug)} aria-current={s.slug === activeSpecialty ? 'page' : undefined}>{name(s, true)}</a>
           ))}
           <details class="nav-menu nav-more">
-            <summary aria-current={SPECIALISTS.some((s) => s.slug === activeSpecialty) ? 'page' : undefined}>Specialisté <span aria-hidden="true">▾</span></summary>
+            <summary aria-current={SPECIALISTS.some((s) => s.slug === activeSpecialty) ? 'page' : undefined}>{T.specialists} <span aria-hidden="true">▾</span></summary>
             <div class="nav-list">
               {SPECIALISTS.map((s) => (
-                <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
+                <a href={specUrl(lang, s.slug)} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {name(s)}</a>
               ))}
             </div>
           </details>
         </nav>
         {/* Phones: one compact row, the specialties open from a button (works without JavaScript). */}
         <details class="nav-menu">
-          <summary><span aria-hidden="true">☰</span> Obory</summary>
-          <nav class="nav-list" aria-label="Obory">
+          <summary><span aria-hidden="true">☰</span> {T.menu}</summary>
+          <nav class="nav-list" aria-label={T.specialties}>
             {MAIN_SPECIALTIES.map((s) => (
-              <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
+              <a href={specUrl(lang, s.slug)} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {name(s)}</a>
             ))}
-            <span class="nav-group">Specialisté</span>
+            <span class="nav-group">{T.specialists}</span>
             {SPECIALISTS.map((s) => (
-              <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {s.plural}</a>
+              <a href={specUrl(lang, s.slug)} aria-current={s.slug === activeSpecialty ? 'page' : undefined}><span aria-hidden="true">{s.icon}</span> {name(s)}</a>
             ))}
+            <a class="nav-lang" href={other} hreflang={en ? 'cs' : 'en'} lang={en ? 'cs' : 'en'}><span aria-hidden="true">🌐</span> {en ? 'Česky' : 'English'}</a>
           </nav>
         </details>
       </div>
@@ -91,16 +106,30 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>
-          <strong>{SITE_NAME}</strong> není oficiální služba. Seznam poskytovatelů vychází z
-          Národního registru poskytovatelů zdravotních služeb (ÚZIS ČR); informace o přijímání
-          nových pacientů pocházejí od uživatelů a ordinací a nemusí být aktuální.
-          Před návštěvou si to ověřte přímo v ordinaci.
-        </p>
-        <p>
-          Nemůžete najít lékaře? Vaše zdravotní pojišťovna vám ho ze zákona musí pomoci najít.
-        </p>
-        <p><a href="/pruvodce">Průvodce</a> · <a href="/dostupnost">Dostupnost péče</a> · <a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a> · <a href="/cookies">Cookies</a>{contact && <> · <a href={`mailto:${contact}`}>{contact}</a></>}</p>
+        {en ? (
+          <>
+            <p>
+              <strong>Accepting new patients?</strong> is not an official service. The list of practices comes from the
+              Czech National Register of Healthcare Providers (ÚZIS ČR). Whether a practice takes new patients comes from
+              patients, the practices themselves and their websites, and may be out of date. Please check with the practice.
+            </p>
+            <p>Can't find a doctor? Your health insurer is required by law to help you find one.</p>
+            <p><a href="/en/guide">Guide for foreigners</a> · <a href="/o-projektu" hreflang="cs">About and privacy (in Czech)</a> · <a href="/cookies" hreflang="cs">Cookies</a>{contact && <> · <a href={`mailto:${contact}`}>{contact}</a></>}</p>
+          </>
+        ) : (
+          <>
+            <p>
+              <strong>{SITE_NAME}</strong> není oficiální služba. Seznam poskytovatelů vychází z
+              Národního registru poskytovatelů zdravotních služeb (ÚZIS ČR); informace o přijímání
+              nových pacientů pocházejí od uživatelů a ordinací a nemusí být aktuální.
+              Před návštěvou si to ověřte přímo v ordinaci.
+            </p>
+            <p>
+              Nemůžete najít lékaře? Vaše zdravotní pojišťovna vám ho ze zákona musí pomoci najít.
+            </p>
+            <p><a href="/pruvodce">Průvodce</a> · <a href="/dostupnost">Dostupnost péče</a> · <a href="/pro-ordinace">Pro ordinace</a> · <a href="/o-projektu">O projektu a ochrana údajů</a> · <a href="/cookies">Cookies</a> · <a href="/en" hreflang="en" lang="en">English</a>{contact && <> · <a href={`mailto:${contact}`}>{contact}</a></>}</p>
+          </>
+        )}
       </div>
     </footer>
     <CallFollowup />

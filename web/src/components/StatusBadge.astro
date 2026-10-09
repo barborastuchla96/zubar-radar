@@ -1,7 +1,9 @@
 ---
 import { STATUS_LABEL } from '../lib/site';
+import { STATUS_EN, langOf } from '../lib/i18n';
 interface Props { status: string }
 const { status } = Astro.props;
 const s = STATUS_LABEL[status] ?? STATUS_LABEL.unknown;
+const e = langOf(Astro.url) === 'en' ? (STATUS_EN[status] ?? STATUS_EN.unknown) : null;
 ---
-<span class={`badge ${status}`} title={s.hint}><span class="badge-icon" aria-hidden="true">{s.icon}</span>{s.label}</span>
+<span class={`badge ${status}`} title={e?.hint ?? s.hint}><span class="badge-icon" aria-hidden="true">{s.icon}</span>{e?.label ?? s.label}</span>

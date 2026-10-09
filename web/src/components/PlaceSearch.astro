@@ -1,24 +1,29 @@
 ---
 // "Where are you looking?" search by town or Prague district. Works without JavaScript.
 import { SPECIALTIES } from '../lib/site';
+import { SPECIALTY_EN } from '../lib/i18n';
 import Suggest from './Suggest.astro';
 interface Props { specialty?: string; q?: string; compact?: boolean }
 const { specialty = 'zubar', q = '', compact = false } = Astro.props;
+const en = Astro.url.pathname.startsWith('/en');
+const T = en
+  ? { action: '/en/search', who: 'Who are you looking for?', where: 'Where? Type a town or a part of Prague', ph: 'E.g. Praha 6, Kladno, Brno', go: 'Search' }
+  : { action: '/hledat', who: 'Koho hledáte?', where: 'Kde? Napište město nebo část Prahy', ph: 'Např. Praha 6, Kladno, Brno', go: 'Hledat' };
 ---
-<form class={`place-search card${compact ? ' compact' : ''}`} method="get" action="/hledat" role="search">
+<form class={`place-search card${compact ? ' compact' : ''}`} method="get" action={T.action} role="search">
   <div class="field">
-    <label for="ps-s">Koho hledáte?</label>
+    <label for="ps-s">{T.who}</label>
     <select id="ps-s" name="s">
-      {SPECIALTIES.map((s) => <option value={s.slug} selected={s.slug === specialty}>{s.plural}</option>)}
+      {SPECIALTIES.map((s) => <option value={s.slug} selected={s.slug === specialty}>{en ? SPECIALTY_EN[s.slug].plural : s.plural}</option>)}
     </select>
   </div>
   <div class="field grow">
-    <label for="ps-q">Kde? Napište město nebo část Prahy</label>
+    <label for="ps-q">{T.where}</label>
     <div class="suggest-wrap">
       <input id="ps-q" name="q" type="search" value={q} required autocomplete="off"
-             placeholder="Např. Praha 6, Kladno, Brno" data-suggest data-spec-from="ps-s" />
+             placeholder={T.ph} data-suggest data-spec-from="ps-s" />
     </div>
   </div>
-  <button class="btn big" type="submit">Hledat</button>
+  <button class="btn big" type="submit">{T.go}</button>
 </form>
 <Suggest />

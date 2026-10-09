@@ -13,7 +13,7 @@ const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat > 48 && lat < 
 const km = Math.min(Math.max(Number(q.get('km')) || 5, 1), 30);
 const rows = valid ? await nearby(spec.slug, lat, lng, km) : [];
 ---
-<Base title={`${spec.plural} v okolí`} description={`${spec.plural} ve vašem okolí, kteří přijímají nové pacienty.`} noindex activeSpecialty={spec.slug}>
+<Base title={`${spec.plural} v okolí`} description={`${spec.plural} ve vašem okolí, kteří přijímají nové pacienty.`} noindex activeSpecialty={spec.slug} alt={`/en/near${Astro.url.search}`}>
   <h1>{spec.plural} do {km} km od vás</h1>
   <SpecialistNote {spec} />
   {!valid && <p class="notice bad">Poloha chybí nebo je mimo Česko. <a href="/">Zkuste to znovu</a> nebo vyberte město.</p>}

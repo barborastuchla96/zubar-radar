@@ -1,0 +1,44 @@
+---
+// English specialty overview: search, then towns by region.
+import Base from '../../../layouts/Base.astro';
+import PlaceSearch from '../../../components/PlaceSearch.astro';
+import SpecialistNote from '../../../components/SpecialistNote.astro';
+import { cities } from '../../../lib/db';
+import { placeCompare } from '../../../lib/site';
+import { enOf, placeEn, placeUrl, practices, regionEn, specialtyFromEn } from '../../../lib/i18n';
+
+const spec = specialtyFromEn(Astro.params.spec ?? '');
+if (!spec) return Astro.rewrite('/404');
+const E = enOf(spec.slug);
+const all = await cities(spec.slug, 1);
+const PRAGUE = 'Hlavní město Praha';
+const byRegion = new Map<string, typeof all>();
+for (const c of all) {
+  const r = c.region ?? 'Other';
+  if (!byRegion.has(r)) byRegion.set(r, []);
+  byRegion.get(r)!.push(c);
+}
+const regions = [...byRegion.entries()].filter(([r]) => r !== PRAGUE).sort((a, b) => placeCompare(a[0], b[0]));
+for (const [, list] of regions) list.sort((a, b) => placeCompare(a.city, b.city));
+const BIG = [['praha', 'Prague'], ['brno', 'Brno'], ['ostrava', 'Ostrava'], ['plzen', 'Plzeň'], ['olomouc', 'Olomouc'], ['liberec', 'Liberec'],
+  ['ceske-budejovice', 'České Budějovice'], ['hradec-kralove', 'Hradec Králové'], ['pardubice', 'Pardubice']] as const;
+Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
+---
+<Base title={`${E.plural} in the Czech Republic accepting new patients – by town`}
+      description={`${E.plural} by town. For every practice: whether it accepts new patients, and whether they speak English.`}
+      activeSpecialty={spec.slug} alt={`/${spec.slug}`}>
+  <div class="crumbs"><a href="/en">Home</a> › {E.plural}</div>
+  <h1>{E.plural} by town</h1>
+  <SpecialistNote {spec} />
+  <p class="muted">{practices(all.reduce((s, c) => s + c.n, 0))} in {all.length.toLocaleString('en')} towns and Prague districts.</p>
+  <PlaceSearch specialty={spec.slug} compact />
+  <ul class="pills big-cities">{BIG.map(([slug, name]) => <li><a href={placeUrl('en', spec.slug, slug)}>{name}</a></li>)}</ul>
+  {regions.map(([region, list]) => (
+    <section>
+      <h2>{regionEn(region)}</h2>
+      <ul class="place-list">
+        {list.map((c) => <li><a href={placeUrl('en', spec.slug, c.city_slug)}>{placeEn(c.city)}</a> <span class="muted nowrap">({c.n})</span></li>)}
+      </ul>
+    </section>
+  ))}
+</Base>

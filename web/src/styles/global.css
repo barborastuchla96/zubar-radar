@@ -405,3 +405,18 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .area-map .dot-inner { font-size: 17px; font-weight: 800; fill: var(--surface); pointer-events: none; }
 .area-map .dot-link:hover .dot.numbered, .area-map .dot-link:focus-visible .dot.numbered { fill: var(--brand); stroke: var(--text); }
 .opt input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex: none; accent-color: var(--brand); }
+
+/* EN / CZ switch in the header */
+/* Wide screens: logo · menu · switch in one row. Narrower: logo and switch on top, menu below. Phones: switch is in the menu. */
+.lang-switch { order: 2; margin-left: auto; padding: .25rem .6rem; border: 1px solid var(--border); border-radius: 8px; font-weight: 700; font-size: .9rem; color: var(--text); text-decoration: none; }
+.lang-switch:hover { border-color: var(--brand); }
+.site-header .nav-wide { order: 3; flex-basis: 100%; }
+.site-header .nav-menu:not(.nav-more) { order: 4; }
+@media (min-width: 1100px) {
+  .site-header .nav-wide { order: 2; flex-basis: auto; margin-left: auto; }
+  .lang-switch { order: 3; margin-left: 0; }
+}
+@media (max-width: 640px) { .site-header .lang-switch { display: none; } }
+.nav-list .nav-lang { border-top: 1px solid var(--border); margin-top: .25rem; border-radius: 0 0 8px 8px; }
+:lang(en) .spec-tile.pick:has(input:checked)::after { content: "✓ Selected"; }
+.site-header .wrap { max-width: 1200px; }

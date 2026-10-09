@@ -1,0 +1,100 @@
+---
+// English practice page. Same data as /lekar/[id]; reports go to the same place.
+import Base from '../../../layouts/Base.astro';
+import StatusBadge from '../../../components/StatusBadge.astro';
+import ReportForm from '../../../components/ReportForm.astro';
+import ProviderCard from '../../../components/ProviderCard.astro';
+import Map from '../../../components/Map.astro';
+import SpecialistNote from '../../../components/SpecialistNote.astro';
+import { alternatives, latestCrawlNote, provider } from '../../../lib/db';
+import { address, breadcrumbLd, emailsOf, firstWeb, formatPhone, providerUrl, specialty, telHref } from '../../../lib/site';
+import { STATUS_EN, agoEn, doctorUrl, enOf, placeEn, placeUrl, specUrl } from '../../../lib/i18n';
+
+const id = Number((Astro.params.id ?? '').split('-')[0]);
+const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
+if (!p) return Astro.rewrite('/404');
+const canonical = doctorUrl('en', p);
+if (Astro.url.pathname !== canonical) return Astro.redirect(canonical + Astro.url.search, 301);
+
+const specs = (p.specialties ?? []).map(specialty).filter((s) => s != null);
+const main = specs[0];
+const alts = main ? await alternatives(p, main.slug) : [];
+const when = agoEn(p.last_signal_at);
+const crawl = p.last_source === 'web_crawl' ? await latestCrawlNote(p.id) : undefined;
+const web = firstWeb(p.web);
+const emails = emailsOf(p.email);
+const result = Astro.url.searchParams.get('r');
+// Foreign phones need the country code to dial a Czech number.
+const intl = (ph: string) => { const f = formatPhone(ph); return /^\d{3} \d{3} \d{3}$/.test(f) ? `+420 ${f}` : f; };
+const status = STATUS_EN[p.status] ?? STATUS_EN.unknown;
+const kinds = specs.map((s) => enOf(s.slug).singular).join(', ');
+const desc = `${p.name}, ${address(p)}. ${kinds}. Accepting new patients? ${status.label}${when ? ` (${crawl ? 'per the practice website' : 'confirmed'} ${when})` : ''}.`;
+Astro.response.headers.set('Cache-Control', 'private, no-cache');
+const jsonLd = breadcrumbLd(Astro.site, [
+  ['Home', '/en'],
+  ...(main ? [[enOf(main.slug).plural, specUrl('en', main.slug)] as [string, string]] : []),
+  ...(main && p.city_slug ? [[p.city ?? '', placeUrl('en', main.slug, p.city_slug)] as [string, string]] : []),
+  [p.name, canonical],
+]);
+---
+<Base title={`${p.name} – accepting new patients?`} description={desc} activeSpecialty={main?.slug} {jsonLd} alt={providerUrl(p)}>
+  <div class="crumbs">
+    <a href="/en">Home</a>
+    {main && <> › <a href={specUrl('en', main.slug)}>{enOf(main.slug).plural}</a></>}
+    {main && p.city_slug && <> › <a href={placeUrl('en', main.slug, p.city_slug)}>{placeEn(p.city ?? '')}</a></>}
+  </div>
+  <h1>{p.name}</h1>
+  <p style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+    <StatusBadge status={p.status} />
+    <span class="muted small">{when ? (crawl ? `per the practice website, checked ${when}` : `last report ${when}`) : status.hint}</span>
+  </p>
+  {p.english
+    ? <p class="notice english-note">🗣️ <strong>You can speak English here.</strong> According to the practice website or patients' reports, someone here speaks English.</p>
+    : <p class="small muted">We don't know yet whether they speak English. If you find out, please tell others below.</p>}
+  {p.self_pay && (
+    <p class="notice self-pay-note">💳 <strong>No contract with Czech health insurers.</strong> According to the practice website or patients,
+      you pay for everything yourself. Public health insurance will not cover it.</p>
+  )}
+  {specs.find((s) => s.specialist) && <SpecialistNote spec={specs.find((s) => s.specialist)!} />}
+  {crawl && (
+    <p class="small muted">
+      On the practice website (in Czech) we found: {crawl.note.split(' — ')[0]}
+      {' '}<a href={crawl.note.split(' — ')[1]} rel="nofollow noopener" target="_blank">source</a>.
+      The website may be out of date.
+    </p>
+  )}
+
+  <div class="two-col">
+    <div>
+      {p.phone && (
+        <a class="btn call big full" href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name}>📞 Call<span class="wide-only">&nbsp;the practice</span> <span class="nowrap">{intl(p.phone)}</span></a>
+      )}
+      {(emails.length > 0 || web) && (
+        <div class="contact-row detail">
+          {emails[0] && <a class="btn secondary" href={`mailto:${emails[0]}`}>✉️ Write an e-mail</a>}
+          {web && <a class="btn secondary" href={web} rel="nofollow noopener" target="_blank">🌐 Practice website</a>}
+        </div>
+      )}
+      <div class="card">
+        <dl class="facts">
+          <dt>Address</dt><dd>{address(p)}</dd>
+          {p.phone && <><dt>Phone</dt><dd><a href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name}>{intl(p.phone)}</a></dd></>}
+          {emails.length > 0 && <><dt>E-mail</dt><dd>{emails.map((e, i) => <>{i > 0 && <br />}<a href={`mailto:${e}`}>{e}</a></>)}</dd></>}
+          {web && <><dt>Website</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
+          <dt>Type of care</dt><dd>{kinds}</dd>
+          {p.facility_type && <><dt>In the register</dt><dd lang="cs">{p.facility_type}</dd></>}
+        </dl>
+      </div>
+      <Map providers={[p]} />
+      <p class="small muted">Tip: many practices answer e-mails in English more easily than phone calls. Mention your health insurer and where you live.</p>
+    </div>
+    <ReportForm providerId={p.id} {result} />
+  </div>
+
+  {alts.length > 0 && main && (
+    <section>
+      <h2>{enOf(main.slug).nearby}</h2>
+      <div class="grid grid-2">{alts.map((a) => <ProviderCard p={a} />)}</div>
+    </section>
+  )}
+</Base>

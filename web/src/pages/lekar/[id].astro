@@ -8,6 +8,7 @@ import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
+import { doctorUrl } from '../../lib/i18n';
 import { STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, emailsOf, firstWeb, formatPhone, providerUrl, specialty, telHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
@@ -68,7 +69,7 @@ const jsonLd = [
   ]),
 ];
 ---
-<Base title={`${p.name} – přijímá nové pacienty?`} description={desc} activeSpecialty={main?.slug} {jsonLd}>
+<Base title={`${p.name} – přijímá nové pacienty?`} description={desc} activeSpecialty={main?.slug} {jsonLd} alt={doctorUrl('en', p)}>
   <div class="crumbs">
     <a href="/">Úvod</a>
     {main && <> › <a href={`/${main.slug}`}>{main.plural}</a></>}

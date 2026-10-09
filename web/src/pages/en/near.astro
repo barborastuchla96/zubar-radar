@@ -1,0 +1,35 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProviderCard from '../../components/ProviderCard.astro';
+import Map from '../../components/Map.astro';
+import SpecialistNote from '../../components/SpecialistNote.astro';
+import { nearby } from '../../lib/db';
+import { SPECIALTIES, specialty } from '../../lib/site';
+import { enOf } from '../../lib/i18n';
+
+const q = Astro.url.searchParams;
+const spec = specialty(q.get('s') ?? '') ?? SPECIALTIES[0];
+const E = enOf(spec.slug);
+const lat = Number(q.get('lat')), lng = Number(q.get('lng'));
+const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat > 48 && lat < 51.5 && lng > 12 && lng < 19.5;
+const km = Math.min(Math.max(Number(q.get('km')) || 5, 1), 30);
+const RANK: Record<string, number> = { accepting: 0, waitlist: 1, mixed: 2, unknown: 3, not_accepting: 4 };
+const rows = (valid ? await nearby(spec.slug, lat, lng, km) : [])
+  .sort((a, b) => (RANK[a.status] ?? 3) - (RANK[b.status] ?? 3) || Number(b.english) - Number(a.english) || a.km - b.km);
+const wider = `?s=${spec.slug}&lat=${lat}&lng=${lng}&km=${Math.min(km * 2, 30)}`;
+---
+<Base title={`${E.plural} near you`} description={`${E.plural} near you that accept new patients.`} noindex activeSpecialty={spec.slug} alt={`/blizko${Astro.url.search}`}>
+  <h1>{E.plural} within {km} km</h1>
+  <SpecialistNote {spec} />
+  {!valid && <p class="notice bad">Location missing or outside the Czech Republic. <a href="/en">Try again</a> or choose a town.</p>}
+  {valid && rows.length === 0 && <p>Nothing found. <a href={wider}>Try a wider area</a>.</p>}
+  {rows.length > 0 && (
+    <>
+      <p class="muted">Practices that accept new patients come first, English speakers first among them; then by distance.
+        {km < 30 && <> <a href={wider}>Widen to {Math.min(km * 2, 30)} km</a></>}
+      </p>
+      <Map providers={rows} />
+      <div class="grid grid-2">{rows.map((p) => <ProviderCard p={p} />)}</div>
+    </>
+  )}
+</Base>

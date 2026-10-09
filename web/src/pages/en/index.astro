@@ -1,0 +1,123 @@
+---
+import Base from '../../layouts/Base.astro';
+import Suggest from '../../components/Suggest.astro';
+import { cities, englishCounts } from '../../lib/db';
+import { MAIN_SPECIALTIES, SPECIALISTS } from '../../lib/site';
+import { acceptingN, enOf, placeUrl, practices } from '../../lib/i18n';
+
+const english = await englishCounts();
+const totals = await Promise.all([...MAIN_SPECIALTIES, ...SPECIALISTS].map(async (s) => {
+  const all = await cities(s.slug, 1);
+  return { s, n: all.reduce((t, c) => t + c.n, 0), accepting: all.reduce((t, c) => t + c.accepting, 0), english: english[s.slug] ?? 0 };
+}));
+// GPs first: registering with a GP is what newcomers need most.
+const order = ['praktik', 'zubar', 'pediatr', 'gynekolog', 'hygienistka'];
+const main = totals.filter((t) => !t.s.specialist).sort((a, b) => order.indexOf(a.s.slug) - order.indexOf(b.s.slug));
+const spec = totals.filter((t) => t.s.specialist);
+const BIG = [['praha', 'Prague'], ['brno', 'Brno'], ['ostrava', 'Ostrava'], ['plzen', 'Plzeň'], ['olomouc', 'Olomouc'], ['liberec', 'Liberec'],
+  ['ceske-budejovice', 'České Budějovice'], ['hradec-kralove', 'Hradec Králové'], ['pardubice', 'Pardubice']] as const;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+---
+<Base title="Find an English-speaking doctor in the Czech Republic who accepts new patients"
+      description="GPs, dentists, pediatricians and specialists across the Czech Republic: who accepts new patients right now, and who speaks English. Free, no sign-up."
+      alt="/">
+  <section class="hero">
+    <h1 class="hero-title"><span>Looking for a doctor</span> <span>who will take you?</span></h1>
+    <p>
+      Every practice in the official Czech register, in one place. For each one you can see whether it{' '}
+      <strong>accepts new patients</strong> according to recent reports, and whether <strong>they speak English</strong>.
+    </p>
+  </section>
+
+  <form id="home-search" class="home-search" method="get" action="/en/search" role="search">
+    <fieldset class="step-box">
+      <legend><span class="step-no">1</span> Who are you looking for?</legend>
+      {[main, spec].map((group, g) => (
+        <>
+          {g === 1 && <p class="tile-group">Specialists</p>}
+          <div class={`grid grid-cards${g === 1 ? ' compact' : ''}`}>
+            {group.map(({ s, n, accepting, english: en }, i) => (
+              <label class="card spec-tile pick">
+                <input type="radio" name="s" value={s.slug} data-en={enOf(s.slug).en} checked={g === 0 && i === 0} />
+                <span class="icon" aria-hidden="true">{s.icon}</span>
+                <strong class="tile-title">{enOf(s.slug).plural}</strong>
+                <span class="tile-stats">
+                  <span class="nowrap">{practices(n)}</span>
+                  {accepting > 0 && <span class="nowrap tile-ok">✓ {acceptingN(accepting)}</span>}
+                  {en > 0 && <span class="nowrap">🗣️ {en} {en === 1 ? 'speaks' : 'speak'} English</span>}
+                </span>
+              </label>
+            ))}
+          </div>
+        </>
+      ))}
+    </fieldset>
+
+    <fieldset class="step-box">
+      <legend><span class="step-no">2</span> Where?</legend>
+      <label for="home-q">Type a town, village or part of Prague</label>
+      <div class="search-row">
+        <div class="suggest-wrap">
+          <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="E.g. Praha 6, Brno, Kladno"
+                 data-suggest data-spec-from="home-search" />
+        </div>
+        <button class="btn big" type="submit">Search</button>
+      </div>
+      <ul class="pills big-cities" aria-label="Big cities">
+        {BIG.map(([slug, name]) => <li><a href={placeUrl('en', 'praktik', slug)} data-city={slug}>{name}</a></li>)}
+      </ul>
+    </fieldset>
+  </form>
+
+  <form method="get" action="/en/near" class="near" id="near-form">
+    <input type="hidden" name="s" value="praktik" />
+    <input type="hidden" name="lat" /><input type="hidden" name="lng" />
+    <span class="muted">or</span>
+    <button class="btn secondary" type="submit" id="near-btn">📍 Show practices near me</button>
+  </form>
+  <p class="small muted" id="near-msg" hidden></p>
+
+  <Suggest />
+
+  <section class="card guide-teaser">
+    <h2 style="margin-top:0">New to the Czech healthcare system?</h2>
+    <p>How registering with a GP works, what to say when you contact a practice, what your insurer must do for you,
+      and what to do if nobody takes you. <a href="/en/guide"><strong>Read the short guide for foreigners →</strong></a></p>
+  </section>
+
+  <h2>How it works</h2>
+  <div class="grid grid-2">
+    <div class="card"><strong>1. Find practices near you</strong><p class="small muted">Choose the type of doctor and type your town. You'll see every practice from the official register.</p></div>
+    <div class="card"><strong>2. See who accepts new patients</strong><p class="small muted">The green label shows practices that recently said they accept new patients. 🗣️ marks those where you can speak English.</p></div>
+    <div class="card"><strong>3. Know more? Tell others</strong><p class="small muted">If you find out whether a practice accepts new patients, or speaks English, you can mark it in one tap. It's voluntary and helps the next person.</p></div>
+  </div>
+  <p class="small muted">Practice names, addresses and the reports quoted from practice websites are in Czech.</p>
+</Base>
+
+<script>
+  const search = document.getElementById('home-search') as HTMLFormElement;
+  const checked = () => search.querySelector<HTMLInputElement>('input[name=s]:checked');
+  const syncCities = () => search.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
+    a.href = `/en/${checked()?.dataset.en ?? 'gp'}/${a.dataset.city}`;
+  });
+  search.addEventListener('change', syncCities);
+  syncCities();
+
+  const form = document.getElementById('near-form') as HTMLFormElement;
+  const msg = document.getElementById('near-msg')!;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    (form.elements.namedItem('s') as HTMLInputElement).value = checked()?.value ?? 'praktik';
+    if (!navigator.geolocation) { msg.hidden = false; msg.textContent = "Your browser can't share your location."; return; }
+    msg.hidden = false; msg.textContent = 'Finding your location… Your browser may ask for permission.';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        (form.elements.namedItem('lat') as HTMLInputElement).value = pos.coords.latitude.toFixed(4);
+        (form.elements.namedItem('lng') as HTMLInputElement).value = pos.coords.longitude.toFixed(4);
+        form.submit();
+      },
+      () => { msg.textContent = "We couldn't get your location. Please type a place in the search above."; },
+      { timeout: 10000, maximumAge: 600000 },
+    );
+  });
+</script>

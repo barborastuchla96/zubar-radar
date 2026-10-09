@@ -8,6 +8,7 @@ import Sponsored from '../../components/Sponsored.astro';
 import StatusLegend from '../../components/StatusLegend.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { cityProviders, nearby, sponsored } from '../../lib/db';
+import { placeUrl } from '../../lib/i18n';
 import { SPECIALTIES, breadcrumbLd, cityUrl, factLine, isPragueSlug, monthYear, placeLabel, specialty } from '../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
@@ -43,7 +44,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   [city, cityUrl(spec.slug, Astro.params.city!)],
 ]);
 ---
-<Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug} {jsonLd}>
+<Base {title} {description} noindex={rows.length < 3} activeSpecialty={spec.slug} {jsonLd} alt={placeUrl('en', spec.slug, Astro.params.city!)}>
   <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> ›
     {isPragueSlug(Astro.params.city!) && <> <a href={cityUrl(spec.slug, 'praha')}>Praha</a> ›</>} {city}</div>
   <h1>{spec.plural} – {city}</h1>

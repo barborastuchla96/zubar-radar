@@ -3,21 +3,24 @@
 // otherwise OpenStreetMap's community server (fine only for small traffic).
 // The key is public by nature (the browser loads the tiles); limit its use in the Mapy.com console.
 import type { ProviderRow } from '../lib/db';
-import { address, formatPhone, providerUrl, STATUS_LABEL, telHref } from '../lib/site';
+import { address, formatPhone, STATUS_LABEL, telHref } from '../lib/site';
+import { STATUS_EN, doctorUrl, langOf } from '../lib/i18n';
 
 interface Props { providers: ProviderRow[] }
 const mapyKey = (process.env.MAPY_API_KEY ?? '').trim();
+const lang = langOf(Astro.url);
 const points = Astro.props.providers
   .filter((p) => p.lat != null && p.lng != null)
   .map((p) => {
     const st = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
+    const label = lang === 'en' ? (STATUS_EN[p.status] ?? STATUS_EN.unknown).label : st.label;
     return {
-      id: p.id, lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status, label: st.label, icon: st.icon,
+      id: p.id, lat: p.lat, lng: p.lng, name: p.name, url: doctorUrl(lang, p), status: p.status, label, icon: st.icon,
       addr: address(p), phone: p.phone ? formatPhone(p.phone) : null, tel: p.phone ? telHref(p.phone) : null,
     };
   });
 ---
-{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} data-mapy={mapyKey || undefined} role="region" aria-label="Mapa ordinací"></div>}
+{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} data-mapy={mapyKey || undefined} data-lang={lang} role="region" aria-label={lang === 'en' ? 'Map of practices' : 'Mapa ordinací'}></div>}
 
 <script>
   import L from 'leaflet';
@@ -38,7 +41,7 @@ const points = Astro.props.providers
       call.dataset.callId = String(p.id); call.dataset.callName = p.name;
       div.append(call);
     }
-    const more = document.createElement('a'); more.href = p.url; more.className = 'mp-more'; more.textContent = 'Podrobnosti a kontakt →';
+    const more = document.createElement('a'); more.href = p.url; more.className = 'mp-more'; more.textContent = document.documentElement.lang === 'en' ? 'Details and contact →' : 'Podrobnosti a kontakt →';
     div.append(more);
     return div;
   }
@@ -60,7 +63,7 @@ const points = Astro.props.providers
       const size = window.devicePixelRatio > 1 ? '256@2x' : '256';
       L.tileLayer(`https://api.mapy.com/v1/maptiles/basic/${size}/{z}/{x}/{y}?apikey=${encodeURIComponent(key)}`, {
         minZoom: 0, maxZoom: 19, tileSize: 256,
-        attribution: '<a href="https://api.mapy.com/copyright" target="_blank" rel="noopener">&copy; Seznam.cz a.s. a další</a>',
+        attribution: '<a href="https://api.mapy.com/copyright" target="_blank" rel="noopener">&copy; Seznam.cz a.s. ' + (el.dataset.lang === 'en' ? 'and others' : 'a další') + '</a>',
       }).addTo(map);
       const Logo = L.Control.extend({
         options: { position: 'bottomleft' },
@@ -79,7 +82,9 @@ const points = Astro.props.providers
       }).addTo(map);
     }
     // Known statuses are small text tags ("✓ Přijímá"); "don't know yet" stays a small quiet dot.
-    const TAG: Record<string, string> = { accepting: '✓ Přijímá', waitlist: '⏳ Pořadník', mixed: '! Nejasné', not_accepting: '✗ Nepřijímá' };
+    const TAG: Record<string, string> = el.dataset.lang === 'en'
+      ? { accepting: '✓ Accepting', waitlist: '⏳ Waiting list', mixed: '! Unclear', not_accepting: '✗ Not accepting' }
+      : { accepting: '✓ Přijímá', waitlist: '⏳ Pořadník', mixed: '! Nejasné', not_accepting: '✗ Nepřijímá' };
     const group = L.featureGroup();
     for (const p of pts) {
       const known = p.status !== 'unknown';

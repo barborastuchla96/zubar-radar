@@ -3,55 +3,72 @@ import { formToken } from '../lib/report';
 
 interface Props { providerId: number; result?: string | null }
 const { providerId, result } = Astro.props;
+const en = Astro.url.pathname.startsWith('/en');
 const today = new Date().toISOString().slice(0, 10);
 const min = new Date(Date.now() - 60 * 86_400_000).toISOString().slice(0, 10);
+const T = en ? {
+  ok: 'Thank you! Your report will help others.', duplicate: 'You already reported this practice today. Thank you!',
+  too_many: "You've sent a lot of reports today. Please try again tomorrow.", invalid: 'Something went wrong. Please check the form.',
+  h: 'Do you know if they take new patients? Tell others', lead: 'Takes a few taps. Voluntary and anonymous.',
+  what: 'What did you find out?', acc: 'They took me / they accept new patients', wait: 'They put me on a waiting list', not: "They don't accept new patients",
+  who: 'Whom do they accept?', all: 'Everyone / not sure', adults: 'Adults only', kids: 'Children only',
+  extra: 'Anything else? (optional)', english: 'You can speak English there', selfPay: 'No contract with health insurers, you pay everything',
+  when: 'When did you find out?', note: 'Note (optional)', ph: 'E.g. "only children living in Praha 6". Please no names or health details.',
+  send: 'Send report', privacy: "We don't store your name or IP address, only an anonymous fingerprint that protects us from spam.",
+} : {
+  ok: 'Díky! Vaše hlášení pomůže dalším lidem.', duplicate: 'Tuto ordinaci jste dnes už nahlásili. Díky!',
+  too_many: 'Dnes jste toho nahlásili už hodně. Zkuste to prosím zítra.', invalid: 'Něco se nepovedlo. Zkontrolujte prosím formulář.',
+  h: 'Víte, jestli tu přijímají? Dejte vědět ostatním', lead: 'Stačí pár klepnutí. Je to dobrovolné a anonymní.',
+  what: 'Co jste zjistili?', acc: 'Vzali mě / přijímají nové pacienty', wait: 'Zapsali mě do pořadníku', not: 'Nové pacienty nepřijímají',
+  who: 'Koho přijímají?', all: 'Všechny / nevím', adults: 'Jen dospělé', kids: 'Jen děti',
+  extra: 'Víte ještě něco? (nepovinné)', english: 'Domluvíte se tam anglicky', selfPay: 'Nemají smlouvu se zdravotní pojišťovnou, všechno se platí',
+  when: 'Kdy jste to zjistili?', note: 'Poznámka (nepovinné)', ph: 'Např. „přijímají jen děti s trvalým bydlištěm v Praze 6“. Nepište prosím jména ani zdravotní údaje.',
+  send: 'Odeslat hlášení', privacy: 'Neukládáme vaše jméno ani IP adresu. Jen anonymní otisk, který nás chrání před spamem.',
+};
 const MESSAGES: Record<string, [string, string]> = {
-  ok: ['ok', 'Díky! Vaše hlášení pomůže dalším lidem.'],
-  duplicate: ['bad', 'Tuto ordinaci jste dnes už nahlásili. Díky!'],
-  too_many: ['bad', 'Dnes jste toho nahlásili už hodně. Zkuste to prosím zítra.'],
-  invalid: ['bad', 'Něco se nepovedlo. Zkontrolujte prosím formulář.'],
+  ok: ['ok', T.ok], duplicate: ['bad', T.duplicate], too_many: ['bad', T.too_many], invalid: ['bad', T.invalid],
 };
 const msg = result ? MESSAGES[result] : null;
 ---
 <section id="nahlasit" class="card">
-  <h2 style="margin-top:0">Víte, jestli tu přijímají? Dejte vědět ostatním</h2>
-  <p class="muted">Stačí pár klepnutí. Je to dobrovolné a anonymní.</p>
+  <h2 style="margin-top:0">{T.h}</h2>
+  <p class="muted">{T.lead}</p>
   {msg && <p class={`notice ${msg[0]}`} role="status">{msg[1]}</p>}
   <form class="report" method="post" action="/api/report">
     <input type="hidden" name="provider_id" value={providerId} />
     <input type="hidden" name="t" value={formToken()} />
+    {en && <input type="hidden" name="lang" value="en" />}
     <div class="hp" aria-hidden="true">
       <label>Web <input type="text" name="web" tabindex="-1" autocomplete="off" /></label>
     </div>
     <fieldset>
-      <legend>Co jste zjistili?</legend>
-      <label class="opt"><input type="radio" name="status" value="accepting" required /> Vzali mě / přijímají nové pacienty</label>
-      <label class="opt"><input type="radio" name="status" value="waitlist" /> Zapsali mě do pořadníku</label>
-      <label class="opt"><input type="radio" name="status" value="not_accepting" /> Nové pacienty nepřijímají</label>
+      <legend>{T.what}</legend>
+      <label class="opt"><input type="radio" name="status" value="accepting" required /> {T.acc}</label>
+      <label class="opt"><input type="radio" name="status" value="waitlist" /> {T.wait}</label>
+      <label class="opt"><input type="radio" name="status" value="not_accepting" /> {T.not}</label>
     </fieldset>
     <fieldset>
-      <legend>Koho přijímají?</legend>
-      <select name="scope" aria-label="Koho přijímají?">
-        <option value="all">Všechny / nevím</option>
-        <option value="adults">Jen dospělé</option>
-        <option value="children">Jen děti</option>
+      <legend>{T.who}</legend>
+      <select name="scope" aria-label={T.who}>
+        <option value="all">{T.all}</option>
+        <option value="adults">{T.adults}</option>
+        <option value="children">{T.kids}</option>
       </select>
     </fieldset>
     <fieldset>
-      <legend>Víte ještě něco? (nepovinné)</legend>
-      <label class="opt"><input type="checkbox" name="english" value="1" /> Domluvíte se tam anglicky</label>
-      <label class="opt"><input type="checkbox" name="self_pay" value="1" /> Nemají smlouvu se zdravotní pojišťovnou, všechno se platí</label>
+      <legend>{T.extra}</legend>
+      <label class="opt"><input type="checkbox" name="english" value="1" /> {T.english}</label>
+      <label class="opt"><input type="checkbox" name="self_pay" value="1" /> {T.selfPay}</label>
     </fieldset>
     <fieldset>
-      <legend><label for="report-date">Kdy jste to zjistili?</label></legend>
+      <legend><label for="report-date">{T.when}</label></legend>
       <input id="report-date" type="date" name="date" value={today} min={min} max={today} required />
     </fieldset>
     <fieldset>
-      <legend><label for="report-note">Poznámka (nepovinné)</label></legend>
-      <textarea id="report-note" name="note" rows="2" maxlength="300"
-        placeholder="Např. „přijímají jen děti s trvalým bydlištěm v Praze 6“. Nepište prosím jména ani zdravotní údaje."></textarea>
+      <legend><label for="report-note">{T.note}</label></legend>
+      <textarea id="report-note" name="note" rows="2" maxlength="300" placeholder={T.ph}></textarea>
     </fieldset>
-    <div><button class="btn" type="submit">Odeslat hlášení</button></div>
-    <p class="small muted">Neukládáme vaše jméno ani IP adresu. Jen anonymní otisk, který nás chrání před spamem.</p>
+    <div><button class="btn" type="submit">{T.send}</button></div>
+    <p class="small muted">{T.privacy}</p>
   </form>
 </section>

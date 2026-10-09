@@ -232,3 +232,16 @@ export async function latestCrawlNote(providerId: number): Promise<{ note: strin
      ORDER BY observed_at DESC LIMIT 1`;
   return row;
 }
+
+/** Practices per specialty where someone speaks English (from websites or patients' reports). */
+export async function englishCounts(): Promise<Record<string, number>> {
+  const rows = await sql<{ slug: string; n: number }[]>`
+    SELECT ps.specialty_slug AS slug, count(DISTINCT p.id)::int AS n
+      FROM providers p
+      JOIN provider_specialties ps ON ps.provider_id = p.id
+      JOIN provider_flags f ON f.provider_id = p.id AND f.flag = 'english'
+           AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')
+     WHERE p.active
+     GROUP BY 1`;
+  return Object.fromEntries(rows.map((r) => [r.slug, r.n]));
+}

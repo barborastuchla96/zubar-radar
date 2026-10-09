@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { SITE_NAME, SPECIALTIES } from '../lib/site';
+import { SPECIALTY_EN } from '../lib/i18n';
 
 // llms.txt: a plain summary of the site for AI assistants (https://llmstxt.org).
 export const GET: APIRoute = ({ site }) => {
@@ -17,6 +18,7 @@ Web je zdarma, bez registrace a bez cookies. Není to oficiální služba: před
 
 ${SPECIALTIES.map((s) => `- [${s.plural} podle měst a krajů](${u(`/${s.slug}`)})`).join('\n')}
 - Adresy stránek: /{obor}/{obec} (např. ${u('/zubar/brno')}), /{obor}/kraj/{kraj}, /{obor}/okres/{okres}, /{obor}/praha. Obory: ${SPECIALTIES.map((s) => s.slug).join(', ')}.
+- English version for foreigners, incl. which practices speak English: ${u('/en')}, e.g. ${u('/en/gp/praha-6')}, guide ${u('/en/guide')}. English specialty slugs: ${SPECIALTIES.map((s) => SPECIALTY_EN[s.slug].en).join(', ')}.
 
 ## Přehledy
 

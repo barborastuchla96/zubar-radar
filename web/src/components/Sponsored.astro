@@ -2,18 +2,20 @@
 // Directly-sold sponsored listing: first-party, no cookies, labelled "Reklama"
 // as Czech advertising law requires ads to be recognisable.
 import StatusBadge from './StatusBadge.astro';
-import { address, providerUrl, telHref } from '../lib/site';
+import { address, telHref } from '../lib/site';
+import { doctorUrl, langOf } from '../lib/i18n';
 import type { SponsoredRow } from '../lib/db';
 
 interface Props { rows: SponsoredRow[] }
 const { rows } = Astro.props;
+const lang = langOf(Astro.url);
 ---
 {rows.length > 0 && (
   <div class="grid grid-2" style="margin-bottom:.75rem">
     {rows.map((p) => (
       <article class="card provider sponsored" data-status={p.status}>
-        <span class="small muted sponsor-label">Reklama · doporučená ordinace</span>
-        <h3><a href={providerUrl(p)}>{p.name}</a></h3>
+        <span class="small muted sponsor-label">{lang === 'en' ? 'Ad · featured practice' : 'Reklama · doporučená ordinace'}</span>
+        <h3><a href={doctorUrl(lang, p)}>{p.name}</a></h3>
         {p.tagline && <p class="small" style="margin:0">{p.tagline}</p>}
         <div class="meta"><StatusBadge status={p.status} /></div>
         <div class="small muted">{address(p)}</div>

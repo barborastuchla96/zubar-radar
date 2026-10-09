@@ -4,10 +4,11 @@
 ---
 <script>
   // Small copies of the helpers in lib/site.ts (which also reads server settings, so it stays out of the browser).
+  const EN = document.documentElement.lang === 'en';
   const pr = new Intl.PluralRules('cs');
   const pick = (n: number, one: string, few: string, many: string) => { const c = pr.select(n); return c === 'one' ? one : c === 'few' ? few : many; };
-  const ordinaci = (n: number) => `${n.toLocaleString('cs')} ${pick(n, 'ordinace', 'ordinace', 'ordinací')}`;
-  const prijima = (n: number) => `${n.toLocaleString('cs')} ${pick(n, 'přijímá', 'přijímají', 'přijímá')}`;
+  const ordinaci = (n: number) => EN ? `${n.toLocaleString('en')} ${n === 1 ? 'practice' : 'practices'}` : `${n.toLocaleString('cs')} ${pick(n, 'ordinace', 'ordinace', 'ordinací')}`;
+  const prijima = (n: number) => EN ? `${n.toLocaleString('en')} accepting` : `${n.toLocaleString('cs')} ${pick(n, 'přijímá', 'přijímají', 'přijímá')}`;
 
   interface Hit { name: string; url: string; n: number; accepting: number; where: string | null }
 
@@ -60,7 +61,7 @@
       if (q.length < 2) { hits = []; render(); return; }
       const my = ++seq;
       try {
-        const r = await fetch(`/api/mista?s=${encodeURIComponent(spec())}&q=${encodeURIComponent(q)}`);
+        const r = await fetch(`/api/mista?s=${encodeURIComponent(spec())}&q=${encodeURIComponent(q)}${EN ? '&lang=en' : ''}`);
         const data = (await r.json()) as Hit[];
         if (my === seq) { hits = data; render(); }   // ignore answers that arrive out of order
       } catch { /* offline: plain search still works */ }

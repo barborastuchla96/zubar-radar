@@ -5,6 +5,7 @@ export interface MapDot { href: string; label: string; title: string; x: number;
 interface Props { viewBox: string; label: string; areas?: MapArea[]; outline?: string; dots?: MapDot[] }
 const { viewBox, label, areas = [], outline, dots = [] } = Astro.props;
 const width = Number(viewBox.split(' ')[2]);
+const en = Astro.url.pathname.startsWith('/en');
 ---
 <div class="region-map area-map">
   <svg {viewBox} role="group" aria-label={label}>
@@ -29,5 +30,5 @@ const width = Number(viewBox.split(' ')[2]);
       </a>
     ))}
   </svg>
-  <p class="small muted map-credit">Hranice © <a href="/o-projektu">ČÚZK, CC BY 4.0</a></p>
+  <p class="small muted map-credit">{en ? 'Boundaries' : 'Hranice'} © <a href="/o-projektu">ČÚZK, CC BY 4.0</a></p>
 </div>

@@ -25,7 +25,7 @@ if (needle) {
   }
 }
 ---
-<Base title={`Hledat: ${q || spec.plural}`} description={`${spec.plural} – vyhledávání podle obce.`} noindex activeSpecialty={spec.slug}>
+<Base title={`Hledat: ${q || spec.plural}`} description={`${spec.plural} – vyhledávání podle obce.`} noindex activeSpecialty={spec.slug} alt={`/en/search${Astro.url.search}`}>
   <h1>Kde hledáte {spec.acc}?</h1>
   <PlaceSearch specialty={spec.slug} {q} />
   {q && matches.length === 0 && (

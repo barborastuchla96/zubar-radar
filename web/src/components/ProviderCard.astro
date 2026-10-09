@@ -1,48 +1,53 @@
 ---
 import StatusBadge from './StatusBadge.astro';
-import { address, ago, emailsOf, firstWeb, formatPhone, providerUrl, telHref } from '../lib/site';
+import { address, ago, emailsOf, firstWeb, formatPhone, telHref } from '../lib/site';
+import { agoEn, doctorUrl, langOf } from '../lib/i18n';
 import type { ProviderRow } from '../lib/db';
 
 interface Props { p: ProviderRow & { km?: number } }
 const { p } = Astro.props;
-const when = ago(p.last_signal_at);
+const en = langOf(Astro.url) === 'en';
+const when = en ? agoEn(p.last_signal_at) : ago(p.last_signal_at);
 const email = emailsOf(p.email)[0];
 const web = firstWeb(p.web);
-const url = providerUrl(p);
+const url = doctorUrl(en ? 'en' : 'cs', p);
+const T = en
+  ? { crawl: 'per the practice website, checked', seen: 'confirmed', km: 'km away', english: 'Speaks English', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
+  : { crawl: 'podle webu ordinace, zkontrolováno', seen: 'ověřeno', km: 'km od vás', english: 'Mluví anglicky', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
 ---
 <article class="card provider" data-status={p.status} data-english={p.english ? "1" : undefined}>
   <h3><a href={url}>{p.name}</a></h3>
   <div class="meta">
     <StatusBadge status={p.status} />
-    {when && <span>{p.last_source === 'web_crawl' ? `podle webu ordinace, zkontrolováno ${when}` : `ověřeno ${when}`}</span>}
-    {p.km != null && <span>{p.km.toLocaleString('cs')} km od vás</span>}
+    {when && <span>{p.last_source === 'web_crawl' ? `${T.crawl} ${when}` : `${T.seen} ${when}`}</span>}
+    {p.km != null && <span>{p.km.toLocaleString(en ? 'en' : 'cs')} {T.km}</span>}
   </div>
   {(p.self_pay || p.english) && (
     <div class="facts">
-      {p.english && <span class="fact-tag english">🗣️ Mluví anglicky</span>}
-      {p.self_pay && <span class="fact-tag self-pay">💳 Bez smlouvy s pojišťovnou, platíte sami</span>}
+      {p.english && <span class="fact-tag english">🗣️ {T.english}</span>}
+      {p.self_pay && <span class="fact-tag self-pay">💳 {T.selfPay}</span>}
     </div>
   )}
   <div class="addr">{address(p)}</div>
   <!-- Same layout on every card: every contact the register has, then the same two links. -->
   <div class="actions">
     {p.phone && (
-      <a class="btn call contact" href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name} aria-label={`Zavolat do ordinace ${p.name}: ${formatPhone(p.phone)}`}>📞 <span class="nowrap">{formatPhone(p.phone)}</span></a>
+      <a class="btn call contact" href={telHref(p.phone)} data-call-id={p.id} data-call-name={p.name} aria-label={`${T.call} ${p.name}: ${formatPhone(p.phone)}`}>📞 <span class="nowrap">{formatPhone(p.phone)}</span></a>
     )}
     {(email || web) && (
       <div class="contact-row">
-        {email && <a class="btn secondary contact" href={`mailto:${email}`} aria-label={`Napsat e-mail: ${email}`}>✉️ E-mail</a>}
-        {web && <a class="btn secondary contact" href={web} rel="nofollow noopener" target="_blank" aria-label={`Web ordinace ${p.name}`}>🌐 Web</a>}
+        {email && <a class="btn secondary contact" href={`mailto:${email}`} aria-label={`${T.mail}: ${email}`}>✉️ E-mail</a>}
+        {web && <a class="btn secondary contact" href={web} rel="nofollow noopener" target="_blank" aria-label={`${T.site} ${p.name}`}>🌐 {en ? 'Website' : 'Web'}</a>}
       </div>
     )}
     {!p.phone && !email && !web && (
       // Nothing in the register: let people look it up instead of hitting a dead end.
       <a class="btn secondary contact" href={`https://search.seznam.cz/?q=${encodeURIComponent(`${p.name} ${p.city ?? ''} kontakt`)}`}
-         rel="nofollow noopener" target="_blank">🔍 Dohledat kontakt</a>
+         rel="nofollow noopener" target="_blank">🔍 {T.find}</a>
     )}
     <div class="links">
-      <a href={url}>Podrobnosti a mapa</a>
-      <a class="report-link" href={`${url}#nahlasit`}>Víte víc? Dejte vědět</a>
+      <a href={url}>{T.more}</a>
+      <a class="report-link" href={`${url}#nahlasit`}>{T.report}</a>
     </div>
   </div>
 </article>

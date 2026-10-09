@@ -1,8 +1,16 @@
 ---
 import Base from '../layouts/Base.astro';
 Astro.response.status = 404;
+const en = (Astro.originPathname ?? Astro.url.pathname).startsWith('/en');
 ---
-<Base title="Stránka nenalezena" description="Tato stránka neexistuje." noindex>
-  <h1>Tady nic není</h1>
-  <p>Tahle stránka neexistuje nebo ordinace už není v registru. <a href="/">Zpět na úvod</a>.</p>
-</Base>
+{en ? (
+  <Base title="Page not found" description="This page does not exist." noindex>
+    <h1>Nothing here</h1>
+    <p>This page doesn't exist, or the practice is no longer in the register. <a href="/en">Back to the home page</a>.</p>
+  </Base>
+) : (
+  <Base title="Stránka nenalezena" description="Tato stránka neexistuje." noindex>
+    <h1>Tady nic není</h1>
+    <p>Tahle stránka neexistuje nebo ordinace už není v registru. <a href="/">Zpět na úvod</a>.</p>
+  </Base>
+)}

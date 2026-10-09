@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { type CityCount, cities } from '../../lib/db';
-import { cityUrl, isPragueSlug, slugify, specialty } from '../../lib/site';
+import { isPragueSlug, slugify, specialty } from '../../lib/site';
+import { placeUrl } from '../../lib/i18n';
 
 // Town suggestions for the search box ("našeptávač"). Town lists change monthly; cache them briefly.
 const cache = new Map<string, { at: number; rows: CityCount[] }>();
@@ -14,6 +15,7 @@ async function places(spec: string) {
 
 export const GET: APIRoute = async ({ url }) => {
   const spec = specialty(url.searchParams.get('s') ?? '');
+  const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'cs';
   const needle = slugify((url.searchParams.get('q') ?? '').slice(0, 60));
   if (!spec || needle.length < 2) return Response.json([]);
 
@@ -27,10 +29,12 @@ export const GET: APIRoute = async ({ url }) => {
     .sort((a, b) => a.r - b.r || b.c.n - a.c.n)
     .slice(0, 8)
     .map(({ c }) => ({
-      name: c.city.replace(/ \(okres .*\)$/, ''), url: cityUrl(spec.slug, c.city_slug), n: c.n, accepting: c.accepting,
-      where: isPragueSlug(c.city_slug) ? 'Praha' : c.district ? `okres ${c.district}` : c.region,
+      name: c.city.replace(/ \(okres .*\)$/, ''), url: placeUrl(lang, spec.slug, c.city_slug), n: c.n, accepting: c.accepting,
+      where: isPragueSlug(c.city_slug) ? (lang === 'en' ? 'Prague' : 'Praha') : c.district ? (lang === 'en' ? `${c.district} district` : `okres ${c.district}`) : c.region,
     }));
   // "pra…" → offer the whole of Prague first
-  if ('praha'.startsWith(needle)) rows.unshift({ name: 'Praha – celá', url: cityUrl(spec.slug, 'praha'), n: 0, accepting: 0, where: 'všechny městské části' });
+  if ('praha'.startsWith(needle) || 'prague'.startsWith(needle)) rows.unshift(lang === 'en'
+    ? { name: 'Prague – all of it', url: placeUrl(lang, spec.slug, 'praha'), n: 0, accepting: 0, where: 'all districts' }
+    : { name: 'Praha – celá', url: placeUrl(lang, spec.slug, 'praha'), n: 0, accepting: 0, where: 'všechny městské části' });
   return Response.json(rows.slice(0, 8), { headers: { 'Cache-Control': 'public, max-age=300' } });
 };
