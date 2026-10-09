@@ -72,8 +72,8 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     lines = [
         "Dobrý den,",
         "",
-        f"máme dobrou zprávu. Do {a.radius_km} km od místa {a.place} teď podle nových zpráv",
-        f"{'přijímá' if n == 1 else 'přijímají'} nové pacienty {these}:",
+        f"máme dobrou zprávu. Do {a.radius_km} km od místa {a.place} teď podle nových zpráv"
+        f" {'přijímá' if n == 1 else 'přijímají'} nové pacienty {these}:",
         "",
     ]
     for p in a.providers:
@@ -85,8 +85,8 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  {site}/lekar/{p['id']}")
         lines.append("")
     lines += [
-        "Než se do ordinace vydáte, zavolejte. Zprávy pocházejí od pacientů a z webů ordinací",
-        "a nemusí být úplně aktuální.",
+        "Než se do ordinace vydáte, zavolejte. Zprávy pocházejí od pacientů a z webů ordinací"
+        " a nemusí být úplně aktuální.",
         "",
         "Až zavoláte, dejte prosím na stránce ordinace vědět, jak to dopadlo. Pomůžete tím dalším.",
         "",
