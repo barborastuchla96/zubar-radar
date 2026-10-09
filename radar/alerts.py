@@ -95,7 +95,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     lines = [
         "Dobrý den,",
         "",
-        f"máme pro vás dobrou zprávu: v lokalitě {a.place} podle posledních informací"
+        f"máme pro vás dobrou zprávu: v lokalitě {a.place} a okolí podle posledních informací"
         f" {'přijímá' if n == 1 else 'přijímají'} nové pacienty {these}:",
         "",
     ]
