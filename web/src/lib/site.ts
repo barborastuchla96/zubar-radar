@@ -64,9 +64,9 @@ export const prijima = (n: number) => `${num(n)} ${plural(n, 'přijímá', 'při
 export const STATUS_LABEL: Record<string, { label: string; hint: string; icon: string }> = {
   accepting:     { icon: '✓', label: 'Přijímá nové pacienty', hint: 'Podle nedávných zpráv přijímá nové pacienty.' },
   waitlist:      { icon: '⏳', label: 'Pořadník',              hint: 'Zapisuje nové pacienty do pořadníku.' },
-  mixed:         { icon: '!', label: 'Nejasné',               hint: 'Hlášení si odporují. Zavolejte a ověřte.' },
+  mixed:         { icon: '!', label: 'Nejasné',               hint: 'Zprávy si odporují.' },
   not_accepting: { icon: '✗', label: 'Nepřijímá',             hint: 'Podle nedávných zpráv nové pacienty nepřijímá.' },
-  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Zatím to nikdo nenahlásil. Až tam zavoláte, můžete výsledek označit tady na webu.' },
+  unknown:       { icon: '?', label: 'Zatím nevíme',          hint: 'Zatím o tom nemáme zprávy.' },
 };
 
 const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });

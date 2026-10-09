@@ -34,7 +34,7 @@ const around = center
   : [];
 const title = `${spec.seo ?? spec.plural} ${city} – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine(city, spec.plural, counts.accepting, rows.length);
-const description = `${fact} Kontakty, mapa a hlášení od lidí, kteří tam volali.`;
+const description = `${fact} Kontakty, mapa a zprávy od pacientů.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [
   ['Úvod', '/'], [spec.plural, `/${spec.slug}`],
@@ -52,7 +52,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
   {open > 0 ? (
     <>
       <p class="intro">Nahoře najdete ordinace, které podle hlášení <strong>přijímají nové pacienty</strong>.
-        U ostatních to zatím nevíme. Pokud tam zavoláte, můžete pak výsledek označit tady na webu.</p>
+        U ostatních to zatím nevíme.</p>
       <StatusLegend />
       <div class="filters" role="group" aria-label="Zobrazit">
         <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
@@ -64,9 +64,9 @@ const jsonLd = breadcrumbLd(Astro.site, [
     // Nobody here is known to accept: say it plainly and offer the two ways to help right away.
     <div class="card empty-state">
       <h2>{known === 0 ? 'Tady nám zatím nikdo nic nenahlásil' : 'Tady zatím nikdo nehlásí, že by přijímali'}</h2>
-      <p>Kontakty na všechny ordinace najdete níže. Až některé zavoláte, můžete výsledek označit jedním
-        klepnutím. Další lidé pak nemusí volat znovu.</p>
-      {center && <p><a href="#upozorneni">📧 Nechcete volat? Pošleme vám e-mail, až tu někdo začne přijímat</a></p>}
+      <p>Kontakty na všechny ordinace najdete níže. Když zjistíte, jak to v některé je, dejte vědět.
+        Ostatní to pak uvidí.</p>
+      {center && <p><a href="#upozorneni">📧 Pošleme vám e-mail, až tu někdo začne přijímat</a></p>}
     </div>
   )}
 

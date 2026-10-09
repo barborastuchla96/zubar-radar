@@ -41,7 +41,7 @@ for (let round = 0; round < 40; round++) {
 districts.sort((a, b) => Number(a.city_slug === 'praha') - Number(b.city_slug === 'praha'));
 const title = `${spec.seo ?? spec.plural} Praha – kdo přijímá nové pacienty (${monthYear()})`;
 const fact = factLine('Praha', spec.plural, acceptingTotal, total);
-const description = `${fact} Přehled podle městských částí, kontakty a hlášení od lidí, kteří tam volali.`;
+const description = `${fact} Přehled podle městských částí, kontakty a zprávy od pacientů.`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`], ['Praha', cityUrl(spec.slug, 'praha')]]);
 ---
@@ -66,8 +66,8 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
       <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
     </>
   ) : (
-    <p class="card">Zatím nemáme žádnou zprávu, že by tu někdo přijímal. Vyberte svou část Prahy a pomozte nám.
-      Po telefonátu do ordinace stačí jedno kliknutí.</p>
+    <p class="card">Zatím nemáme žádnou zprávu, že by tu někdo přijímal. Vyberte svou část Prahy
+      a podívejte se na kontakty.</p>
   )}
   <AdSlot name={`city-${spec.slug}`} />
 

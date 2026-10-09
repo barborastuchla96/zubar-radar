@@ -14,8 +14,8 @@ const MESSAGES: Record<string, [string, string]> = {
 const msg = result ? MESSAGES[result] : null;
 ---
 <section id="nahlasit" class="card">
-  <h2 style="margin-top:0">Volali jste do této ordinace? Pomozte ostatním</h2>
-  <p class="muted">Když budete chtít, označte, jak telefonát dopadl. Je to dobrovolné a anonymní.</p>
+  <h2 style="margin-top:0">Víte, jestli tu přijímají? Dejte vědět ostatním</h2>
+  <p class="muted">Stačí pár klepnutí. Je to dobrovolné a anonymní.</p>
   {msg && <p class={`notice ${msg[0]}`} role="status">{msg[1]}</p>}
   <form class="report" method="post" action="/api/report">
     <input type="hidden" name="provider_id" value={providerId} />
@@ -24,7 +24,7 @@ const msg = result ? MESSAGES[result] : null;
       <label>Web <input type="text" name="web" tabindex="-1" autocomplete="off" /></label>
     </div>
     <fieldset>
-      <legend>Jak to dopadlo?</legend>
+      <legend>Co jste zjistili?</legend>
       <label class="opt"><input type="radio" name="status" value="accepting" required /> Vzali mě / přijímají nové pacienty</label>
       <label class="opt"><input type="radio" name="status" value="waitlist" /> Zapsali mě do pořadníku</label>
       <label class="opt"><input type="radio" name="status" value="not_accepting" /> Nové pacienty nepřijímají</label>

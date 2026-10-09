@@ -127,11 +127,17 @@ def _snippet(text: str, m: re.Match, pad: int = 50, original: str | None = None,
              src: list[int] | None = None) -> str:
     """Text around a match, taken from the original (with diacritics) when given."""
     a, b = max(0, m.start() - pad), min(len(text), m.end() + pad)
+    # Whole words only: "…tní stomatologickou péči" reads like a typo.
+    while 0 < a < m.start() and text[a - 1].isalnum():
+        a += 1
+    while m.end() < b < len(text) and text[b].isalnum():
+        b -= 1
     if original is not None and src:
         s = original[src[a]: src[b - 1] + 1]
     else:
         s = text[a:b]
-    return re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+", " ", s).strip()
+    return ("…" if a > 0 else "") + s + ("…" if b < len(text) else "")
 
 
 def _scope(window: str) -> str:
