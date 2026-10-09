@@ -226,6 +226,20 @@ def run(conn: psycopg.Connection, sender, site_url: str, mail_from: str, dry_run
             "removed_unconfirmed": removed}
 
 
+def send_test(conn: psycopg.Connection, sender, site_url: str, mail_from: str, to: str) -> None:
+    """Send a sample alert so the real mail path can be checked without touching any data."""
+    lat, lng = 50.0971, 14.3741          # Praha 6
+    with conn.cursor(row_factory=dict_row) as cur:
+        provs = cur.execute(
+            "SELECT p.id, p.name, p.street, p.house_no, p.city, p.phone,"
+            "       distance_km(%s, %s, p.lat, p.lng) AS km"
+            "  FROM providers p JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = 'zubar'"
+            " WHERE p.active AND p.lat IS NOT NULL ORDER BY km LIMIT 2", (lat, lng)).fetchall()
+    msg = compose(Alert("test", to, "test-only-not-a-real-token", "zubar", "Praha 6", 5, provs), site_url, mail_from)
+    msg.replace_header("Subject", "[TEST] " + msg["Subject"])
+    sender.send(msg)
+
+
 def sender_from_env() -> SMTPSender:
     host = os.environ.get("SMTP_HOST")
     if not host:

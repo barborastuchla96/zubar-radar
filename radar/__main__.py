@@ -194,6 +194,14 @@ def cmd_alerts(args) -> None:
     if not args.dry_run and not mail_from:
         sys.exit("set MAIL_FROM (or SMTP_USER)")
     with psycopg.connect(_dsn(args), autocommit=True) as conn:
+        if args.test_to:
+            sender = alerts.sender_from_env()
+            try:
+                alerts.send_test(conn, sender, site, mail_from, args.test_to)
+            finally:
+                sender.close()
+            print(f"test alert sent to {args.test_to}")
+            return
         sender = None if args.dry_run else alerts.sender_from_env()
         try:
             st = alerts.run(conn, sender, site, mail_from or "info@example.cz", dry_run=args.dry_run)
@@ -264,6 +272,7 @@ def main(argv: list[str] | None = None) -> None:
 
     p = sub.add_parser("alerts", help="send email alerts to subscribers (run daily)")
     p.add_argument("--dry-run", action="store_true", help="print the emails instead of sending them")
+    p.add_argument("--test-to", metavar="EMAIL", help="send one sample alert (real Praha 6 dentists) to EMAIL; changes no data")
     p.set_defaults(func=cmd_alerts)
 
     args = ap.parse_args(argv)
