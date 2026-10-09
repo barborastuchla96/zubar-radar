@@ -362,7 +362,7 @@ def error_kind(error: str) -> str:
     e = error.lower()
     for needle, kind in (("http 4", error.split(":")[0]), ("http 5", "HTTP 5xx"), ("timed out", "timeout"),
                          ("timeout", "timeout"), ("certificate", "TLS/certificate"), ("ssl", "TLS/certificate"),
-                         ("name or service", "DNS: domain not found"), ("nodename", "DNS: domain not found"),
+                         ("dns failed", "DNS: domain not found"), ("name or service", "DNS: domain not found"), ("nodename", "DNS: domain not found"),
                          ("getaddrinfo", "DNS: domain not found"), ("no address", "DNS: domain not found"),
                          ("refused", "connection refused"), ("reset", "connection reset"),
                          ("not html", "not HTML"), ("robots", "blocked by robots.txt"), ("non-public", "non-public address")):

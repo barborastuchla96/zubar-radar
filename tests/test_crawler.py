@@ -176,6 +176,7 @@ def test_falls_back_to_http_when_https_is_broken(site):
 
 
 @pytest.mark.parametrize("err,kind", [("HTTP 404", "HTTP 404"), ("URLError: <urlopen error [Errno -2] Name or service not known>", "DNS: domain not found"),
-                                      ("URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]>", "TLS/certificate"), ("TimeoutError: timed out", "timeout")])
+                                      ("URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]>", "TLS/certificate"), ("TimeoutError: timed out", "timeout"),
+                                      ("BlockedURL: DNS failed for www.example.cz", "DNS: domain not found")])
 def test_error_kinds(err, kind):
     assert crawler.error_kind(err) == kind
