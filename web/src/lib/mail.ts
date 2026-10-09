@@ -2,7 +2,7 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import { SITE_NAME } from './site';
 
 /** Sender name on Czech e-mails (same as radar/alerts.py MAIL_FROM_NAME). */
-export const MAIL_FROM_NAME_CS = 'Barbora z prijimanovepacienty.cz';
+export const MAIL_FROM_NAME_CS = 'Barbora';
 
 /** Alerts are switched on only when SMTP is configured (deploy/.env). */
 export const mailEnabled = () => Boolean(process.env.SMTP_HOST);
