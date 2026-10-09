@@ -5,8 +5,9 @@ import { agoEn, doctorUrl, langOf } from '../lib/i18n';
 import type { ProviderRow } from '../lib/db';
 
 // kmFrom: what the distance is measured from (the visitor, this practice, or the town centre).
-interface Props { p: ProviderRow & { km?: number }; kmFrom?: 'you' | 'here' | 'centre' | 'place' }
-const { p, kmFrom = 'you' } = Astro.props;
+// kmPlace: the town the distance is measured from ("16,5 km od místa Teplice").
+interface Props { p: ProviderRow & { km?: number }; kmFrom?: 'you' | 'here' | 'centre' | 'place'; kmPlace?: string }
+const { p, kmFrom = 'you', kmPlace } = Astro.props;
 const en = langOf(Astro.url) === 'en';
 const when = en ? agoEn(p.last_signal_at) : ago(p.last_signal_at);
 const email = emailsOf(p.email)[0];
@@ -16,8 +17,8 @@ const url = doctorUrl(en ? 'en' : 'cs', p);
 const hospital = /nemocnic/i.test(`${p.facility_type ?? ''} ${p.name}`);
 const ins = p.self_pay ? null : insurersShort(p.insurers, en);
 const T = en
-  ? { crawl: 'on their website, checked', clinic: 'confirmed by the practice', seen: 'reported', km: { you: 'km away', here: 'km from this practice', centre: 'km away', place: 'km from there' }[kmFrom], english: 'Speaks English', hospital: 'Clinic at a hospital', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
-  : { crawl: 'na webu ordinace, kontrola', clinic: 'potvrdila ordinace', seen: 'nahlášeno', km: { you: 'km od vás', here: 'km odsud', centre: 'km daleko', place: 'km od hledaného místa' }[kmFrom], english: 'Mluví anglicky', hospital: 'Ambulance v nemocnici', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
+  ? { crawl: 'on their website, checked', clinic: 'confirmed by the practice', seen: 'reported', km: { you: 'km away', here: 'km from this practice', centre: kmPlace ? `km from ${kmPlace}` : 'km away', place: 'km from there' }[kmFrom], english: 'Speaks English', hospital: 'Clinic at a hospital', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
+  : { crawl: 'na webu ordinace, kontrola', clinic: 'potvrdila ordinace', seen: 'nahlášeno', km: { you: 'km od vás', here: 'km odsud', centre: kmPlace ? `km od místa ${kmPlace}` : 'km daleko', place: 'km od hledaného místa' }[kmFrom], english: 'Mluví anglicky', hospital: 'Ambulance v nemocnici', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
 ---
 <article class="card provider" data-status={p.status} data-english={p.english ? "1" : undefined}>
   <h3><a href={url}>{p.name}</a></h3>
