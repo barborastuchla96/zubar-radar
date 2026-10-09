@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import { GUIDES, GUIDES_REVIEWED, GUIDES_UPDATED, faqLd } from '../../lib/guides';
+import { SPECIALTIES, breadcrumbLd, dayLong } from '../../lib/site';
+
+const g = GUIDES[0];
+const faq: [string, string][] = [
+  ['Jak najít zubaře, který přijímá nové pacienty?',
+   'Vyhledejte ordinace ve svém okolí, začněte těmi, o kterých víme, že přijímají, a volejte ráno v ordinačních hodinách. Když neuspějete, zapište se do pořadníku nebo požádejte o pomoc svou zdravotní pojišťovnu.'],
+  ['Kdy je nejlepší do ordinace volat?',
+   'Hned na začátku ordinačních hodin, nejčastěji ráno. Řada ordinací má na telefon vyhrazený čas, bývá uvedený na jejich webu nebo na dveřích.'],
+  ['Co říct, když volám do ordinace?',
+   'Že hledáte nového lékaře, u které pojišťovny jste pojištěni, kde bydlíte a zda jde o dítě nebo dospělého. Když nepřijímají, zeptejte se, jestli mají pořadník a kdy zkusit volat znovu.'],
+  ['Co když mě nikde nevezmou?',
+   'Požádejte o pomoc svou zdravotní pojišťovnu. Ze zákona musí zajistit, aby pro vás byla péče dostupná, a pomoci vám lékaře najít.'],
+];
+const jsonLd = [faqLd(faq), breadcrumbLd(Astro.site, [['Úvod', '/'], ['Průvodce', '/pruvodce'], [g.title, `/pruvodce/${g.slug}`]])];
+---
+<Base title={g.title} description={g.lead} noindex={!GUIDES_REVIEWED} {jsonLd}>
+  <div class="crumbs"><a href="/">Úvod</a> › <a href="/pruvodce">Průvodce</a> › Jak najít lékaře</div>
+  <article class="guide">
+    <h1>{g.title}</h1>
+    <p class="intro">{g.lead}</p>
+
+    <h2>1. Najděte ordinace ve svém okolí</h2>
+    <p>Vyberte obor a napište své město, nebo použijte mapu. Uvidíte všechny ordinace z oficiálního registru, i ty, které nemají vlastní web.</p>
+    <ul class="pills">{SPECIALTIES.map((s) => <li><a href={`/${s.slug}`}>{s.plural}</a></li>)}</ul>
+
+    <h2>2. Volejte nejdřív tam, kde podle zpráv přijímají</h2>
+    <p>Ordinace se zeleným štítkem „Přijímá nové pacienty“ jsou nejlepší první volba. U každé vidíte, kdy to někdo naposledy ověřil: čím čerstvější zpráva, tím větší šance. Potom zkuste ty, u kterých to zatím nevíme. Ani tam to není ztracené, jen to ještě nikdo nenahlásil.</p>
+
+    <h2>3. Volejte ve správnou dobu a mějte připravené odpovědi</h2>
+    <ul>
+      <li><strong>Kdy:</strong> hned na začátku ordinačních hodin, nejčastěji ráno. Řada ordinací má na telefon vyhrazený čas.</li>
+      <li><strong>Co říct:</strong> že hledáte nového lékaře, u které pojišťovny jste, kde bydlíte a jestli jde o dítě nebo dospělého.</li>
+      <li><strong>Na co se zeptat, když nepřijímají:</strong> mají pořadník? Kdy zkusit volat znovu? Neví o kolegovi, který přijímá?</li>
+      <li><strong>Raději e-mail?</strong> U řady ordinací najdete e-mail nebo web. Napište krátce totéž co do telefonu.</li>
+    </ul>
+
+    <h2>4. Nechte si poslat upozornění</h2>
+    <p>Na stránce svého města si můžete nastavit e-mail, který vám přijde, jakmile v okolí začne nějaká ordinace přijímat. Nemusíte pak web hlídat sami.</p>
+
+    <h2>5. Nevyšlo to? Požádejte pojišťovnu</h2>
+    <p>Vaše zdravotní pojišťovna musí zajistit, aby pro vás byla péče dostupná, a pomoci vám lékaře najít. Jak na to, popisujeme v návodu <a href="/pruvodce/kdyz-vas-nikde-nevezmou">Co dělat, když vás žádný lékař nechce přijmout</a>.</p>
+
+    <h2>Časté otázky</h2>
+    {faq.map(([q, a]) => <details class="card faq"><summary>{q}</summary><p>{a}</p></details>)}
+
+    <p class="small muted">Aktualizováno {dayLong(new Date(GUIDES_UPDATED))}. Jde o obecné informace, ne o právní radu.</p>
+  </article>
+</Base>

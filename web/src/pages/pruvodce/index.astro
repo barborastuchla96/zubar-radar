@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+import { GUIDES, GUIDES_REVIEWED } from '../../lib/guides';
+---
+<Base title="Průvodce: jak najít lékaře, který vás vezme" description="Praktické rady, jak najít zubaře nebo lékaře, který přijímá nové pacienty, a co dělat, když vás nikde nevezmou." noindex={!GUIDES_REVIEWED}>
+  <div class="crumbs"><a href="/">Úvod</a> › Průvodce</div>
+  <h1>Průvodce</h1>
+  <ul class="result-list">
+    {GUIDES.map((g) => <li><a href={`/pruvodce/${g.slug}`}><strong>{g.title}</strong><span class="muted">{g.lead}</span></a></li>)}
+  </ul>
+</Base>

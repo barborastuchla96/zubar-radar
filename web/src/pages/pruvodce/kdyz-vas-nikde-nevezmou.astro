@@ -1,0 +1,73 @@
+---
+import Base from '../../layouts/Base.astro';
+import { GUIDES, GUIDES_REVIEWED, GUIDES_UPDATED, faqLd } from '../../lib/guides';
+import { breadcrumbLd, dayLong } from '../../lib/site';
+
+const g = GUIDES[1];
+// Health insurers in Czechia (code, name, website)
+const INSURERS = [
+  ['111', 'Všeobecná zdravotní pojišťovna (VZP)', 'https://www.vzp.cz'],
+  ['201', 'Vojenská zdravotní pojišťovna (VoZP)', 'https://www.vozp.cz'],
+  ['205', 'Česká průmyslová zdravotní pojišťovna (ČPZP)', 'https://www.cpzp.cz'],
+  ['207', 'Oborová zdravotní pojišťovna (OZP)', 'https://www.ozp.cz'],
+  ['209', 'Zaměstnanecká pojišťovna Škoda (ZPŠ)', 'https://www.zpskoda.cz'],
+  ['211', 'Zdravotní pojišťovna ministerstva vnitra (ZPMV)', 'https://www.zpmvcr.cz'],
+  ['213', 'RBP, zdravotní pojišťovna', 'https://www.rbp213.cz'],
+];
+const faq: [string, string][] = [
+  ['Může mě lékař odmítnout jako nového pacienta?',
+   'Ano, ale jen z důvodů, které stanoví zákon o zdravotních službách: hlavně když by přijetím dalšího pacienta překročil únosné pracovní zatížení, nebo mu v tom brání provozní či personální důvody. Odmítnout vás může také, když nemá smlouvu s vaší pojišťovnou.'],
+  ['Musí mi lékař dát odmítnutí písemně?',
+   'Ano. Když vás lékař odmítne přijmout do péče, má vám vydat písemnou zprávu o odmítnutí s důvodem. Hodí se, když pak žádáte o pomoc pojišťovnu.'],
+  ['Jak mi musí pomoci zdravotní pojišťovna?',
+   'Pojišťovna musí zajistit, aby pro vás byla hrazená péče dostupná. Zubní lékař, praktický lékař, dětský lékař i gynekolog mají být podle nařízení vlády dosažitelní do 35 minut cesty. Pokud lékaře nemůžete najít, obraťte se na infolinku nebo pobočku své pojišťovny.'],
+  ['Co když mě bolí zub a nemám zubaře?',
+   'Akutní a neodkladnou péči vám odmítnout nesmí. Obraťte se na zubní pohotovost ve svém městě nebo kraji.'],
+];
+const jsonLd = [faqLd(faq), breadcrumbLd(Astro.site, [['Úvod', '/'], ['Průvodce', '/pruvodce'], [g.title, `/pruvodce/${g.slug}`]])];
+---
+<Base title={g.title} description={g.lead} noindex={!GUIDES_REVIEWED} {jsonLd}>
+  <div class="crumbs"><a href="/">Úvod</a> › <a href="/pruvodce">Průvodce</a> › Když vás nikde nevezmou</div>
+  <article class="guide">
+    <h1>{g.title}</h1>
+    <p class="intro">{g.lead}</p>
+
+    <h2>Kdy vás lékař smí odmítnout</h2>
+    <p>Lékař, kterého si vyberete, vás podle zákona o zdravotních službách smí odmítnout jen z určitých důvodů:</p>
+    <ul>
+      <li>přijetím dalšího pacienta by překročil <strong>únosné pracovní zatížení</strong>, tedy by trpěla péče o pacienty, které už má,</li>
+      <li>brání mu v tom <strong>provozní nebo personální důvody</strong> či vybavení ordinace,</li>
+      <li>nemá <strong>smlouvu s vaší zdravotní pojišťovnou</strong>,</li>
+      <li>u praktického lékaře také <strong>vzdálenost vašeho bydliště</strong>, kvůli které by k vám nemohl dojíždět na návštěvy.</li>
+    </ul>
+    <p><strong>Akutní a neodkladnou péči vám odmítnout nesmí.</strong> Když vás bolí zub a nemáte zubaře, obraťte se na zubní pohotovost.</p>
+
+    <h2>Požádejte o písemnou zprávu o odmítnutí</h2>
+    <p>Když vás lékař odmítne, má vám vydat písemnou zprávu o odmítnutí s uvedením důvodu. Nebojte se o ni požádat. Hodí se, když pak žádáte o pomoc pojišťovnu nebo podáváte stížnost.</p>
+
+    <h2>Obraťte se na svou zdravotní pojišťovnu</h2>
+    <p>Pojišťovna ze zákona musí zajistit, aby pro vás byla hrazená péče dostupná. Podle nařízení vlády o místní a časové dostupnosti má být zubní lékař, praktický lékař, dětský lékař i gynekolog dosažitelný <strong>do 35 minut cesty</strong> od vašeho bydliště.</p>
+    <p>Zavolejte na infolinku nebo zajděte na pobočku a řekněte, že nemůžete najít lékaře. Pomůže, když budete mít seznam ordinací, kam jste volali, a případné písemné zprávy o odmítnutí.</p>
+    <div class="table-wrap">
+      <table class="avail">
+        <thead><tr><th>Pojišťovna</th><th>Kód</th></tr></thead>
+        <tbody>{INSURERS.map(([code, name, url]) => <tr><th scope="row"><a href={url} rel="noopener" target="_blank">{name}</a></th><td>{code}</td></tr>)}</tbody>
+      </table>
+    </div>
+
+    <h2>Když vás odmítli bez důvodu</h2>
+    <p>Můžete podat stížnost, nejdřív přímo ordinaci. Když nejste spokojeni s jejím vyřízením, obraťte se na krajský úřad, který ordinaci registroval.</p>
+
+    <h2>Mezitím</h2>
+    <ul>
+      <li><a href="/">Vyhledejte ordinace ve svém okolí</a> a začněte těmi, které podle zpráv přijímají.</li>
+      <li>Na stránce svého města si nastavte <strong>e-mailové upozornění</strong>, až někde začnou přijímat.</li>
+      <li>Zapište se do pořadníku, kde ho mají.</li>
+    </ul>
+
+    <h2>Časté otázky</h2>
+    {faq.map(([q, a]) => <details class="card faq"><summary>{q}</summary><p>{a}</p></details>)}
+
+    <p class="small muted">Aktualizováno {dayLong(new Date(GUIDES_UPDATED))}. Jde o obecné informace, ne o právní radu. V konkrétní situaci se obraťte na svou pojišťovnu.</p>
+  </article>
+</Base>

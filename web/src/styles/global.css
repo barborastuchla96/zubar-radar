@@ -358,3 +358,11 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .district-table > summary { font-weight: 700; cursor: pointer; min-height: 32px; }
 .pills a[aria-current="page"] { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); font-weight: 700; }
 .fact { font-size: 1.05rem; max-width: 48rem; }
+
+/* guide pages */
+.guide { max-width: 46rem; }
+.guide h2 { margin-top: 1.75rem; }
+.guide li { margin: .35rem 0; }
+.faq { margin: .5rem 0; }
+.faq > summary { font-weight: 700; cursor: pointer; min-height: 32px; }
+.faq p { margin: .5rem 0 0; }
