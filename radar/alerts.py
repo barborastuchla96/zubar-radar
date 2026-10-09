@@ -96,10 +96,10 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  {site}/lekar/{p['id']}")
         lines.append("")
     lines += [
-        "Než se do ordinace vydáte, zavolejte. Zprávy pocházejí od pacientů a z webů ordinací"
+        "Než se do ordinace vydáte, ověřte si to přímo u nich. Zprávy pocházejí od pacientů, ordinací a z jejich webů"
         " a nemusí být úplně aktuální.",
         "",
-        "Až zavoláte, dejte prosím na stránce ordinace vědět, jak to dopadlo. Pomůžete tím dalším.",
+        "Až zjistíte, jak to je, dejte prosím vědět na stránce ordinace. Pomůžete tím dalším.",
         "",
         "Hezký den",
         SITE_NAME,

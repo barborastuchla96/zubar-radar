@@ -63,7 +63,7 @@ const jsonLd = {
 Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
 ---
 <Base title={`Dostupnost péče – ${lowerName(spec.plural)} podle krajů a okresů`}
-      description={`Kolik ordinací (${lowerName(spec.plural)}) podle posledních zpráv přijímá nové pacienty, po krajích a okresech. Stav k ${today}.`} {jsonLd}>
+      description={`${spec.plural}: kolik ordinací podle posledních zpráv přijímá nové pacienty, po krajích a okresech. Stav k ${today}.`} {jsonLd}>
   <div class="crumbs"><a href="/">Úvod</a> › Dostupnost péče</div>
   <h1>Kde přijímají nové pacienty</h1>
   <p class="intro">Přehled po krajích a okresech: kolik ordinací podle posledních zpráv přijímá nové pacienty.

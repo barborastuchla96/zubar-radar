@@ -7,18 +7,19 @@ const contact = contactEmail();
   <h1>O projektu</h1>
   <h2>Odkud jsou data</h2>
   <p>Seznam ordinací přebíráme z otevřených dat Národního registru poskytovatelů zdravotních služeb,
-     který spravuje ÚZIS ČR, a pravidelně ho aktualizujeme. Stav „přijímá / nepřijímá“ vychází z hlášení
-     uživatelů a samotných ordinací. Starší hlášení postupně ztrácejí váhu a po 90 dnech se nepočítají.</p>
-  <p>Hranice krajů na mapě: © ČÚZK (INSPIRE – územní správní jednotky), zpracování
-     <a href="https://github.com/siwekm/czech-geojson">siwekm/czech-geojson</a>, licence
+     který spravuje ÚZIS ČR, a pravidelně ho aktualizujeme. Stav „přijímá / nepřijímá“ vychází ze zpráv
+     pacientů, od samotných ordinací a z webů ordinací. Starší zprávy postupně ztrácejí váhu a po 90 dnech se nepočítají.</p>
+  <p>Hranice krajů na mapě: © ČÚZK (INSPIRE – územní správní jednotky), zpracování{' '}
+     <a href="https://github.com/siwekm/czech-geojson">siwekm/czech-geojson</a>, licence{' '}
      <a href="https://creativecommons.org/licenses/by/4.0/deed.cs">CC BY 4.0</a>. Obrysy jsme pro mapu zjednodušili.</p>
   <h2>Kontrola webů ordinací</h2>
   <p>Jednou týdně náš robot <strong>PrijimaNovePacientyBot</strong> projde weby ordinací uvedené v registru
      a hledá věty jako „přijímáme nové pacienty“ nebo „nepřijímáme nové pacienty“. Takto zjištěný stav
-     označujeme „podle webu ordinace“ a má menší váhu než hlášení lidí a ordinací. Robot respektuje
+     označujeme „podle webu ordinace“ a má menší váhu než zprávy pacientů a ordinací. Robot respektuje
      soubor robots.txt. Ordinace, která si kontrolu nepřeje, ho může zakázat pro <code>PrijimaNovePacientyBot</code>.</p>
   <p>Když web ordinace píše, že nemá smlouvu se zdravotními pojišťovnami (péči si platíte sami), označíme ji
-     „Bez smlouvy s pojišťovnou“. Podobně označíme ordinace, kde se domluvíte anglicky. Obojí mohou nahlásit i pacienti.</p>
+     „Bez smlouvy s pojišťovnou“. Když web uvádí smluvní pojišťovny (např. 111, 207), zobrazíme je. Podobně označíme
+     ordinace, kde se domluvíte anglicky. Všechno tohle mohou nahlásit i pacienti.</p>
   <h2>Ochrana údajů</h2>
   <p>U hlášení neukládáme jméno ani IP adresu. Ukládáme jen anonymní otisk (hash), který slouží
      k ochraně před spamem. Do poznámky prosím nepište jména ani zdravotní údaje.</p>
@@ -37,10 +38,10 @@ const contact = contactEmail();
      nechat je opravit nebo smazat a vznést námitku. Stačí napsat na e-mail výše. Pokud nebudete
      spokojeni, můžete se obrátit na <a href="https://uoou.gov.cz">Úřad pro ochranu osobních údajů</a>.</p>
   <p>Údaje o ordinacích (název, adresa, telefon, web) přebíráme z veřejného registru, abychom pacientům
-     usnadnili najít péči. Lékař nebo ordinace může požádat o opravu nebo vznést námitku, viz
+     usnadnili najít péči. Lékař nebo ordinace může požádat o opravu nebo vznést námitku, viz{' '}
      <a href="/pro-ordinace">Pro ordinace</a>.</p>
   <h2>Nejde o oficiální službu</h2>
-  <p>Informace nemusí být přesné. Před návštěvou vždy zavolejte do ordinace. Pokud nemůžete lékaře najít,
+  <p>Informace nemusí být přesné. Před návštěvou si to ověřte přímo v ordinaci. Pokud nemůžete lékaře najít,
      obraťte se na svou zdravotní pojišťovnu: ze zákona vám musí pomoci péči zajistit.</p>
   {contact && (
     <>

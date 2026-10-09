@@ -95,7 +95,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
     {english > 0
       ? <>First the {english === 1 ? 'practice' : `${english} practices`} where we know <strong>you can speak English</strong>, then all the others.</>
       : <>We <strong>don't know yet</strong> which practices here speak English. That doesn't mean they don't: many doctors do, so it's worth asking.</>}
-    {' '}In each part, those that recently said they <strong>accept new patients</strong> come first.
+    {' '}{english > 0 ? 'In each part, those' : 'Those'} that recently said they <strong>accept new patients</strong> come first.
   </p>
   <StatusLegend />
   <div class="filters" role="group" aria-label="Show">

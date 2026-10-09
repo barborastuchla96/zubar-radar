@@ -25,7 +25,7 @@ const regions = [...byRegion.entries()].sort((a, b) =>
 for (const [, list] of regions) list.sort((a, b) => placeCompare(a.city, b.city));
 Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
 ---
-<Base title={`${spec.seo ?? spec.plural} – kdo přijímá nové pacienty | podle měst`} description={`${spec.plural} podle měst a krajů. U každé ordinace vidíte, zda přijímá nové pacienty.`} activeSpecialty={spec.slug} alt={specUrl('en', spec.slug)}>
+<Base title={`${spec.seo ?? spec.plural} podle měst – kdo přijímá nové pacienty`} description={`${spec.plural} podle měst a krajů. U každé ordinace vidíte, zda přijímá nové pacienty.`} activeSpecialty={spec.slug} alt={specUrl('en', spec.slug)}>
   <div class="crumbs"><a href="/">Úvod</a> › {spec.plural}</div>
   <h1>{spec.plural} podle měst</h1>
   <SpecialistNote {spec} />

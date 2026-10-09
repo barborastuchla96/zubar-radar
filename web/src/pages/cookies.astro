@@ -32,7 +32,8 @@ const mapy = Boolean((process.env.MAPY_API_KEY ?? '').trim());
         abychom se vás po návratu mohli zeptat „Jak to dopadlo?“. Zůstává jen ve vašem zařízení, nikam se neposílá
         a po zavření okna zmizí.</li>
     <li>Mapy načítáme z {mapy ? 'Mapy.com (Seznam.cz)' : 'OpenStreetMap'}. Váš prohlížeč při tom stahuje mapové dlaždice z jejich serverů.</li>
-    <li>Funkce „Najít v mém okolí“ použije vaši polohu, jen když ji v prohlížeči povolíte. Polohu neukládáme.</li>
+    <li>Tlačítka „Ukázat ordinace v mém okolí“ a „Seřadit podle vzdálenosti ode mě“ použijí vaši polohu, jen když ji v prohlížeči povolíte. Polohu neukládáme.</li>
+    <li>Když do vyhledávání napíšete ulici nebo místo, které neznáme z registru, zeptáme se na jeho polohu služby Mapy.com. Pošleme jí jen hledaný text, nic o vás.</li>
     <li>Hlášení o ordinacích ukládáme bez jména a bez IP adresy (viz <a href="/o-projektu">ochrana údajů</a>).</li>
   </ul>
 </Base>

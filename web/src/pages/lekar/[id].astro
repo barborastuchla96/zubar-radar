@@ -113,11 +113,11 @@ const jsonLd = [
           {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
           {!p.self_pay && p.insurers?.length ? <><dt>Pojišťovny</dt><dd>{p.insurers.map((c) => `${INSURERS[c]} (${c})`).join(', ')} <span class="muted small">(podle webu ordinace nebo hlášení)</span></dd></> : null}
           <dt>Obory</dt><dd>{specs.map((s) => s.singular).join(', ')}</dd>
-          {p.facility_type && <><dt>Typ</dt><dd>{p.facility_type}</dd></>}
+          {p.facility_type && <><dt>Typ (v registru)</dt><dd>{p.facility_type}</dd></>}
         </dl>
       </div>
       <Map providers={[p]} />
-      <p class="small muted">Je tu chyba, nebo jste z této ordinace? <a href="/pro-ordinace">Upravte si údaje zdarma</a>.</p>
+      <p class="small muted">Je tu chyba, nebo jste z této ordinace? <a href="/pro-ordinace">Napište nám</a>, údaje zdarma opravíme.</p>
     </div>
     <ReportForm providerId={p.id} {result} />
   </div>

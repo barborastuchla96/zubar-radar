@@ -120,7 +120,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
 
   {around.length > 0 && (
     <>
-      <h2>Nedaleko – mimo {city}</h2>
+      <h2>{spec.nearby}</h2>
       <div class="grid grid-2" id="list-around">
         {around.map((p) => <ProviderCard p={p} />)}
       </div>
