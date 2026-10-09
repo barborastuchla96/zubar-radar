@@ -20,7 +20,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 SITE_NAME = "Přijímá nové pacienty?"
-MAIL_FROM_NAME = "Barbora z Přijímá nové pacienty?"   # sender on Czech e-mails
+MAIL_FROM_NAME = "Barbora z prijimanovepacienty.cz"   # sender on Czech e-mails
 DAILY_LIMIT = int(os.environ.get("MAIL_DAILY_LIMIT", "450"))   # Wedos: 500/day, keep a margin
 RENOTIFY_DAYS = 60       # the same practice may be announced again after this long
 PENDING_DAYS = 7         # unconfirmed sign-ups are deleted after this long
@@ -121,7 +121,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
          " Pomůžete tím dalším pacientům."),
         "",
         "Hezký den",
-        "Barbora z Přijímá nové pacienty?",
+        "Barbora z prijimanovepacienty.cz",
         "",
         "--",
         f"Už nechcete dostávat upozornění? Odhlásit se můžete zde: {unsubscribe}",

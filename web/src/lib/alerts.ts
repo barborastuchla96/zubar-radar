@@ -150,6 +150,6 @@ export function confirmationText(siteUrl: string, token: string, v: Pick<SignupI
     'Pokud jste se k odběru nepřihlašovali, tento e-mail ignorujte. Bez potvrzení vám nic dalšího nepošleme a vaši e-mailovou adresu do týdne smažeme.',
     '',
     'Hezký den',
-    'Barbora z Přijímá nové pacienty?',
+    'Barbora z prijimanovepacienty.cz',
   ].join('\n');
 }
