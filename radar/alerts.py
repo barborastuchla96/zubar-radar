@@ -112,7 +112,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  Na našem webu: {site}/lekar/{p['id']}")
         lines.append("")
     lines += [
-        "Než ordinaci navštívíte, radši si to u nich ověřte telefonicky nebo e-mailem. Informace máme od pacientů,"
+        "Než ordinaci navštívíte, raději si to u nich ověřte telefonicky nebo e-mailem. Informace máme od pacientů,"
         " od samotných ordinací a z jejich webů, takže nemusí být vždy aktuální.",
         "",
         ("Až zjistíte, jak to dopadlo, dejte nám prosím vědět na stránce ordinace"
