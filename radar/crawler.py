@@ -43,8 +43,12 @@ _WHO = r"(?:pacient\w*|klient\w*)"
 NEGATIVE = [
     re.compile(rf"\bne{_VERB}\b{_GAP}\b(?:nov\w*|dalsi\w*|zadn\w*)\b{_GAP}\b{_WHO}"),
     re.compile(rf"\bkapacit\w*\b{_GAP}\b(?:naplnen\w*|plna|vycerpan\w*|zaplnen\w*)"),
-    re.compile(rf"\bnemame\b{_GAP}\bvoln\w*\b{_GAP}\bkapacit\w*"),
+    re.compile(rf"\bnemame\b{_GAP}\bkapacit\w*"),     # "nemáme (volnou) kapacitu"
     re.compile(r"\bstop\s?stav\w*"),
+    # "Pozastavujeme / ukončili jsme příjem nových pacientů", "kapacity nedostačují"
+    re.compile(rf"\b(?:pozastav\w*|zastav\w*|ukoncil\w*|ukoncujeme|uzavrel\w*|uzavirame|preruseni|prerusujeme|pozastaveni|zastaveni|ukonceni)\b{_GAP}\b(?:prijem\w*|prijimani|registrac\w*|nabor\w*)\b{_GAP}\bnov\w*\b{_GAP}\b{_WHO}"),
+    re.compile(rf"\b(?:prijem|prijimani|registrac\w*)\b{_GAP}\bnov\w*\b{_GAP}\b{_WHO}\b{_GAP}\b(?:pozastav\w*|zastav\w*|ukoncen\w*|uzavren\w*|preruse\w*)"),
+    re.compile(rf"\bkapacit\w*\b{_GAP}\b(?:nedostacuj\w*|nestaci|nepostacuj\w*)"),
 ]
 WAITLIST = [
     re.compile(rf"\b(?:zapisujeme|zapiseme|zapis)\b{_GAP}\b(?:poradnik\w*|cekaci\w*)"),

@@ -233,3 +233,15 @@ def test_english(text, yes):
 
 def test_find_flags_collects_both():
     assert set(crawler.find_flags("Nemáme smlouvy se zdravotními pojišťovnami. We speak English.")) == {"self_pay", "english"}
+
+
+@pytest.mark.parametrize("text", [
+    "Bohužel musíme dočasně pozastavit příjem nových pacientů.",
+    "POZASTAVUJEME PŘÍJEM NOVÝCH PACIENTŮ",
+    "Naše kapacity už bohužel nedostačují.",
+    "Příjem nových pacientů je dočasně pozastaven.",
+    "Ukončili jsme registraci nových pacientů.",
+    "Momentálně nemáme kapacitu na nové pacienty.",
+])
+def test_paused_intake_is_not_accepting(text):
+    assert crawler.classify(text).status == "not_accepting"
