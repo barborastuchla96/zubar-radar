@@ -29,16 +29,20 @@ const { specialty, active, syncWith } = Astro.props;
 </div>
 
 <script>
-  // On the homepage the map follows the "Koho hledáte?" select.
+  // On the homepage the map follows the "Koho hledáte?" choice (a select, or a form with radio tiles).
   document.querySelectorAll<HTMLElement>('.region-map[data-sync]').forEach((map) => {
-    const select = document.getElementById(map.dataset.sync!) as HTMLSelectElement | null;
-    if (!select) return;
+    const el = document.getElementById(map.dataset.sync!);
+    if (!el) return;
+    const select = { get value() {
+      return el instanceof HTMLSelectElement ? el.value
+        : ((el as HTMLFormElement).elements.namedItem('s') as RadioNodeList).value || 'zubar';
+    } };
     // setAttribute, not .href: inside the SVG these are SVG links, whose href is read-only
     const update = () => map.querySelectorAll<HTMLElement>('a[data-kraj]').forEach((a) => {
       const k = a.dataset.kraj;
       a.setAttribute('href', k === 'hlavni-mesto-praha' ? `/${select.value}/praha` : `/${select.value}/kraj/${k}`);
     });
-    select.addEventListener('change', update);
+    el.addEventListener('change', update);
     update();
   });
 </script>

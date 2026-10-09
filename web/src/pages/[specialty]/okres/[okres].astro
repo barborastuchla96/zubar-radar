@@ -1,0 +1,88 @@
+---
+import Base from '../../../layouts/Base.astro';
+import AreaMap from '../../../components/AreaMap.astro';
+import ProviderCard from '../../../components/ProviderCard.astro';
+import StatusLegend from '../../../components/StatusLegend.astro';
+import { districtDetail, districtsOf, toMap } from '../../../lib/areas';
+import { cities, regionAccepting } from '../../../lib/db';
+import { regionBySlug } from '../../../lib/regions';
+import {
+  SPECIALTIES, breadcrumbLd, cityUrl, districtUrl, ordinaci, placeCompare, prijima, regionUrl, specialty,
+} from '../../../lib/site';
+
+const spec = specialty(Astro.params.specialty ?? '');
+const okres = districtDetail(Astro.params.okres ?? '');
+if (!spec || !okres) return Astro.rewrite('/404');
+const slug = Astro.params.okres!;
+const region = regionBySlug(okres.kraj)!;
+
+// On a district page the "(okres …)" suffix is obvious; keep names short.
+const towns = (await cities(spec.slug, 1)).filter((c) => c.district === okres.name)
+  .map((c) => ({ ...c, city: c.city.replace(/ \(okres .*\)$/, '') }))
+  .sort((a, b) => placeCompare(a.city, b.city));
+// Brno-město, Plzeň-město…: a district that is a single town goes straight to that town.
+if (towns.length === 1) return Astro.redirect(cityUrl(spec.slug, towns[0].city_slug), 302);
+const total = towns.reduce((t, c) => t + c.n, 0);
+const acceptingTotal = towns.reduce((t, c) => t + c.accepting, 0);
+const accepting = (await regionAccepting(spec.slug, region.name, 200)).filter((p) => p.district === okres.name).slice(0, 12);
+
+// Towns as dots: bigger dot = more practices, green = someone there accepts. Names for the biggest ones.
+const named = new Set([...towns].sort((a, b) => b.n - a.n).slice(0, 8).map((c) => c.city_slug));
+const dots = towns.filter((c) => c.lat != null && c.lng != null).map((c) => {
+  const [x, y] = toMap(okres, c.lat!, c.lng!);
+  return {
+    href: cityUrl(spec.slug, c.city_slug), label: c.city, x, y, r: Math.min(5 + Math.sqrt(c.n) * 1.8, 18),
+    ok: c.accepting > 0, showLabel: named.has(c.city_slug),
+    title: `${c.city}: ${ordinaci(c.n)}${c.accepting ? `, ${prijima(c.accepting)}` : ''}`,
+  };
+}).sort((a, b) => b.r - a.r);                  // small dots on top, so they stay clickable
+const neighbours = districtsOf(okres.kraj).filter((o) => o.slug !== slug).sort((a, b) => placeCompare(a.name, b.name));
+
+const title = `${spec.plural} – okres ${okres.name} – kdo přijímá nové pacienty`;
+const description = `${spec.plural} v okrese ${okres.name}: ${ordinaci(total)} v ${towns.length} obcích. ` +
+  (acceptingTotal ? `Podle hlášení ${prijima(acceptingTotal)} nové pacienty.` : 'Podívejte se, kdo přijímá nové pacienty.');
+Astro.response.headers.set('Cache-Control', 'public, max-age=600');
+const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.slug}`],
+  [region.name, regionUrl(spec.slug, region.slug)], [`okres ${okres.name}`, districtUrl(spec.slug, slug)]]);
+---
+<Base {title} {description} noindex={total === 0} activeSpecialty={spec.slug} {jsonLd}>
+  <div class="crumbs"><a href="/">Úvod</a> › <a href={`/${spec.slug}`}>{spec.plural}</a> › <a href={regionUrl(spec.slug, region.slug)}>{region.name}</a> › okres {okres.name}</div>
+  <h1>{spec.plural} – okres {okres.name}</h1>
+  <p class="muted">
+    {ordinaci(total)} v {towns.length.toLocaleString('cs')} obcích
+    {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
+  </p>
+
+  {towns.length === 0 ? (
+    <p class="card">V tomto okrese v registru žádné ordinace tohoto oboru nejsou. Zkuste <a href={regionUrl(spec.slug, region.slug)}>sousední okres</a>.</p>
+  ) : (
+    <>
+      <h2>Vyberte obec</h2>
+      <p class="small muted">Větší tečka znamená víc ordinací. <span class="tile-ok">Zelená</span> znamená, že tam někdo přijímá.</p>
+      <AreaMap viewBox={okres.viewBox} label={`Obce – okres ${okres.name}`} outline={okres.d} {dots} />
+      <ul class="pills">
+        {towns.map((c) => (
+          <li><a href={cityUrl(spec.slug, c.city_slug)}>{c.city} <span class="muted">({c.n})</span>
+            {c.accepting > 0 && <span class="tile-ok">&nbsp;✓ {c.accepting}</span>}</a></li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  {accepting.length > 0 && (
+    <>
+      <h2>Kde teď přijímají</h2>
+      <StatusLegend />
+      <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
+    </>
+  )}
+
+  <h2>Další okresy – {region.name}</h2>
+  <ul class="pills">
+    {neighbours.map((o) => <li><a href={districtUrl(spec.slug, o.slug)}>{o.name}</a></li>)}
+    <li><a class="pill-more" href={regionUrl(spec.slug, region.slug)}>Mapa kraje</a></li>
+  </ul>
+
+  <h2>Další obory – okres {okres.name}</h2>
+  <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={districtUrl(s.slug, slug)}>{s.plural}</a></li>)}</ul>
+</Base>

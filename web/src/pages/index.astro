@@ -1,22 +1,20 @@
 ---
 import Base from '../layouts/Base.astro';
 import AdSlot from '../components/AdSlot.astro';
-import PlaceSearch from '../components/PlaceSearch.astro';
-import Tile from '../components/Tile.astro';
 import RegionMap from '../components/RegionMap.astro';
 import { cities } from '../lib/db';
-import { FEATURED_CITY, SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, isPragueSlug } from '../lib/site';
+import { SITE_NAME, SPECIALTIES, TAGLINE, cityUrl, ordinaci, prijima } from '../lib/site';
 
-// Provider counts for the launch city, per specialty.
-const featured = await Promise.all(
-  SPECIALTIES.map(async (s) => {
-    const all = await cities(s.slug, 1);
-    const inCity = all.filter((x) =>
-      FEATURED_CITY.slug === 'praha' ? isPragueSlug(x.city_slug) : x.city_slug === FEATURED_CITY.slug);
-    return { s, n: inCity.reduce((t, c) => t + c.n, 0), accepting: inCity.reduce((t, c) => t + c.accepting, 0) };
-  }),
-);
-const topDentistCities = (await cities('zubar', 3, 40)).filter((c) => !isPragueSlug(c.city_slug)).slice(0, 12);
+// Nationwide counts per specialty, for the "Koho hledáte?" tiles.
+const totals = await Promise.all(SPECIALTIES.map(async (s) => {
+  const all = await cities(s.slug, 1);
+  return { s, n: all.reduce((t, c) => t + c.n, 0), accepting: all.reduce((t, c) => t + c.accepting, 0) };
+}));
+// Regional capitals: the places people most often look for.
+const BIG = [['praha', 'Praha'], ['brno', 'Brno'], ['ostrava', 'Ostrava'], ['plzen', 'Plzeň'], ['liberec', 'Liberec'],
+  ['olomouc', 'Olomouc'], ['ceske-budejovice', 'České Budějovice'], ['hradec-kralove', 'Hradec Králové'],
+  ['usti-nad-labem', 'Ústí nad Labem'], ['pardubice', 'Pardubice'], ['zlin', 'Zlín'], ['jihlava', 'Jihlava'],
+  ['karlovy-vary', 'Karlovy Vary']] as const;
 Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 ---
 <Base title={`${SITE_NAME} – ${TAGLINE}`} description="Najděte zubaře, praktického či dětského lékaře nebo gynekologa, který přijímá nové pacienty. Ověřeno lidmi, kteří tam volali.">
@@ -26,24 +24,49 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
       Všechny ordinace z oficiálního registru na jednom místě. U každé uvidíte, jestli podle
       posledních zpráv <strong>přijímá nové pacienty</strong> a kdy to naposledy někdo ověřil.
     </p>
-    <PlaceSearch />
-    <form method="get" action="/blizko" class="near" id="near-form">
-      <input type="hidden" name="s" value="zubar" />
-      <input type="hidden" name="lat" /><input type="hidden" name="lng" />
-      <span class="muted">nebo</span>
-      <button class="btn secondary" type="submit" id="near-btn">📍 Ukázat ordinace v mém okolí</button>
-    </form>
-    <p class="small muted" id="near-msg" hidden></p>
-    <h2 class="map-title">Vyberte svůj kraj na mapě</h2>
-    <RegionMap specialty="zubar" syncWith="ps-s" />
   </section>
 
-  <h2>{FEATURED_CITY.name}</h2>
-  <div class="grid grid-cards">
-    {featured.map(({ s, n, accepting }) => (
-      <Tile href={cityUrl(s.slug, FEATURED_CITY.slug)} icon={s.icon} title={s.plural} {n} {accepting} />
-    ))}
-  </div>
+  <form id="home-search" class="home-search" method="get" action="/hledat" role="search">
+    <fieldset class="step-box">
+      <legend><span class="step-no">1</span> Koho hledáte?</legend>
+      <div class="grid grid-cards">
+        {totals.map(({ s, n, accepting }, i) => (
+          <label class="card spec-tile pick">
+            <input type="radio" name="s" value={s.slug} checked={i === 0} />
+            <span class="icon" aria-hidden="true">{s.icon}</span>
+            <strong class="tile-title">{s.plural}</strong>
+            <span class="tile-stats">
+              <span class="nowrap">{ordinaci(n)}</span>
+              {accepting > 0 && <span class="nowrap tile-ok">✓ {prijima(accepting)}</span>}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="step-box">
+      <legend><span class="step-no">2</span> Kde?</legend>
+      <label for="home-q">Napište město, obec nebo část Prahy</label>
+      <div class="search-row">
+        <input id="home-q" name="q" type="search" required autocomplete="off" placeholder="Např. Praha 6, Kladno, Brno" />
+        <button class="btn big" type="submit">Hledat</button>
+      </div>
+      <ul class="pills big-cities" aria-label="Krajská města">
+        {BIG.map(([slug, name]) => <li><a href={cityUrl('zubar', slug)} data-city={slug}>{name}</a></li>)}
+      </ul>
+    </fieldset>
+  </form>
+
+  <form method="get" action="/blizko" class="near" id="near-form">
+    <input type="hidden" name="s" value="zubar" />
+    <input type="hidden" name="lat" /><input type="hidden" name="lng" />
+    <span class="muted">nebo</span>
+    <button class="btn secondary" type="submit" id="near-btn">📍 Ukázat ordinace v mém okolí</button>
+  </form>
+  <p class="small muted" id="near-msg" hidden></p>
+
+  <h2 class="map-title">Nebo klikněte na svůj kraj</h2>
+  <RegionMap specialty="zubar" syncWith="home-search" />
 
   <AdSlot name="home-mid" />
 
@@ -53,22 +76,24 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
     <div class="card"><strong>2. Podívejte se na stav</strong><p class="small muted">Zelený štítek znamená, že ordinace podle nedávných zpráv přijímá nové pacienty. Starší zprávy se počítají méně.</p></div>
     <div class="card"><strong>3. Zavolejte a dejte vědět</strong><p class="small muted">Po telefonátu nám jedním kliknutím dejte vědět, jak to dopadlo. Ostatním tím ušetříte hodiny obvolávání.</p></div>
   </div>
-
-  <h2>Zubaři v dalších městech</h2>
-  <ul class="pills">
-    {topDentistCities.map((c) => <li><a href={cityUrl('zubar', c.city_slug)}>{c.city}</a></li>)}
-    <li><a class="pill-more" href="/zubar">Všechna města →</a></li>
-  </ul>
 </Base>
 
 <script>
+  const search = document.getElementById('home-search') as HTMLFormElement;
+  const chosen = () => (search.elements.namedItem('s') as RadioNodeList).value || 'zubar';
+
+  // City shortcuts follow the specialty tiles.
+  const syncCities = () => search.querySelectorAll<HTMLAnchorElement>('a[data-city]').forEach((a) => {
+    a.href = `/${chosen()}/${a.dataset.city}`;
+  });
+  search.addEventListener('change', syncCities);
+  syncCities();
+
   const form = document.getElementById('near-form') as HTMLFormElement;
   const msg = document.getElementById('near-msg')!;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    // Use the specialty chosen in the search box above.
-    (form.elements.namedItem('s') as HTMLInputElement).value =
-      (document.getElementById('ps-s') as HTMLSelectElement | null)?.value ?? 'zubar';
+    (form.elements.namedItem('s') as HTMLInputElement).value = chosen();
     if (!navigator.geolocation) { msg.hidden = false; msg.textContent = 'Váš prohlížeč polohu nepodporuje.'; return; }
     msg.hidden = false; msg.textContent = 'Zjišťuji polohu… Prohlížeč se vás možná zeptá, jestli ji smí použít.';
     navigator.geolocation.getCurrentPosition(

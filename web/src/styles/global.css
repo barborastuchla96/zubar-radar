@@ -175,7 +175,7 @@ input[type="radio"] { width: 1.2rem; height: 1.2rem; }
 
 /* short link lists as chips (no "·" separators that wrap badly) */
 .pills { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem; }
-.pills a { display: inline-flex; align-items: center; min-height: 44px; padding: .35rem .9rem; border: 2px solid var(--border); border-radius: 999px; background: var(--surface); text-decoration: none; color: var(--text); }
+.pills a { display: inline-flex; align-items: center; gap: .3em; min-height: 44px; padding: .35rem .9rem; border: 2px solid var(--border); border-radius: 999px; background: var(--surface); text-decoration: none; color: var(--text); }
 .pills a:hover { border-color: var(--brand); }
 .pills .pill-more { color: var(--brand); font-weight: 700; }
 
@@ -213,3 +213,33 @@ h1, h2, h3, label, legend { text-wrap: balance; }
 @media (min-width: 641px) { .region-pills { display: none; } }
 .map-credit { margin: .6rem 0 1rem; font-size: .8rem; }
 .map-credit a { color: inherit; }
+
+/* zoomed maps: districts and towns */
+.area-map svg { max-width: 760px; max-height: 70vh; }
+.area-map .kraj { fill-rule: evenodd; }
+.area-map .kraj.outline { pointer-events: none; }
+.area-map .kraj-label { font-size: 13px; }
+.area-map .dot { fill: color-mix(in srgb, var(--brand) 35%, var(--surface)); stroke: var(--surface); stroke-width: 1.5; }
+.area-map .dot.ok { fill: var(--ok); }
+.area-map .dot-hit { fill: transparent; }
+.area-map .dot-link:hover .dot, .area-map .dot-link:focus-visible .dot { fill: var(--brand); stroke: var(--text); }
+.area-map .dot-label { font-size: 13px; font-weight: 700; fill: var(--text); pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+@media (max-width: 640px) { .area-map .kraj-label { display: inline; font-size: 15px; } .area-map .dot-label { font-size: 16px; } }
+.area-map .kraj-label { pointer-events: none; }
+
+/* homepage: step 1 who, step 2 where */
+.home-search { margin: .5rem 0 1rem; }
+.step-box { border: 0; padding: 0; margin: 0 0 1.5rem; min-width: 0; }
+.step-box legend { font-size: 1.35rem; font-weight: 800; margin-bottom: .6rem; display: flex; align-items: center; gap: .55rem; }
+.step-no { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--brand); color: var(--brand-ink); font-size: 1.05rem; }
+.step-box > label { display: block; font-weight: 700; margin-bottom: .35rem; }
+.spec-tile.pick { cursor: pointer; position: relative; border-width: 2px; }
+.spec-tile.pick input { position: absolute; opacity: 0; pointer-events: none; }
+.spec-tile.pick:has(input:checked) { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 9%, var(--surface)); box-shadow: 0 0 0 2px var(--brand); }
+.spec-tile.pick:has(input:checked)::after { content: "✓ Vybráno"; position: absolute; top: .6rem; right: .7rem; font-size: .8rem; font-weight: 700; color: var(--brand-ink); background: var(--brand); padding: .1rem .5rem; border-radius: 999px; }
+.spec-tile.pick:has(input:focus-visible) { outline: 3px solid var(--text); outline-offset: 2px; }
+.search-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+.search-row input { flex: 1 1 260px; font: inherit; min-height: 54px; padding: .5rem .8rem; border: 2px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); }
+.search-row input:focus { border-color: var(--brand); outline: none; }
+.big-cities { margin-top: .9rem; }
+@media (max-width: 640px) { .search-row .btn { width: 100%; } }

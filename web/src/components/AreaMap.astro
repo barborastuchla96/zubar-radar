@@ -1,0 +1,32 @@
+---
+// A zoomed map: clickable areas (districts) and/or clickable dots (towns). Plain links, no JavaScript.
+export interface MapArea { href: string; label: string; title?: string; d: string; lx: number; ly: number; alt?: boolean }
+export interface MapDot { href: string; label: string; title: string; x: number; y: number; r: number; ok: boolean; showLabel: boolean }
+interface Props { viewBox: string; label: string; areas?: MapArea[]; outline?: string; dots?: MapDot[] }
+const { viewBox, label, areas = [], outline, dots = [] } = Astro.props;
+const width = Number(viewBox.split(' ')[2]);
+---
+<div class="region-map area-map">
+  <svg {viewBox} role="group" aria-label={label}>
+    {outline && <path d={outline} class="kraj outline" />}
+    {areas.map((a, i) => (
+      <a href={a.href} aria-label={a.title ?? a.label} data-i={i}>
+        <title>{a.title ?? a.label}</title>
+        <path d={a.d} class={`kraj${a.alt ? ' praha' : ''}`} />
+      </a>
+    ))}
+    {/* labels after all shapes, so a neighbour never covers them */}
+    {areas.map((a) => <text x={a.lx} y={a.ly} class="kraj-label" text-anchor="middle" dominant-baseline="middle">{a.label}</text>)}
+    {dots.map((d) => (
+      <a href={d.href} aria-label={d.title} class="dot-link">
+        <title>{d.title}</title>
+        <circle cx={d.x} cy={d.y} r={Math.max(d.r, 9)} class="dot-hit" />
+        <circle cx={d.x} cy={d.y} r={d.r} class={`dot${d.ok ? ' ok' : ''}`} />
+        {d.showLabel && (d.x > width * 0.7
+          ? <text x={d.x - d.r - 4} y={d.y} class="dot-label" text-anchor="end" dominant-baseline="middle">{d.label}</text>
+          : <text x={d.x + d.r + 4} y={d.y} class="dot-label" dominant-baseline="middle">{d.label}</text>)}
+      </a>
+    ))}
+  </svg>
+  <p class="small muted map-credit">Hranice © <a href="/o-projektu">ČÚZK, CC BY 4.0</a></p>
+</div>

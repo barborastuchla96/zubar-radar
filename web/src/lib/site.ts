@@ -79,6 +79,9 @@ export const placeLabel = (city: string, slug: string, district: string | null) 
 
 export const providerUrl = (p: { id: number; name: string }) => `/lekar/${p.id}-${slugify(p.name)}`;
 export const cityUrl = (spec: string, city: string) => `/${spec}/${city}`;
+/** District (okres) page. */
+export const districtUrl = (spec: string, okres: string) =>
+  okres === 'praha' ? cityUrl(spec, 'praha') : `/${spec}/okres/${okres}`;
 /** Region page; Prague is both a city and a region and already has its own page. */
 export const regionUrl = (spec: string, kraj: string) =>
   kraj === 'hlavni-mesto-praha' ? cityUrl(spec, 'praha') : `/${spec}/kraj/${kraj}`;

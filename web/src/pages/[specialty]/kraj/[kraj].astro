@@ -1,24 +1,42 @@
 ---
 import Base from '../../../layouts/Base.astro';
+import AreaMap from '../../../components/AreaMap.astro';
 import ProviderCard from '../../../components/ProviderCard.astro';
 import PlaceSearch from '../../../components/PlaceSearch.astro';
-import RegionMap from '../../../components/RegionMap.astro';
 import StatusLegend from '../../../components/StatusLegend.astro';
+import { regionDetail } from '../../../lib/areas';
 import { cities, regionAccepting } from '../../../lib/db';
 import { regionBySlug } from '../../../lib/regions';
-import { SPECIALTIES, breadcrumbLd, cityUrl, ordinaci, placeCompare, prijima, regionUrl, specialty } from '../../../lib/site';
+import {
+  SPECIALTIES, breadcrumbLd, cityUrl, districtUrl, ordinaci, placeCompare, prijima, regionUrl, specialty,
+} from '../../../lib/site';
 
 const spec = specialty(Astro.params.specialty ?? '');
 const region = regionBySlug(Astro.params.kraj ?? '');
 if (!spec || !region) return Astro.rewrite('/404');
 if (region.slug === 'hlavni-mesto-praha') return Astro.redirect(cityUrl(spec.slug, 'praha'), 301);
+const detail = regionDetail(region.slug)!;
 
-const places = (await cities(spec.slug, 1)).filter((c) => c.region === region.name)
-  .sort((a, b) => placeCompare(a.city, b.city));
+const places = (await cities(spec.slug, 1)).filter((c) => c.region === region.name);
 const total = places.reduce((t, c) => t + c.n, 0);
 const acceptingTotal = places.reduce((t, c) => t + c.accepting, 0);
 const accepting = await regionAccepting(spec.slug, region.name);
 const biggest = [...places].sort((a, b) => b.n - a.n).slice(0, 8);
+
+// Practices per district, for the labels and buttons
+const perDistrict = new Map<string, { n: number; accepting: number }>();
+for (const c of places) {
+  const d = perDistrict.get(c.district ?? '') ?? { n: 0, accepting: 0 };
+  d.n += c.n; d.accepting += c.accepting;
+  perDistrict.set(c.district ?? '', d);
+}
+const districts = detail.okresy.filter((o) => o.slug !== 'praha')
+  .map((o) => ({ ...o, ...(perDistrict.get(o.name) ?? { n: 0, accepting: 0 }) }))
+  .sort((a, b) => placeCompare(a.name, b.name));
+const areas = detail.okresy.map((o) => ({
+  href: districtUrl(spec.slug, o.slug), label: o.label, d: o.d, lx: o.lx, ly: o.ly, alt: o.slug === 'praha',
+  title: o.slug === 'praha' ? 'Praha' : `okres ${o.name}: ${ordinaci(perDistrict.get(o.name)?.n ?? 0)}`,
+}));
 
 const title = `${spec.plural} – ${region.name} – kdo přijímá nové pacienty`;
 const description = `${spec.plural} v kraji ${region.name}: ${ordinaci(total)} v ${places.length} obcích. ` +
@@ -34,7 +52,20 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
     {acceptingTotal > 0 && <> · <strong style="color:var(--ok)">{prijima(acceptingTotal)} nové pacienty</strong></>}
   </p>
 
+  <h2>Vyberte okres</h2>
+  <AreaMap viewBox={detail.viewBox} label={`Okresy – ${region.name}`} {areas} />
+  <ul class="pills district-pills">
+    {districts.map((o) => (
+      <li><a href={districtUrl(spec.slug, o.slug)}>{o.name} <span class="muted">({o.n})</span>
+        {o.accepting > 0 && <span class="tile-ok">&nbsp;✓ {o.accepting}</span>}</a></li>
+    ))}
+  </ul>
+
+  <h2>Nebo hledejte podle obce</h2>
   <PlaceSearch specialty={spec.slug} compact />
+  {biggest.length > 0 && (
+    <ul class="pills">{biggest.map((c) => <li><a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a></li>)}</ul>
+  )}
 
   {accepting.length > 0 && (
     <>
@@ -44,25 +75,7 @@ const jsonLd = breadcrumbLd(Astro.site, [['Úvod', '/'], [spec.plural, `/${spec.
     </>
   )}
 
-  {biggest.length > 0 && (
-    <>
-      <h2>Největší města</h2>
-      <ul class="pills">{biggest.map((c) => <li><a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a></li>)}</ul>
-    </>
-  )}
-
-  <h2>Všechny obce v kraji</h2>
-  <ul class="place-list">
-    {places.map((c) => (
-      <li>
-        <a href={cityUrl(spec.slug, c.city_slug)}>{c.city}</a> <span class="muted nowrap">({c.n})</span>
-        {c.accepting > 0 && <span class="nowrap tile-ok"> ✓ {prijima(c.accepting)}</span>}
-      </li>
-    ))}
-  </ul>
-
-  <h2>Jiný kraj</h2>
-  <RegionMap specialty={spec.slug} active={region.slug} />
+  <p><a href={`/${spec.slug}`}>← Zpět na mapu krajů</a></p>
 
   <h2>Další obory – {region.name}</h2>
   <ul class="pills">{SPECIALTIES.filter((s) => s.slug !== spec.slug).map((s) => <li><a href={regionUrl(s.slug, region.slug)}>{s.plural}</a></li>)}</ul>

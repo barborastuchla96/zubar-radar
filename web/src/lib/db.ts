@@ -89,15 +89,19 @@ export async function alternatives(p: ProviderRow, specialty: string, limit = 5)
   return rows.filter((r) => r.id !== p.id).slice(0, limit);
 }
 
-export interface CityCount { city_slug: string; city: string; region: string | null; n: number; accepting: number }
+export interface CityCount {
+  city_slug: string; city: string; region: string | null; district: string | null;
+  n: number; accepting: number; lat: number | null; lng: number | null;
+}
 
-const labelled = (rows: (CityCount & { district: string | null })[]): CityCount[] =>
-  rows.map(({ district, ...c }) => ({ ...c, city: placeLabel(c.city, c.city_slug, district) }));
+const labelled = (rows: CityCount[]): CityCount[] =>
+  rows.map((c) => ({ ...c, city: placeLabel(c.city, c.city_slug, c.district) }));
 
 /** Cities ranked by number of providers for a specialty. */
 export async function cities(specialty: string, minProviders = 1, limit = 10000): Promise<CityCount[]> {
-  return labelled(await sql<(CityCount & { district: string | null })[]>`
+  return labelled(await sql<CityCount[]>`
     SELECT p.city_slug, min(p.city) AS city, min(p.region) AS region, min(p.district) AS district, count(*)::int AS n,
+           avg(p.lat) AS lat, avg(p.lng) AS lng,
            count(*) FILTER (WHERE s.status = 'accepting')::int AS accepting
       FROM providers p
       JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
