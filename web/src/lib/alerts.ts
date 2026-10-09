@@ -78,6 +78,11 @@ export async function createSignup(v: SignupInput, requesterHash: string): Promi
   });
 }
 
+/** The confirmation email didn't go out: don't count it, so trying again right away works. */
+export const sendFailed = (token: string) => sql`
+  UPDATE subscriptions SET confirm_sends = greatest(confirm_sends - 1, 0), created_at = now() - interval '11 minutes'
+   WHERE verify_token = ${token} AND verified_at IS NULL`;
+
 export const logMail = (kind: 'confirm' | 'alert') => sql`INSERT INTO mail_log (kind) VALUES (${kind})`;
 
 export interface SubscriptionRow { specialty_slug: string; place_label: string | null; radius_km: number; verified_at: Date | null }

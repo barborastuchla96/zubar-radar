@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { confirmationText, createSignup, logMail, parseSignup } from '../../lib/alerts';
+import { confirmationText, createSignup, logMail, parseSignup, sendFailed } from '../../lib/alerts';
 import { mailEnabled, sendMail } from '../../lib/mail';
 import { clientIp, reporterHash } from '../../lib/report';
 
@@ -19,6 +19,7 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect, site })
       await logMail('confirm');
     } catch (e) {
       console.error('confirmation email failed:', e);
+      await sendFailed(result.token);
       return back('error');
     }
   }
