@@ -25,7 +25,7 @@ const BIG = [['praha', 'Prague'], ['brno', 'Brno'], ['ostrava', 'Ostrava'], ['pl
 Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
 ---
 <Base title={`${E.plural} in the Czech Republic accepting new patients – by town`}
-      description={`${E.plural} by town. For every practice: whether it accepts new patients, and whether they speak English.`}
+      description={`${E.plural} by town. For every practice: whether it accepts new patients and, where we know it, whether they speak English.`}
       activeSpecialty={spec.slug} alt={`/${spec.slug}`}>
   <div class="crumbs"><a href="/en">Home</a> › {E.plural}</div>
   <h1>{E.plural} by town</h1>

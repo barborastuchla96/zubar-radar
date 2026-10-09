@@ -12,7 +12,7 @@ const email = emailsOf(p.email)[0];
 const web = firstWeb(p.web);
 const url = doctorUrl(en ? 'en' : 'cs', p);
 const T = en
-  ? { crawl: 'per the practice website, checked', seen: 'confirmed', km: 'km away', english: 'Speaks English', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
+  ? { crawl: 'from their website,', seen: 'confirmed', km: 'km away', english: 'Speaks English', selfPay: 'No insurance contract, you pay', call: 'Call', mail: 'Write an e-mail', site: 'Website of', find: 'Look up contact', more: 'Details and map', report: 'Know more? Tell others' }
   : { crawl: 'podle webu ordinace, zkontrolováno', seen: 'ověřeno', km: 'km od vás', english: 'Mluví anglicky', selfPay: 'Bez smlouvy s pojišťovnou, platíte sami', call: 'Zavolat do ordinace', mail: 'Napsat e-mail', site: 'Web ordinace', find: 'Dohledat kontakt', more: 'Podrobnosti a mapa', report: 'Víte víc? Dejte vědět' };
 ---
 <article class="card provider" data-status={p.status} data-english={p.english ? "1" : undefined}>

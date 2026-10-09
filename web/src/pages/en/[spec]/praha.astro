@@ -36,7 +36,7 @@ for (let round = 0; round < 40; round++) {
   }
 }
 const fact = factLineEn('Prague', E.plural, acceptingTotal, total);
-const title = `${E.plural} in Prague accepting new patients – English-speaking (${monthYearEn()})`;
+const title = `${E.plural} in Prague accepting new patients, incl. English-speaking (${monthYearEn()})`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [['Home', '/en'], [E.plural, specUrl('en', spec.slug)], ['Prague', placeUrl('en', spec.slug, 'praha')]]);
 ---
@@ -58,7 +58,15 @@ const jsonLd = breadcrumbLd(Astro.site, [['Home', '/en'], [E.plural, specUrl('en
   {accepting.length > 0 ? (
     <>
       <StatusLegend />
-      <div class="grid grid-2">{accepting.map((p) => <ProviderCard p={p} />)}</div>
+      {accepting.some((p) => p.english) && (
+        <>
+          <h3>🗣️ You can speak English here</h3>
+          <div class="grid grid-2">{accepting.filter((p) => p.english).map((p) => <ProviderCard p={p} />)}</div>
+          <h3>Others: we don't know yet whether they speak English</h3>
+        </>
+      )}
+      {!accepting.some((p) => p.english) && <p class="small muted">We don't know yet which of these speak English. That doesn't mean they don't, so it's worth asking.</p>}
+      <div class="grid grid-2">{accepting.filter((p) => !p.english).map((p) => <ProviderCard p={p} />)}</div>
     </>
   ) : (
     <p class="card">No report yet of anyone accepting. Pick your district to see all practices and their contacts.</p>

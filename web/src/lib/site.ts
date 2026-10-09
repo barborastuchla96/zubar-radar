@@ -100,8 +100,10 @@ export const regionUrl = (spec: string, kraj: string) =>
 
 export function address(p: { street: string | null; house_no: string | null; city: string | null; postcode?: string | null }) {
   const street = [p.street, p.house_no].filter(Boolean).join(' ');
-  const pc = p.postcode ? p.postcode.replace(/^(\d{3})(\d{2})$/, '$1 $2') : null;
-  return [street, [pc, p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  // Non-breaking spaces keep "120 00 Praha 2" together instead of "120 00 Praha / 2".
+  const pc = p.postcode ? p.postcode.replace(/^(\d{3})(\d{2})$/, '$1\u00a0$2') : null;
+  const city = p.city ? p.city.replace(/ (\d+)$/, '\u00a0$1') : null;
+  return [street, [pc, city].filter(Boolean).join('\u00a0')].filter(Boolean).join(', ');
 }
 
 /** Normalise phone for tel: links ("+420 773 255 275" -> "+420773255275"). */

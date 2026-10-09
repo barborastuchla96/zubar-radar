@@ -23,7 +23,9 @@ const city = placeEn(placeLabel(rows[0].city!, rows[0].city_slug!, rows[0].distr
 const counts: Record<string, number> = {};
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const open = (counts.accepting ?? 0) + (counts.waitlist ?? 0);
-const english = rows.filter((r) => r.english).length;
+const speaks = rows.filter((r) => r.english);
+const others = rows.filter((r) => !r.english);
+const english = speaks.length;
 const located = rows.filter((r) => r.lat != null && r.lng != null);
 const center = located.length
   ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
@@ -35,7 +37,7 @@ const around = center
   : [];
 const prague = isPragueSlug(citySlug);
 const fact = factLineEn(city, E.plural, counts.accepting ?? 0, rows.length, english);
-const title = `${E.plural} in ${city} accepting new patients – English-speaking (${monthYearEn()})`;
+const title = `${E.plural} in ${city} accepting new patients, incl. English-speaking (${monthYearEn()})`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=120');
 const jsonLd = breadcrumbLd(Astro.site, [
   ['Home', '/en'], [E.plural, specUrl('en', spec.slug)],
@@ -52,15 +54,15 @@ const jsonLd = breadcrumbLd(Astro.site, [
   <SpecialistNote {spec} />
 
   <p class="intro">
-    {open > 0 ? <>Practices that recently said they <strong>accept new patients</strong> are at the top.</> : <>No practice here is known to accept new patients right now.</>}
-    {english > 0 ? <> Those marked <strong>🗣️ Speaks English</strong> come first.</> : <> We don't know yet who speaks English here.</>}
-    {' '}Others may speak English too, so it's worth asking.
+    {english > 0
+      ? <>First the {english === 1 ? 'practice' : `${english} practices`} where we know <strong>you can speak English</strong>, then all the others.</>
+      : <>We <strong>don't know yet</strong> which practices here speak English. That doesn't mean they don't: many doctors do, so it's worth asking.</>}
+    {' '}In each part, those that recently said they <strong>accept new patients</strong> come first.
   </p>
   <StatusLegend />
   <div class="filters" role="group" aria-label="Show">
     <button class="chip" type="button" data-filter="all" aria-pressed="true">All ({rows.length})</button>
     {open > 0 && <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Accepting ({open})</button>}
-    {english > 0 && <button class="chip" type="button" data-filter="english" aria-pressed="false">🗣️ Speaks English ({english})</button>}
   </div>
 
   <details class="map-toggle" open>
@@ -71,8 +73,21 @@ const jsonLd = breadcrumbLd(Astro.site, [
     if (matchMedia('(max-width: 640px)').matches) document.currentScript.previousElementSibling.open = false;
   </script>
 
-  <h2 class="sr-only">Practices</h2>
-  <div class="grid grid-2" id="list">{rows.map((p) => <ProviderCard p={p} />)}</div>
+  {english > 0 && (
+    <section class="list-part">
+      <h2>🗣️ You can speak English here ({english})</h2>
+      <p class="small muted">According to the practice website or patients' reports.</p>
+      <div class="grid grid-2 list">{speaks.map((p) => <ProviderCard p={p} />)}</div>
+    </section>
+  )}
+  <section class="list-part">
+    {english > 0
+      ? <h2>Other practices ({others.length})</h2>
+      : <h2 class="sr-only">Practices</h2>}
+    {english > 0 && <p class="notice unknown-english">We <strong>don't know yet</strong> whether these speak English. That doesn't mean they don't:
+      many doctors do, so it's worth asking. If you find out, tell others on the practice page.</p>}
+    <div class="grid grid-2 list">{others.map((p) => <ProviderCard p={p} />)}</div>
+  </section>
   <p class="notice ok" id="empty" hidden>Nothing in this filter.</p>
 
   {around.length > 0 && (
@@ -88,13 +103,13 @@ const jsonLd = breadcrumbLd(Astro.site, [
 
 <script>
   const chips = document.querySelectorAll<HTMLButtonElement>('.chip[data-filter]');
-  const cards = document.querySelectorAll<HTMLElement>('#list article.provider');
+  const cards = document.querySelectorAll<HTMLElement>('.list article.provider');
   chips.forEach((chip) => chip.addEventListener('click', () => {
     chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
     const f = chip.dataset.filter!;
     let shown = 0;
     cards.forEach((card) => {
-      const ok = f === 'all' || (f === 'english' ? card.dataset.english === '1' : ['accepting', 'waitlist'].includes(card.dataset.status!));
+      const ok = f === 'all' || ['accepting', 'waitlist'].includes(card.dataset.status!);
       card.hidden = !ok; if (ok) shown++;
     });
     document.getElementById('empty')!.hidden = shown > 0;

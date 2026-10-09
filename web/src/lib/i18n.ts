@@ -63,7 +63,7 @@ export function factLineEn(place: string, plural: string, accepting: number, tot
   const base = accepting > 0
     ? `${head}, ${n(accepting)} of ${practices(total)} ${accepting === 1 ? 'accepts' : 'accept'} new patients according to recent reports.`
     : `${head}, we have no report yet of any of the ${practices(total)} accepting new patients.`;
-  return english > 0 ? `${base} ${n(english)} ${english === 1 ? 'is' : 'are'} known to speak English.` : base;
+  return english > 0 ? `${base} We know of ${n(english)} where you can speak English.` : base;
 }
 
 /** Czech place names stay as they are; only the "(okres …)" suffix is translated. */

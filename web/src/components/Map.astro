@@ -86,18 +86,33 @@ const points = Astro.props.providers
       ? { accepting: '✓ Accepting', waitlist: '⏳ Waiting list', mixed: '! Unclear', not_accepting: '✗ Not accepting' }
       : { accepting: '✓ Přijímá', waitlist: '⏳ Pořadník', mixed: '! Nejasné', not_accepting: '✗ Nepřijímá' };
     const group = L.featureGroup();
+    // Zoomed out, text tags pile up: show just the symbol (✓ / ✗) until people zoom in.
+    const FULL_ZOOM = 15;
+    const tagIcon = (p: Pt, full: boolean) => L.divIcon({
+      html: `<span class="map-tag tag-${p.status}${full ? '' : ' short'}">${full ? (TAG[p.status] ?? p.label) : p.icon}</span>`,
+      className: 'tag-wrap', iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, full ? -26 : -18] });
+    const tagged: [L.Marker, Pt][] = [];
     for (const p of pts) {
       const known = p.status !== 'unknown';
       const icon = known
-        ? L.divIcon({ html: `<span class="map-tag tag-${p.status}">${TAG[p.status] ?? p.label}</span>`, className: 'tag-wrap',
-                      iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -26] })
+        ? tagIcon(p, pts.length === 1)
         : L.divIcon({ html: '<span class="pin-dot"></span>', className: 'tag-wrap', iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -6] });
       const m = L.marker([p.lat, p.lng], { icon, title: `${p.name}: ${p.label}`, zIndexOffset: p.status === 'accepting' ? 1000 : known ? 500 : 0, riseOnHover: true });
       m.bindPopup(popup(p), { minWidth: 220, maxWidth: 280 });
       group.addLayer(m);
+      if (known) tagged.push([m, p]);
     }
     group.addTo(map);
+    let full: boolean | null = null;
+    const relabel = () => {
+      const f = pts.length === 1 || map.getZoom() >= FULL_ZOOM;
+      if (f === full) return;
+      full = f;
+      for (const [m, p] of tagged) m.setIcon(tagIcon(p, f));
+    };
+    map.on('zoomend', relabel);
     if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], 15);
     else map.fitBounds(group.getBounds(), { padding: [20, 20], maxZoom: 15 });
+    relabel();
   }
 </script>
