@@ -43,6 +43,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-450}
+      MAPY_API_KEY: ${MAPY_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

@@ -83,8 +83,9 @@ If the total weight is below 0.3 the status is `unknown`; a score ≥ 0.5 is `ac
 runtime. Directly sold sponsored listings (`python -m radar sponsor add …`) need no consent banner;
 Sklik ads need Seznam's TCF consent platform. Full details are in [deploy/README.md](deploy/README.md#ads--cookies).
 
-**Maps.** Leaflet with OpenStreetMap tiles. That's fine at launch traffic; move to Mapy.com
-or a paid tile provider before traffic grows (see OSM's tile usage policy).
+**Maps.** Leaflet street maps use Mapy.com tiles when `MAPY_API_KEY` is set, otherwise
+OpenStreetMap's community tile server (only fine for small traffic, see its usage policy).
+Region and district maps are inline SVG and need no tiles.
 
 ## Deploying
 

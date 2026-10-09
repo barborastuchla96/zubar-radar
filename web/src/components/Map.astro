@@ -1,16 +1,18 @@
 ---
-// Leaflet map of providers. Tiles: OpenStreetMap (fine for launch traffic;
-// switch to Mapy.com or a paid tile host before you get big).
+// Leaflet map of providers. Tiles: Mapy.com when MAPY_API_KEY is set (deploy/.env),
+// otherwise OpenStreetMap's community server (fine only for small traffic).
+// The key is public by nature (the browser loads the tiles); limit its use in the Mapy.com console.
 import type { ProviderRow } from '../lib/db';
 import { providerUrl, STATUS_LABEL } from '../lib/site';
 
 interface Props { providers: ProviderRow[] }
+const mapyKey = (process.env.MAPY_API_KEY ?? '').trim();
 const points = Astro.props.providers
   .filter((p) => p.lat != null && p.lng != null)
   .map((p) => ({ lat: p.lat, lng: p.lng, name: p.name, url: providerUrl(p), status: p.status,
                  label: (STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown).label }));
 ---
-{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} role="region" aria-label="Mapa ordinací"></div>}
+{points.length > 0 && <div id="map" class={points.length === 1 ? "single" : undefined} data-points={JSON.stringify(points)} data-mapy={mapyKey || undefined} role="region" aria-label="Mapa ordinací"></div>}
 
 <script>
   import L from 'leaflet';
@@ -23,9 +25,30 @@ const points = Astro.props.providers
   if (el) {
     const pts = JSON.parse(el.dataset.points ?? '[]');
     const map = L.map(el, { scrollWheelZoom: false });
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap',
-    }).addTo(map);
+    const key = el.dataset.mapy;
+    if (key) {
+      // Mapy.com terms: show their copyright link and logo.
+      const size = window.devicePixelRatio > 1 ? '256@2x' : '256';
+      L.tileLayer(`https://api.mapy.com/v1/maptiles/basic/${size}/{z}/{x}/{y}?apikey=${encodeURIComponent(key)}`, {
+        minZoom: 0, maxZoom: 19, tileSize: 256,
+        attribution: '<a href="https://api.mapy.com/copyright" target="_blank" rel="noopener">&copy; Seznam.cz a.s. a další</a>',
+      }).addTo(map);
+      const Logo = L.Control.extend({
+        options: { position: 'bottomleft' },
+        onAdd() {
+          const a = L.DomUtil.create('a');
+          a.href = 'https://mapy.com/'; a.target = '_blank'; a.rel = 'noopener';
+          a.innerHTML = '<img src="https://api.mapy.com/img/api/logo.svg" alt="Mapy.com" width="100" height="25" style="display:block">';
+          L.DomEvent.disableClickPropagation(a);
+          return a;
+        },
+      });
+      new Logo().addTo(map);
+    } else {
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; OpenStreetMap',
+      }).addTo(map);
+    }
     const group = L.featureGroup();
     for (const p of pts) {
       const m = L.circleMarker([p.lat, p.lng], {
