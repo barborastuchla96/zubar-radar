@@ -285,7 +285,32 @@ def fetch(url: str, allow_private: bool = False, html_only: bool = True) -> tupl
 # Not the practice's own website: social networks, business directories, webmail.
 NOT_OWN_SITE = re.compile(
     r"(^|\.)(facebook\.com|fb\.com|instagram\.com|linkedin\.com|twitter\.com|x\.com|youtube\.com|"
-    r"firmy\.cz|seznam\.cz|google\.[a-z.]+|goo\.gl|mapy\.cz|mapy\.com|zlatestranky\.cz|najisto\.centrum\.cz)$")
+    r"firmy\.cz|seznam\.cz|google\.[a-z.]+|goo\.gl|mapy\.cz|mapy\.com|zlatestranky\.cz|najisto\.centrum\.cz|"
+    r"zdravotniregistr\.cz)$")
+
+
+# Words that name a field of care. A sentence naming only other fields ("přijímáme do
+# diabetologické ambulance" on a hospital site) says nothing about this practice.
+FIELD_WORDS = {
+    "zubar": r"zub|stomato|dent", "hygienistka": r"hygien",
+    "praktik": r"praktick|všeobecn", "pediatr": r"dětsk|pediatr|dorost|praktick",
+    "gynekolog": r"gynekolog|porodn", "ocni": r"oční|očn|oftalmolog",
+    "orl": r"\borl\b|ušní|krční|otorinolaryng", "kozni": r"kožní|dermatolog",
+    "psychiatr": r"psychiatr", "neurolog": r"neurolog",
+}
+OTHER_FIELDS = (r"diabetolog|kardiolog|interní|internist|ortoped|chirurg|urolog|endokrinolog|gastroenterolog|"
+                r"revmatolog|alergolog|plicní|pneumolog|onkolog|nefrolog|rehabilita|psycholog|logoped|"
+                r"fyzioterap|mamolog|cévní|hematolog|angiolog|geriatr|sexuolog|algeziolog")
+
+
+def fits_specialty(snippet: str, specialties: set[str]) -> bool:
+    """False when the sentence names fields of care, none of them this practice's."""
+    s = snippet.lower()
+    own = [FIELD_WORDS[x] for x in specialties if x in FIELD_WORDS]
+    if any(re.search(w, s) for w in own):
+        return True
+    others = [w for k, w in FIELD_WORDS.items() if k not in specialties] + [OTHER_FIELDS]
+    return not any(re.search(w, s) for w in others)
 
 
 def normalize_site(web: str) -> str | None:

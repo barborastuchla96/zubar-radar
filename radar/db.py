@@ -121,7 +121,8 @@ def near(
 
 
 def crawl_targets(
-    conn: psycopg.Connection, city_regex: str, specialties: list[str] | None = None, limit: int | None = None
+    conn: psycopg.Connection, city_regex: str, specialties: list[str] | None = None, limit: int | None = None,
+    forget_dropped: bool = False,
 ) -> dict[str, list[int]]:
     """Normalized clinic website URL -> ids of active providers listing it."""
     from .crawler import normalize_site
@@ -144,6 +145,13 @@ def crawl_targets(
     # One site for many practices is a hospital or chain homepage; what it says can't be
     # pinned to one practice, so leave those to patients' reports.
     sites = {u: ids for u, ids in sites.items() if len(ids) <= MAX_PRACTICES_PER_SITE}
+    if forget_dropped and limit is None:
+        # Practices whose site we no longer check (a directory, a shared hospital page):
+        # what we read there before shouldn't linger.
+        checked = {pid for ids in sites.values() for pid in ids}
+        dropped = sorted({pid for pid, _ in rows} - checked)
+        conn.execute("DELETE FROM availability_signals WHERE source = 'web_crawl' AND provider_id = ANY(%s)", (dropped,))
+        conn.commit()
     if limit is not None:
         sites = dict(list(sites.items())[:limit])
     return sites
@@ -156,6 +164,8 @@ MAX_PRACTICES_PER_SITE = 5
 def record_crawl(conn: psycopg.Connection, results) -> int:
     """Store crawl verdicts as web_crawl signals. Skips repeats of an unchanged
     verdict within RECHECK_DAYS so weekly runs don't pile up duplicates."""
+    from .crawler import fits_specialty
+
     written = 0
     with conn.transaction():
         for r in results:
@@ -169,7 +179,15 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
             if not v or not v.status:
                 continue                       # site unreachable this time: keep what we had
             note = f"„{v.snippet[:300]}“ — {r.page_url}"[:500]
+            specs: dict[int, set[str]] = {}
+            for pid, slug in conn.execute("SELECT provider_id, specialty_slug FROM provider_specialties"
+                                          " WHERE provider_id = ANY(%s)", (list(r.provider_ids),)):
+                specs.setdefault(pid, set()).add(slug)
             for pid in r.provider_ids:
+                if not fits_specialty(v.snippet, specs.get(pid, set())):
+                    # About another department (a hospital site): not this practice's news.
+                    conn.execute("DELETE FROM availability_signals WHERE source = 'web_crawl' AND provider_id = %s", (pid,))
+                    continue
                 # Same verdict seen recently: just refresh its quote (e.g. after a wording fix).
                 conn.execute(
                     """

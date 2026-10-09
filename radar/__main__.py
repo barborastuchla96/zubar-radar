@@ -156,7 +156,7 @@ def cmd_crawl(args) -> None:
     from .db import crawl_targets, record_crawl
 
     with psycopg.connect(_dsn(args)) as conn:
-        sites = crawl_targets(conn, args.city, args.specialty, args.limit)
+        sites = crawl_targets(conn, args.city, args.specialty, args.limit, forget_dropped=not args.dry_run)
     n_prov = sum(len(v) for v in sites.values())
     print(f"checking {len(sites)} websites ({n_prov} practices), {args.workers} at a time…", flush=True)
 

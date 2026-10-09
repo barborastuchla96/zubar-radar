@@ -160,3 +160,22 @@ def test_crawl_skips_sites_shared_by_many_practices(conn, monkeypatch):
     assert list(db.crawl_targets(conn, "^brno$")) == ["http://www.nemocnice-test.cz/"]
     monkeypatch.setattr(db, "MAX_PRACTICES_PER_SITE", 1)     # now it counts as a hospital/chain page
     assert db.crawl_targets(conn, "^brno$") == {}
+
+
+def test_crawl_ignores_other_departments_and_forgets_dropped_sites(conn):
+    from radar.crawler import SiteResult, Verdict
+    db.import_providers(conn, providers())
+    a = pid(conn, "1001")                                   # a dentist
+    conn.execute("UPDATE providers SET web = 'www.nemocnice-x.cz' WHERE id = %s", (a,))
+    res = [SiteResult("http://www.nemocnice-x.cz/", Verdict("accepting", "all", "Přijímáme nové pacienty do diabetologické ambulance"),
+                      "http://www.nemocnice-x.cz/", provider_ids=[a])]
+    assert db.record_crawl(conn, res) == 0                  # another department: not this practice
+    res[0].verdict = Verdict("accepting", "all", "Zubní ordinace přijímá nové pacienty")
+    assert db.record_crawl(conn, res) == 1
+
+    count = lambda: conn.execute("SELECT count(*) FROM availability_signals WHERE source='web_crawl'").fetchone()[0]
+    conn.execute("UPDATE providers SET web = 'https://www.zdravotniregistr.cz/x' WHERE id = %s", (a,))
+    db.crawl_targets(conn, "^brno$")
+    assert count() == 1                                     # only a real run forgets…
+    db.crawl_targets(conn, "^brno$", forget_dropped=True)
+    assert count() == 0                                     # …what a directory site told us

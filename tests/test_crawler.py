@@ -180,3 +180,21 @@ def test_falls_back_to_http_when_https_is_broken(site):
                                       ("BlockedURL: DNS failed for www.example.cz", "DNS: domain not found")])
 def test_error_kinds(err, kind):
     assert crawler.error_kind(err) == kind
+
+
+@pytest.mark.parametrize("snippet,specs,ok", [
+    ("Přijímáme nové pacienty do Diabetologické ambulance.", {"neurolog"}, False),
+    ("Naše ordinace praktické lékařky pro děti přijímá nové pacienty.", {"ocni"}, False),
+    ("Naše ordinace praktické lékařky pro děti přijímá nové pacienty.", {"pediatr"}, True),
+    ("Oční ambulance přijímá nové pacienty.", {"ocni"}, True),
+    ("Přijímáme nové pacienty do neurologické a diabetologické ambulance.", {"neurolog"}, True),
+    ("Aktuálně přijímáme nové pacienty.", {"psychiatr"}, True),
+    ("Psychologická poradna přijímá nové klienty.", {"psychiatr"}, False),
+    ("ORL ambulance nepřijímá nové pacienty.", {"orl"}, True),
+])
+def test_fits_specialty(snippet, specs, ok):
+    assert crawler.fits_specialty(snippet, specs) is ok
+
+
+def test_directory_sites_are_not_own_sites():
+    assert crawler.normalize_site("https://www.zdravotniregistr.cz/lekar/123") is None
