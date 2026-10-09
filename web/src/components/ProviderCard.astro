@@ -17,6 +17,7 @@ const url = providerUrl(p);
     {when && <span>{p.last_source === 'web_crawl' ? `podle webu ordinace, zkontrolováno ${when}` : `ověřeno ${when}`}</span>}
     {p.km != null && <span>{p.km.toLocaleString('cs')} km od vás</span>}
   </div>
+  {p.self_pay && <div class="self-pay">💳 Bez smlouvy s pojišťovnou, platíte sami</div>}
   <div class="addr">{address(p)}</div>
   <!-- Same layout on every card: every contact the register has, then the same two links. -->
   <div class="actions">

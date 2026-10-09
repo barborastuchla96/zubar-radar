@@ -60,6 +60,30 @@ POSITIVE = [
 NOT_REGISTRATION = re.compile(r"\b(?:belen\w*|beleni|estetick\w*|kosmetick\w*|samoplat\w*)")
 
 
+# "Nemáme smlouvy se zdravotními pojišťovnami", "pouze pro samoplátce": care isn't covered by insurance.
+# Only "no insurer at all": not when one is named ("…s pojišťovnou 211", "…kromě VZP").
+_NOT_ALL = r"(?!\s*(?:\d|vzp|cpzp|ozp|rbp|vozp|zpmv|zps|ministerstva|skoda|vojensk|oborov|ceska|ceske|vseobecn|krome|mimo|s vyjimkou))"
+_INSURERS = r"(?:zadnou\b{g}pojistovn\w*|(?:zdravotnimi )?pojistovnami|(?:zdravotni )?pojistovnou)" + _NOT_ALL
+SELF_PAY = [
+    re.compile(rf"\bnemame\b{_GAP}\bsmlouv\w*\b{_GAP}" + _INSURERS.format(g=_GAP)),
+    re.compile(rf"\bbez smlouv\w* (?:se?|s) " + _INSURERS.format(g=_GAP)),
+    re.compile(r"\bnesmluvn\w* (?:ordinac\w*|lekar\w*|zarizen\w*|pracovist\w*|poskytovatel\w*|ambulanc\w*)\b(?![^.!?\n]{0,30}(?:vzp|cpzp|ozp|rbp|vozp|zpmv|\b2\d\d\b))"),
+    re.compile(r"\b(?:pouze|jen|vyhradne|vylucne) (?:pro |pro nase )?samoplatc\w*"),
+]
+# …unless the sentence is about one paid extra (whitening, hygiene, implants) or "not with all of them".
+SELF_PAY_EXTRA = re.compile(r"\b(?:vsemi|vsech|nekter\w*|hygien\w*|belen\w*|estetick\w*|kosmetick\w*|implant\w*|botox\w*|laser\w*|nadstandard\w*|ortodont\w*|rovnatk\w*)")
+
+
+def self_pay(raw_text: str) -> str | None:
+    """Snippet saying the practice has no contract with health insurers, or None."""
+    text, src = _normalize_with_map(raw_text)
+    for p in SELF_PAY:
+        for m in p.finditer(text):
+            if not SELF_PAY_EXTRA.search(_sentence(text, m)):
+                return _snippet(text, m, original=raw_text, src=src)
+    return None
+
+
 def _sentence(text: str, m: re.Match) -> str:
     start = max(text.rfind(c, 0, m.start()) for c in ".!?\n") + 1
     ends = [i for i in (text.find(c, m.end()) for c in ".!?\n") if i != -1]
@@ -291,21 +315,21 @@ NOT_OWN_SITE = re.compile(
 
 # Words that name a field of care. A sentence naming only other fields ("přijímáme do
 # diabetologické ambulance" on a hospital site) says nothing about this practice.
-FIELD_WORDS = {
+FIELD_WORDS = {   # matched against normalize()d text: lower-case, no diacritics
     "zubar": r"zub|stomato|dent", "hygienistka": r"hygien",
-    "praktik": r"praktick|všeobecn", "pediatr": r"dětsk|pediatr|dorost|praktick",
-    "gynekolog": r"gynekolog|porodn", "ocni": r"oční|očn|oftalmolog",
-    "orl": r"\borl\b|ušní|krční|otorinolaryng", "kozni": r"kožní|dermatolog",
+    "praktik": r"praktick|vseobecn", "pediatr": r"detsk|pediatr|dorost|praktick",
+    "gynekolog": r"gynekolog|porodn", "ocni": r"\bocni|\bocn|oftalmolog",
+    "orl": r"\borl\b|\busni|\bkrcni|otorinolaryng", "kozni": r"\bkozni|dermatolog",
     "psychiatr": r"psychiatr", "neurolog": r"neurolog",
 }
-OTHER_FIELDS = (r"diabetolog|kardiolog|interní|internist|ortoped|chirurg|urolog|endokrinolog|gastroenterolog|"
-                r"revmatolog|alergolog|plicní|pneumolog|onkolog|nefrolog|rehabilita|psycholog|logoped|"
-                r"fyzioterap|mamolog|cévní|hematolog|angiolog|geriatr|sexuolog|algeziolog")
+OTHER_FIELDS = (r"diabetolog|kardiolog|\binterni|internist|ortoped|chirurg|urolog|endokrinolog|gastroenterolog|"
+                r"revmatolog|alergolog|\bplicni|pneumolog|onkolog|nefrolog|rehabilita|psycholog|logoped|"
+                r"fyzioterap|mamolog|\bcevni|hematolog|angiolog|geriatr|sexuolog|algeziolog")
 
 
 def fits_specialty(snippet: str, specialties: set[str]) -> bool:
     """False when the sentence names fields of care, none of them this practice's."""
-    s = snippet.lower()
+    s = normalize(snippet)
     own = [FIELD_WORDS[x] for x in specialties if x in FIELD_WORDS]
     if any(re.search(w, s) for w in own):
         return True
@@ -336,6 +360,7 @@ class SiteResult:
     url: str
     verdict: Verdict | None = None
     page_url: str | None = None
+    self_pay: str | None = None        # "nemáme smlouvy s pojišťovnami" seen on a page we read
     error: str | None = None
     provider_ids: list[int] = field(default_factory=list)
 
@@ -412,6 +437,7 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
         text, links = extract(html)
         best = classify(text)
         best_page = final_url
+        res.self_pay = self_pay(text)
         if best.status is None and not best.conflicting:
             for extra in pick_links(final_url, links):
                 if not robots.can_fetch(USER_AGENT, extra):
@@ -421,7 +447,9 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
                     page_url, page_html = fetch(extra, allow_private)
                 except Exception:
                     continue
-                v = classify(extract(page_html)[0])
+                page_text = extract(page_html)[0]
+                res.self_pay = res.self_pay or self_pay(page_text)
+                v = classify(page_text)
                 if v.status or v.conflicting:
                     best, best_page = v, page_url
                     break

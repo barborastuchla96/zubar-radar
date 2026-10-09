@@ -27,6 +27,7 @@ export interface ProviderRow {
   status: Status;
   last_signal_at: Date | null;
   last_source: 'clinic' | 'region' | 'user' | 'web_crawl' | null;
+  self_pay: boolean;      // no contract with any health insurer
   specialties: string[];
 }
 
@@ -38,6 +39,8 @@ const PROVIDER_COLS = sql`
   p.id, p.name, p.street, p.house_no, p.city, p.city_slug, p.postcode, p.district, p.region,
   p.lat, p.lng, p.phone, p.email, p.web, p.facility_type,
   coalesce(s.status, 'unknown') AS status, s.last_signal_at, s.last_source,
+  EXISTS (SELECT 1 FROM provider_flags f WHERE f.provider_id = p.id AND f.flag = 'self_pay'
+           AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS self_pay,
   (SELECT array_agg(specialty_slug ORDER BY specialty_slug)
      FROM provider_specialties WHERE provider_id = p.id) AS specialties`;
 
@@ -54,7 +57,7 @@ export async function cityProviders(specialty: string, citySlug: string): Promis
       JOIN provider_specialties ps ON ps.provider_id = p.id AND ps.specialty_slug = ${specialty}
       LEFT JOIN provider_status s ON s.provider_id = p.id
      WHERE p.active AND p.city_slug = ${citySlug}
-     ORDER BY ${STATUS_ORDER}, s.last_signal_at DESC NULLS LAST, p.name`;
+     ORDER BY ${STATUS_ORDER}, self_pay, s.last_signal_at DESC NULLS LAST, p.name`;
 }
 
 export async function provider(id: number): Promise<ProviderRow | undefined> {
@@ -119,6 +122,7 @@ export interface ReportInput {
   scope: 'adults' | 'children' | 'all';
   observedAt: Date;
   note: string | null;
+  selfPay?: boolean;      // "no contract with insurers, everything is paid"
   reporterHash: string;
 }
 
@@ -141,6 +145,12 @@ export async function addReport(r: ReportInput): Promise<ReportResult> {
     await tx`
       INSERT INTO availability_signals (provider_id, source, status, scope, observed_at, note, reporter_hash)
       VALUES (${r.providerId}, 'user', ${r.status}, ${r.scope}, ${r.observedAt}, ${r.note}, ${r.reporterHash})`;
+    if (r.selfPay) {
+      await tx`
+        INSERT INTO provider_flags (provider_id, flag, source, observed_at)
+        VALUES (${r.providerId}, 'self_pay', 'user', ${r.observedAt})
+        ON CONFLICT (provider_id, flag, source) DO UPDATE SET observed_at = greatest(provider_flags.observed_at, EXCLUDED.observed_at)`;
+    }
     return 'ok';
   });
 }

@@ -67,7 +67,7 @@ export function parseReport(form: FormData, now = new Date()): Parsed {
     ok: true,
     value: {
       providerId, status: status as ReportInput['status'], scope: scope as ReportInput['scope'],
-      observedAt: clamped, note,
+      observedAt: clamped, note, selfPay: get('self_pay') === '1',
     },
   };
 }

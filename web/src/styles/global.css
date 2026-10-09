@@ -107,6 +107,8 @@ input[type="date"], input[type="email"], textarea, select { font: inherit; color
 .notice.ok { background: var(--ok-bg); color: var(--ok); }
 .notice.referral { background: color-mix(in srgb, var(--brand) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border)); }
 .notice.referral p { margin: .2rem 0; }
+.self-pay { display: inline-block; margin: .35rem 0 .1rem; padding: .15rem .6rem; border-radius: 999px; font-size: .9rem; font-weight: 700; color: var(--warn); background: var(--warn-bg); border: 1px solid currentColor; }
+.notice.self-pay-note { background: var(--warn-bg); color: var(--text); border: 1px solid var(--warn); }
 .notice.bad { background: var(--bad-bg); color: var(--bad); }
 
 .ad { border: 1px dashed var(--border); border-radius: var(--radius); padding: .5rem; margin: 1.25rem 0; min-height: 100px; display: grid; place-items: center; color: var(--muted); font-size: .8rem; }

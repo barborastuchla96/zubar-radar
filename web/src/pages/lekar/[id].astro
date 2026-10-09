@@ -79,6 +79,10 @@ const jsonLd = [
     <StatusBadge status={p.status} />
     <span class="muted small">{when ? (crawl ? `podle webu ordinace, zkontrolováno ${when}` : `poslední hlášení ${when}`) : status.hint}</span>
   </p>
+  {p.self_pay && (
+    <p class="notice self-pay-note">💳 <strong>Bez smlouvy se zdravotní pojišťovnou.</strong> Podle webu ordinace nebo hlášení
+      pacientů tu všechno platíte sami. Pojišťovna vám péči neproplatí.</p>
+  )}
   {specs.find((s) => s.specialist) && <SpecialistNote spec={specs.find((s) => s.specialist)!} />}
   {crawl && (
     <p class="small muted">

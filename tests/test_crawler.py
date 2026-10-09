@@ -198,3 +198,21 @@ def test_fits_specialty(snippet, specs, ok):
 
 def test_directory_sites_are_not_own_sites():
     assert crawler.normalize_site("https://www.zdravotniregistr.cz/lekar/123") is None
+
+
+@pytest.mark.parametrize("text,yes", [
+    ("Nemáme smlouvy se zdravotními pojišťovnami, veškerá péče je hrazena přímo.", True),
+    ("Nemáme uzavřenou smlouvu s žádnou zdravotní pojišťovnou.", True),
+    ("Jsme nesmluvní ordinace.", True),
+    ("Ošetřujeme pouze samoplátce.", True),
+    ("Přijímáme i samoplátce.", False),
+    ("Nemáme smlouvu s pojišťovnou 211.", False),
+    ("Nemáme smlouvu s pojišťovnami kromě VZP.", False),
+    ("Nemáme smlouvy se všemi pojišťovnami.", False),
+    ("Nemáme smlouvu se Zdravotní pojišťovnou ministerstva vnitra.", False),
+    ("Dentální hygiena je pouze pro samoplátce.", False),
+    ("Bělení zubů: tato péče není hrazena ze zdravotního pojištění.", False),
+    ("Jsme nesmluvní lékař VZP.", False),
+])
+def test_self_pay(text, yes):
+    assert bool(crawler.self_pay(text)) is yes

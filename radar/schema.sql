@@ -101,6 +101,20 @@ CREATE INDEX IF NOT EXISTS availability_signals_reporter_idx
     ON availability_signals (reporter_hash, created_at) WHERE reporter_hash IS NOT NULL;
 
 -- ---------------------------------------------------------------------------
+-- Facts about a practice beyond "accepting?": 'self_pay' (no contract with any
+-- health insurer, patients pay everything), later e.g. 'english'.
+-- One row per practice, fact and source; a newer report replaces the older one.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS provider_flags (
+    provider_id   bigint NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+    flag          text NOT NULL CHECK (flag IN ('self_pay')),
+    source        signal_source NOT NULL,
+    note          text CHECK (length(note) <= 500),
+    observed_at   timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (provider_id, flag, source)
+);
+
+-- ---------------------------------------------------------------------------
 -- Alert subscriptions ("email me when a dentist near Praha 6 opens up").
 -- Store only what the alert needs: no names, no health details.
 -- ---------------------------------------------------------------------------
