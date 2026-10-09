@@ -1,4 +1,4 @@
-# Bere pacienty?
+# Přijímá nové pacienty?
 
 This site shows which Czech dentists, GPs, pediatricians and gynecologists are taking new patients.
 The list of practices comes from the official NRPZS register. Each practice's status

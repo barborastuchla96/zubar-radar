@@ -13,7 +13,7 @@ Check current prices; they change.
 ## 1. Buy the pieces (about 20 min)
 
 1. **A domain.** Use any Czech registrar (Wedos, Forpsi, Active24, Subreg…). Check first that the
-   name is free, e.g. `berepacienty.cz`.
+   name is free, e.g. `prijimanovepacienty.cz`.
 2. **A server.** Hetzner Cloud is cheap and close to CZ (Falkenstein or Nuremberg). Pick the smallest
    x86 plan with **2 vCPU / 4 GB RAM** and the **Ubuntu 24.04** image, and add your SSH key while creating it.
    Any VPS with Ubuntu 24.04 works the same way.
@@ -76,7 +76,7 @@ findings. They're stored as low-weight `web_crawl` signals and shown on the site
 "podle webu ordinace" (based on the clinic's website). Options: `--specialty zubar`,
 `--limit 50`, `--city '^brno$'`, or `--city .` for the whole country.
 
-The checker identifies itself as `BerePacientyBot`, honours robots.txt, waits between requests
+The checker identifies itself as `PrijimaNovePacientyBot`, honours robots.txt, waits between requests
 to the same site, and refuses private network addresses.
 
 ## Everyday commands (run in `deploy/`)

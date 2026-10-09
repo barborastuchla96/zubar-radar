@@ -41,7 +41,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a href="/" class="logo">Bere <span>pacienty?</span></a>
+        <a href="/" class="logo">Přijímá <span>nové pacienty?</span></a>
         <nav class="nav" aria-label="Obory">
           {SPECIALTIES.map((s) => (
             <a href={`/${s.slug}`} aria-current={s.slug === activeSpecialty ? 'page' : undefined}>{s.short}</a>

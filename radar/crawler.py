@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 
-USER_AGENT = "BerePacientyBot/1.0 (+https://berepacienty.cz/o-projektu)"
+USER_AGENT = "PrijimaNovePacientyBot/1.0 (+https://prijimanovepacienty.cz/o-projektu)"
 TIMEOUT = 10
 MAX_BYTES = 1_500_000
 MAX_EXTRA_PAGES = 2

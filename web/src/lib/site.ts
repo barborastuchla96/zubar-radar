@@ -1,7 +1,7 @@
 // Copy, labels and helpers. Everything user-facing is Czech.
 
-export const SITE_NAME = 'Bere pacienty?';
-export const TAGLINE = 'Kteří lékaři a zubaři právě přijímají nové pacienty';
+export const SITE_NAME = 'Přijímá nové pacienty?';
+export const TAGLINE = 'Zubaři a lékaři s volnou kapacitou';
 
 /** Launch city: featured on the homepage. */
 export const FEATURED_CITY = { slug: 'praha', name: 'Praha' };
