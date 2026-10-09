@@ -11,8 +11,9 @@ const body = encodeURIComponent('Dobrý den,\n\nodkaz na profil naší ordinace:
      ušetříte sobě i jim spoustu telefonátů. Vaše vlastní hlášení má vždy přednost před zprávami pacientů.</p>
   <div class="card">
     <h2 style="margin-top:0">Jak na to</h2>
-    <p>Napište nám z e-mailu uvedeného v registru poskytovatelů a pošlete odkaz na profil vaší ordinace.
-       Ověříme vás a stav upravíme. Je to zdarma.</p>
+    <p>Napište nám{contact ? <> na <strong>{contact}</strong></> : ''} z e-mailové adresy, kterou má vaše ordinace uvedenou
+       v registru poskytovatelů, a přidejte odkaz na profil ordinace u nás. Podle adresy poznáme, že píšete opravdu vy.
+       Stav pak upravíme. Je to zdarma.</p>
     {contact
       ? <p><a class="btn" href={`mailto:${contact}?subject=${subject}&body=${body}`}>✉️ Napsat na {contact}</a></p>
       : <p class="muted">Kontaktní e-mail brzy doplníme.</p>}
@@ -20,6 +21,6 @@ const body = encodeURIComponent('Dobrý den,\n\nodkaz na profil naší ordinace:
   </div>
   <h2>Oprava nebo odstranění údajů</h2>
   <p>Údaje o ordinacích přebíráme z veřejného Národního registru poskytovatelů zdravotních služeb.
-     Je-li něco špatně, nebo nesouhlasíte s tím, jak vaše údaje zobrazujeme, napište nám
-     ze stejného e-mailu. Údaje opravíme, případně stav „přijímá / nepřijímá“ u vaší ordinace skryjeme.</p>
+     Je-li něco špatně, nebo nesouhlasíte s tím, jak vaše údaje zobrazujeme, napište nám{contact ? <> na <strong>{contact}</strong></> : ''},
+     ideálně z adresy, kterou má vaše ordinace v registru. Údaje opravíme, případně stav „přijímá / nepřijímá“ u vaší ordinace skryjeme.</p>
 </Base>

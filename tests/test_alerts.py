@@ -129,3 +129,15 @@ def test_daily_limit_is_shared_and_bad_addresses_skipped(conn, monkeypatch):
     st = alerts.run(conn, s, "https://x.cz", "info@x.cz")
     assert (st["sent"], st["failed"], st["deferred"]) == (2, 1, 1)
     assert [m["To"] for m in s.sent] == ["a@example.cz", "b@example.cz"]
+
+
+@needs_db
+def test_alert_goes_to_subscriber_and_lists_practice_contacts(conn):
+    subscribe(conn, "subscriber@example.cz")
+    conn.execute("UPDATE providers SET email = 'ordinace@example.cz', web = 'www.ordinace.cz' WHERE id = 2")
+    accepting(conn, 2)
+    s = FakeSender()
+    alerts.run(conn, s, "https://x.cz", "info@x.cz")
+    assert [m["To"] for m in s.sent] == ["subscriber@example.cz"]          # never the practice's own address
+    body = s.sent[0].get_content()
+    assert "E-mail: ordinace@example.cz" in body and "Web: https://www.ordinace.cz" in body

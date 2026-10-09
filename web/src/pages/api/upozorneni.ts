@@ -15,7 +15,8 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect, site })
   if (result.kind === 'send') {
     try {
       await sendMail(parsed.value.email, confirmationSubject(parsed.value.lang),
-        confirmationText(String(site ?? process.env.SITE_URL), result.token, parsed.value));
+        confirmationText(String(site ?? process.env.SITE_URL), result.token, parsed.value), {},
+        parsed.value.lang === 'en' ? 'Accepting new patients?' : undefined);
       await logMail('confirm');
     } catch (e) {
       console.error('confirmation email failed:', e);

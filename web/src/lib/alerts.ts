@@ -141,6 +141,6 @@ export function confirmationText(siteUrl: string, token: string, v: Pick<SignupI
     'Pokud jste o nic nežádali, e-mail klidně ignorujte. Bez potvrzení vám už nic nepošleme a adresu do týdne smažeme.',
     '',
     'Hezký den',
-    'Přijímá nové pacienty?',
+    'Přijímá nové pacienty? (prijimanovepacienty.cz)',
   ].join('\n');
 }

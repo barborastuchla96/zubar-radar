@@ -7,6 +7,7 @@ this job only sends the alert emails and tidies up.
 from __future__ import annotations
 
 import os
+import re
 import smtplib
 import ssl
 import sys
@@ -41,6 +42,16 @@ SPECIALTY_PLURAL_EN = {
 
 def _plural(n: int, one: str, few: str, many: str) -> str:
     return one if n == 1 else few if 2 <= n <= 4 else many
+
+
+def _first_email(v: str | None) -> str | None:
+    """The register sometimes lists several addresses in one field."""
+    return next((e for e in re.split(r"[\s,;]+", v or "") if re.fullmatch(r"[^@\s]+@[^@\s]+\.[a-z]{2,}", e, re.I)), None)
+
+
+def _first_web(v: str | None) -> str | None:
+    w = next((w for w in re.split(r"[\s,;]+", v or "") if "." in w and "@" not in w), None)
+    return None if not w else w if re.match(r"https?://", w, re.I) else f"https://{w}"
 
 
 def _km(km: float) -> str:
@@ -83,7 +94,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
     lines = [
         "Dobrý den,",
         "",
-        f"máme dobrou zprávu. Do {a.radius_km} km od místa {a.place} teď podle nových zpráv"
+        f"dobrá zpráva: do {a.radius_km} km od místa {a.place} teď podle posledních hlášení"
         f" {'přijímá' if n == 1 else 'přijímají'} nové pacienty {these}:",
         "",
     ]
@@ -93,7 +104,11 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  {addr} ({_km(p['km'])})" if addr else f"  {_km(p['km'])}")
         if tel := _phone(p.get("phone")):
             lines.append(f"  Telefon: {tel}")
-        lines.append(f"  {site}/lekar/{p['id']}")
+        if mail := _first_email(p.get("practice_email")):
+            lines.append(f"  E-mail: {mail}")
+        if web := _first_web(p.get("practice_web")):
+            lines.append(f"  Web: {web}")
+        lines.append(f"  Na našem webu: {site}/lekar/{p['id']}")
         lines.append("")
     lines += [
         "Než se do ordinace vydáte, ověřte si to přímo u nich. Zprávy pocházejí od pacientů, ordinací a z jejich webů"
@@ -102,7 +117,7 @@ def compose(a: Alert, site_url: str, sender: str) -> EmailMessage:
         "Až zjistíte, jak to je, dejte prosím vědět na stránce ordinace. Pomůžete tím dalším.",
         "",
         "Hezký den",
-        SITE_NAME,
+        f"{SITE_NAME} ({site.split('//')[-1]})",
         "",
         "--",
         f"Upozornění už nechcete? Odhlásíte se tady: {unsubscribe}",
@@ -139,11 +154,15 @@ def _compose_en(a: Alert, site_url: str, sender: str) -> EmailMessage:
         lines.append(f"  {addr} ({_km(p['km']).replace(',', '.')})" if addr else f"  {_km(p['km']).replace(',', '.')}")
         if tel := _phone(p.get("phone")):
             lines.append(f"  Phone: +420 {tel}")
-        lines.append(f"  {site}/en/doctor/{p['id']}")
+        if mail := _first_email(p.get("practice_email")):
+            lines.append(f"  E-mail: {mail}")
+        if web := _first_web(p.get("practice_web")):
+            lines.append(f"  Website: {web}")
+        lines.append(f"  On our site: {site}/en/doctor/{p['id']}")
         lines.append("")
     lines += [
-        "Please contact the practice before you go. The reports come from patients and practice websites"
-        " and may not be completely up to date. Many practices answer e-mails more easily than calls.",
+        "Please contact the practice before you go. The reports come from patients, the practices"
+        " themselves and their websites, and may not be completely up to date. Many practices answer e-mails more easily than calls.",
         "",
         "Once you know, please mark the result on the practice page. It helps the next person.",
         "",
@@ -172,6 +191,7 @@ PENDING_SQL = """
 SELECT s.id::text AS subscription_id, s.email, s.verify_token, s.specialty_slug, s.lang,
        coalesce(s.place_label, 'vybrané místo') AS place, s.radius_km,
        p.id, p.name, p.street, p.house_no, p.city, p.phone,
+       p.email AS practice_email, p.web AS practice_web,   -- not "email": that is the subscriber's
        distance_km(s.lat, s.lng, p.lat, p.lng) AS km
   FROM subscriptions s
   JOIN provider_specialties ps ON ps.specialty_slug = s.specialty_slug
