@@ -37,7 +37,11 @@ const msg = result ? MESSAGES[result] : null;
         <option value="children">Jen děti</option>
       </select>
     </fieldset>
-    <label class="opt"><input type="checkbox" name="self_pay" value="1" /> Nemají smlouvu se zdravotní pojišťovnou, všechno se platí</label>
+    <fieldset>
+      <legend>Víte ještě něco? (nepovinné)</legend>
+      <label class="opt"><input type="checkbox" name="english" value="1" /> Domluvíte se tam anglicky</label>
+      <label class="opt"><input type="checkbox" name="self_pay" value="1" /> Nemají smlouvu se zdravotní pojišťovnou, všechno se platí</label>
+    </fieldset>
     <fieldset>
       <legend><label for="report-date">Kdy jste to zjistili?</label></legend>
       <input id="report-date" type="date" name="date" value={today} min={min} max={today} required />

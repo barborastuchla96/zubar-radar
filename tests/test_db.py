@@ -186,12 +186,12 @@ def test_crawl_remembers_and_forgets_self_pay(conn):
     db.import_providers(conn, providers())
     a = pid(conn, "1001")
     flags = lambda: conn.execute("SELECT count(*) FROM provider_flags WHERE flag = 'self_pay'").fetchone()[0]
-    r = SiteResult("http://x.cz/", Verdict(None), "http://x.cz/", self_pay="Nemáme smlouvy se zdravotními pojišťovnami",
+    r = SiteResult("http://x.cz/", Verdict(None), "http://x.cz/", flags={"self_pay": "Nemáme smlouvy se zdravotními pojišťovnami"},
                    provider_ids=[a])
     db.record_crawl(conn, [r])
     db.record_crawl(conn, [r])
     assert flags() == 1                     # remembered once
-    r.self_pay, r.error = None, "HTTP 503"
+    r.flags, r.error = {}, "HTTP 503"
     db.record_crawl(conn, [r])
     assert flags() == 1                     # site down: keep it
     r.error = None

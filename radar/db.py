@@ -158,26 +158,31 @@ def crawl_targets(
     return sites
 
 
-def _record_self_pay(conn: psycopg.Connection, r) -> None:
-    """The site loaded: remember (or forget) that it says it has no insurer contract."""
+FLAGS = ("self_pay", "english")
+
+
+def _record_flags(conn: psycopg.Connection, r) -> None:
+    """The site loaded: remember (or forget) what it says beyond "accepting?"."""
     from .crawler import fits_specialty
 
     ids = list(r.provider_ids)
-    keep = []
-    if r.self_pay:
-        specs: dict[int, set[str]] = {}
+    specs: dict[int, set[str]] = {}
+    if r.flags:
         for pid, slug in conn.execute("SELECT provider_id, specialty_slug FROM provider_specialties"
                                       " WHERE provider_id = ANY(%s)", (ids,)):
             specs.setdefault(pid, set()).add(slug)
-        keep = [pid for pid in ids if fits_specialty(r.self_pay, specs.get(pid, set()))]
-        note = f"„{r.self_pay[:300]}“ — {r.page_url or r.url}"[:500]
-        for pid in keep:
-            conn.execute(
-                "INSERT INTO provider_flags (provider_id, flag, source, note) VALUES (%s, 'self_pay', 'web_crawl', %s)"
-                " ON CONFLICT (provider_id, flag, source) DO UPDATE SET note = EXCLUDED.note, observed_at = now()",
-                (pid, note))
-    conn.execute("DELETE FROM provider_flags WHERE source = 'web_crawl' AND provider_id = ANY(%s)"
-                 " AND NOT provider_id = ANY(%s)", (ids, keep))
+    for flag in FLAGS:
+        snippet = r.flags.get(flag)
+        keep = [pid for pid in ids if snippet and fits_specialty(snippet, specs.get(pid, set()))]
+        if snippet:
+            note = f"„{snippet[:300]}“ — {r.page_url or r.url}"[:500]
+            for pid in keep:
+                conn.execute(
+                    "INSERT INTO provider_flags (provider_id, flag, source, note) VALUES (%s, %s, 'web_crawl', %s)"
+                    " ON CONFLICT (provider_id, flag, source) DO UPDATE SET note = EXCLUDED.note, observed_at = now()",
+                    (pid, flag, note))
+        conn.execute("DELETE FROM provider_flags WHERE source = 'web_crawl' AND flag = %s AND provider_id = ANY(%s)"
+                     " AND NOT provider_id = ANY(%s)", (flag, ids, keep))
 
 
 RECHECK_DAYS = 6
@@ -194,7 +199,7 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
         for r in results:
             v = r.verdict
             if r.error is None:
-                _record_self_pay(conn, r)
+                _record_flags(conn, r)
             if r.error is None and (not v or not v.status):
                 # The site loaded and no longer says anything clear: what we read there
                 # earlier isn't true any more (wording removed, or we misread it before).

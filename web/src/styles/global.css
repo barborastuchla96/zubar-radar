@@ -107,7 +107,11 @@ input[type="date"], input[type="email"], textarea, select { font: inherit; color
 .notice.ok { background: var(--ok-bg); color: var(--ok); }
 .notice.referral { background: color-mix(in srgb, var(--brand) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border)); }
 .notice.referral p { margin: .2rem 0; }
-.self-pay { display: inline-block; margin: .35rem 0 .1rem; padding: .15rem .6rem; border-radius: 999px; font-size: .9rem; font-weight: 700; color: var(--warn); background: var(--warn-bg); border: 1px solid currentColor; }
+.facts { display: flex; flex-wrap: wrap; gap: .35rem; margin: .35rem 0 .1rem; }
+.fact-tag { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .9rem; font-weight: 700; border: 1px solid currentColor; }
+.fact-tag.self-pay { color: var(--warn); background: var(--warn-bg); }
+.fact-tag.english { color: var(--brand); background: color-mix(in srgb, var(--brand) 9%, var(--surface)); }
+.notice.english-note { background: color-mix(in srgb, var(--brand) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border)); }
 .notice.self-pay-note { background: var(--warn-bg); color: var(--text); border: 1px solid var(--warn); }
 .notice.bad { background: var(--bad-bg); color: var(--bad); }
 
@@ -400,3 +404,4 @@ table.avail td.ok { color: var(--ok); font-weight: 700; }
 .area-map .dot.numbered.ok { fill: var(--ok); }
 .area-map .dot-inner { font-size: 17px; font-weight: 800; fill: var(--surface); pointer-events: none; }
 .area-map .dot-link:hover .dot.numbered, .area-map .dot-link:focus-visible .dot.numbered { fill: var(--brand); stroke: var(--text); }
+.opt input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex: none; accent-color: var(--brand); }

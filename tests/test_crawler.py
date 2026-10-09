@@ -216,3 +216,20 @@ def test_directory_sites_are_not_own_sites():
 ])
 def test_self_pay(text, yes):
     assert bool(crawler.self_pay(text)) is yes
+
+
+@pytest.mark.parametrize("text,yes", [
+    ("V ordinaci mluvíme anglicky a německy.", True),
+    ("Domluvíte se u nás i anglicky.", True),
+    ("Anglicky mluvící praktický lékař v Praze 6.", True),
+    ("We speak English.", True),
+    ("English-speaking GP in Prague.", True),
+    ("Nemluvíme anglicky.", False),
+    ("Kurzy angličtiny pro děti.", False),
+])
+def test_english(text, yes):
+    assert bool(crawler.english(text)) is yes
+
+
+def test_find_flags_collects_both():
+    assert set(crawler.find_flags("Nemáme smlouvy se zdravotními pojišťovnami. We speak English.")) == {"self_pay", "english"}

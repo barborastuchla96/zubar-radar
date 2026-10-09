@@ -10,14 +10,19 @@ const email = emailsOf(p.email)[0];
 const web = firstWeb(p.web);
 const url = providerUrl(p);
 ---
-<article class="card provider" data-status={p.status}>
+<article class="card provider" data-status={p.status} data-english={p.english ? "1" : undefined}>
   <h3><a href={url}>{p.name}</a></h3>
   <div class="meta">
     <StatusBadge status={p.status} />
     {when && <span>{p.last_source === 'web_crawl' ? `podle webu ordinace, zkontrolováno ${when}` : `ověřeno ${when}`}</span>}
     {p.km != null && <span>{p.km.toLocaleString('cs')} km od vás</span>}
   </div>
-  {p.self_pay && <div class="self-pay">💳 Bez smlouvy s pojišťovnou, platíte sami</div>}
+  {(p.self_pay || p.english) && (
+    <div class="facts">
+      {p.english && <span class="fact-tag english">🗣️ Mluví anglicky</span>}
+      {p.self_pay && <span class="fact-tag self-pay">💳 Bez smlouvy s pojišťovnou, platíte sami</span>}
+    </div>
+  )}
   <div class="addr">{address(p)}</div>
   <!-- Same layout on every card: every contact the register has, then the same two links. -->
   <div class="actions">

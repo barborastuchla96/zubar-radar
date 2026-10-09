@@ -21,6 +21,7 @@ const counts = { accepting: 0, waitlist: 0, not_accepting: 0, unknown: 0, mixed:
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const known = rows.length - counts.unknown;
 const open = counts.accepting + counts.waitlist;
+const english = rows.filter((r) => r.english).length;
 const located = rows.filter((r) => r.lat != null && r.lng != null);
 const center = located.length
   ? { lat: located.reduce((t, r) => t + r.lat!, 0) / located.length, lng: located.reduce((t, r) => t + r.lng!, 0) / located.length }
@@ -58,6 +59,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
         <button class="chip" type="button" data-filter="all" aria-pressed="true">Všechny ({rows.length})</button>
         <button class="chip" type="button" data-filter="accepting" aria-pressed="false">Přijímají ({open})</button>
         <button class="chip" type="button" data-filter="unknown" aria-pressed="false">Zatím nevíme ({counts.unknown + counts.mixed})</button>
+        {english > 0 && <button class="chip" type="button" data-filter="english" aria-pressed="false">🗣️ Mluví anglicky ({english})</button>}
       </div>
     </>
   ) : (
@@ -114,7 +116,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
     const f = chip.dataset.filter!;
     let shown = 0;
     cards.forEach((card) => {
-      const ok = f === 'all' || groups[f].includes(card.dataset.status!);
+      const ok = f === 'all' || (f === 'english' ? card.dataset.english === '1' : groups[f].includes(card.dataset.status!));
       card.hidden = !ok; if (ok) shown++;
     });
     document.getElementById('empty')!.hidden = shown > 0;

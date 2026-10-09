@@ -74,6 +74,29 @@ SELF_PAY = [
 SELF_PAY_EXTRA = re.compile(r"\b(?:vsemi|vsech|nekter\w*|hygien\w*|belen\w*|estetick\w*|kosmetick\w*|implant\w*|botox\w*|laser\w*|nadstandard\w*|ortodont\w*|rovnatk\w*)")
 
 
+# "Mluvíme anglicky", "domluvíte se i anglicky", "we speak English": someone there speaks English.
+ENGLISH = [
+    re.compile(rf"\b(?:mluvime|hovorime|domluvite se|domluvime se|komunikujeme|dorozumite se|mluvi|hovori|ovladame|ovlada)\b{_GAP}\banglick\w*"),
+    re.compile(r"\banglick\w* (?:mluvic\w*|hovoric\w*)"),
+    re.compile(r"\b(?:we (?:also )?speak|english[- ]speaking|speaks? english|english (?:is )?spoken)\b"),
+]
+
+
+def english(raw_text: str) -> str | None:
+    """Snippet saying someone at the practice speaks English, or None."""
+    text, src = _normalize_with_map(raw_text)
+    for p in ENGLISH:
+        if m := p.search(text):
+            return _snippet(text, m, original=raw_text, src=src)
+    return None
+
+
+def find_flags(raw_text: str) -> dict[str, str]:
+    """Facts beyond "accepting?" that a page states, as {flag: snippet}."""
+    found = {"self_pay": self_pay(raw_text), "english": english(raw_text)}
+    return {k: v for k, v in found.items() if v}
+
+
 def self_pay(raw_text: str) -> str | None:
     """Snippet saying the practice has no contract with health insurers, or None."""
     text, src = _normalize_with_map(raw_text)
@@ -366,7 +389,7 @@ class SiteResult:
     url: str
     verdict: Verdict | None = None
     page_url: str | None = None
-    self_pay: str | None = None        # "nemáme smlouvy s pojišťovnami" seen on a page we read
+    flags: dict[str, str] = field(default_factory=dict)   # e.g. {"self_pay": snippet}, from any page we read
     error: str | None = None
     provider_ids: list[int] = field(default_factory=list)
 
@@ -443,7 +466,7 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
         text, links = extract(html)
         best = classify(text)
         best_page = final_url
-        res.self_pay = self_pay(text)
+        res.flags = find_flags(text)
         if best.status is None and not best.conflicting:
             for extra in pick_links(final_url, links):
                 if not robots.can_fetch(USER_AGENT, extra):
@@ -454,7 +477,7 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
                 except Exception:
                     continue
                 page_text = extract(page_html)[0]
-                res.self_pay = res.self_pay or self_pay(page_text)
+                res.flags = {**find_flags(page_text), **res.flags}
                 v = classify(page_text)
                 if v.status or v.conflicting:
                     best, best_page = v, page_url
