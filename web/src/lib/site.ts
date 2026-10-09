@@ -101,6 +101,14 @@ export function formatPhone(phone: string): string {
   return /^\d{9}$/.test(d) ? d.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') : phone.trim();
 }
 
+/** The register sometimes lists several addresses in one field: "a@x.cz,b@y.cz". */
+export const emailsOf = (v: string | null) =>
+  (v ?? '').split(/[\s,;]+/).map((e) => e.trim()).filter((e) => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e));
+
+/** Same for websites: "www.a.cz www.b.cz" → first usable link. */
+export const firstWeb = (v: string | null) =>
+  (v ?? '').split(/[\s,;]+/).map(webHref).find((u) => u != null) ?? null;
+
 export function webHref(web: string): string | null {
   const w = web.trim();
   if (!w) return null;

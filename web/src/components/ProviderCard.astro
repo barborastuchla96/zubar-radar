@@ -1,12 +1,13 @@
 ---
 import StatusBadge from './StatusBadge.astro';
-import { address, ago, formatPhone, providerUrl, telHref, webHref } from '../lib/site';
+import { address, ago, emailsOf, firstWeb, formatPhone, providerUrl, telHref } from '../lib/site';
 import type { ProviderRow } from '../lib/db';
 
 interface Props { p: ProviderRow & { km?: number } }
 const { p } = Astro.props;
 const when = ago(p.last_signal_at);
-const web = !p.phone && p.web ? webHref(p.web) : null;
+const email = emailsOf(p.email)[0];
+const web = firstWeb(p.web);
 const url = providerUrl(p);
 ---
 <article class="card provider" data-status={p.status}>
@@ -17,16 +18,21 @@ const url = providerUrl(p);
     {p.km != null && <span>{p.km.toLocaleString('cs')} km od vás</span>}
   </div>
   <div class="addr">{address(p)}</div>
-  <!-- Same layout on every card: one main contact button, then the same two links. -->
+  <!-- Same layout on every card: every contact the register has, then the same two links. -->
   <div class="actions">
-    {p.phone ? (
+    {p.phone && (
       <a class="btn call contact" href={telHref(p.phone)} aria-label={`Zavolat do ordinace ${p.name}: ${formatPhone(p.phone)}`}>📞 <span class="nowrap">{formatPhone(p.phone)}</span></a>
-    ) : web ? (
-      <a class="btn secondary contact" href={web} rel="nofollow noopener" target="_blank">🌐 Web ordinace</a>
-    ) : (
-      // Not in the register: let people look the number up instead of hitting a dead end.
-      <a class="btn secondary contact" href={`https://search.seznam.cz/?q=${encodeURIComponent(`${p.name} ${p.city ?? ''} telefon`)}`}
-         rel="nofollow noopener" target="_blank">🔍 Dohledat telefon</a>
+    )}
+    {(email || web) && (
+      <div class="contact-row">
+        {email && <a class="btn secondary contact" href={`mailto:${email}`} aria-label={`Napsat e-mail: ${email}`}>✉️ E-mail</a>}
+        {web && <a class="btn secondary contact" href={web} rel="nofollow noopener" target="_blank" aria-label={`Web ordinace ${p.name}`}>🌐 Web</a>}
+      </div>
+    )}
+    {!p.phone && !email && !web && (
+      // Nothing in the register: let people look it up instead of hitting a dead end.
+      <a class="btn secondary contact" href={`https://search.seznam.cz/?q=${encodeURIComponent(`${p.name} ${p.city ?? ''} kontakt`)}`}
+         rel="nofollow noopener" target="_blank">🔍 Dohledat kontakt</a>
     )}
     <div class="links">
       <a href={url}>Podrobnosti a mapa</a>

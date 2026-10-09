@@ -7,7 +7,7 @@ import Map from '../../components/Map.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import AlertForm from '../../components/AlertForm.astro';
 import { alternatives, latestCrawlNote, provider } from '../../lib/db';
-import { STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, formatPhone, providerUrl, specialty, telHref, webHref } from '../../lib/site';
+import { STATUS_LABEL, address, ago, breadcrumbLd, cityUrl, emailsOf, firstWeb, formatPhone, providerUrl, specialty, telHref } from '../../lib/site';
 
 const id = Number((Astro.params.id ?? '').split('-')[0]);
 const p = Number.isInteger(id) && id > 0 ? await provider(id) : undefined;
@@ -22,7 +22,8 @@ const main = specs[0];
 const alts = main ? await alternatives(p, main.slug) : [];
 const when = ago(p.last_signal_at);
 const crawl = p.last_source === 'web_crawl' ? await latestCrawlNote(p.id) : undefined;
-const web = p.web ? webHref(p.web) : null;
+const web = firstWeb(p.web);
+const emails = emailsOf(p.email);
 const result = Astro.url.searchParams.get('r');
 const status = STATUS_LABEL[p.status] ?? STATUS_LABEL.unknown;
 const desc = `${p.name}, ${address(p)}. ${specs.map((s) => s.singular).join(', ')}. ` +
@@ -80,12 +81,18 @@ const jsonLd = [
       {p.phone && (
         <a class="btn call big full" href={telHref(p.phone)}>📞 Zavolat do ordinace <span class="nowrap">{formatPhone(p.phone)}</span></a>
       )}
+      {(emails.length > 0 || web) && (
+        <div class="contact-row detail">
+          {emails[0] && <a class="btn secondary" href={`mailto:${emails[0]}`}>✉️ Napsat e-mail</a>}
+          {web && <a class="btn secondary" href={web} rel="nofollow noopener" target="_blank">🌐 Otevřít web ordinace</a>}
+        </div>
+      )}
       <div class="card">
         <dl class="facts">
           <dt>Adresa</dt><dd>{address(p)}</dd>
           {p.phone && <><dt>Telefon</dt><dd><a href={telHref(p.phone)}>{formatPhone(p.phone)}</a></dd></>}
-          {p.email && <><dt>E-mail</dt><dd><a href={`mailto:${p.email}`}>{p.email}</a></dd></>}
-          {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{p.web}</a></dd></>}
+          {emails.length > 0 && <><dt>E-mail</dt><dd>{emails.map((e, i) => <>{i > 0 && <br />}<a href={`mailto:${e}`}>{e}</a></>)}</dd></>}
+          {web && <><dt>Web</dt><dd><a href={web} rel="nofollow noopener" target="_blank">{web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
           <dt>Obory</dt><dd>{specs.map((s) => s.singular).join(', ')}</dd>
           {p.facility_type && <><dt>Typ</dt><dd>{p.facility_type}</dd></>}
         </dl>
