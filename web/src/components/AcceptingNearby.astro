@@ -1,0 +1,30 @@
+---
+// Top of a practice page that isn't known to accept: the closest practices of the same kind
+// that do, so someone who landed here from Google sees an alternative before they leave.
+import type { ProviderRow } from '../lib/db';
+import { acceptingNearby } from '../lib/db';
+import { doctorUrl, enOf, placeUrl } from '../lib/i18n';
+import { SPECIALTIES } from '../lib/site';
+
+interface Props { p: ProviderRow; specialty: string; en?: boolean }
+const { p, specialty, en = false } = Astro.props;
+const rows = p.status === 'accepting' ? [] : await acceptingNearby(p, specialty);
+const spec = SPECIALTIES.find((s) => s.slug === specialty)!;
+const km = (n: number) => `${n.toLocaleString(en ? 'en' : 'cs')} km`;
+const h = en
+  ? (p.status === 'not_accepting' || p.status === 'waitlist' ? 'Not taking new patients here? These nearby are:' : 'Not sure about this one? These nearby are accepting:')
+  : (p.status === 'not_accepting' || p.status === 'waitlist' ? 'Tady nové pacienty neberou? V okolí přijímají:' : 'Nevíte, jestli tu berou? V okolí přijímají:');
+const all = en ? `All ${enOf(specialty).plural.toLowerCase()} in ${p.city} →` : `Celý seznam: ${spec.plural} – ${p.city} →`;
+const allUrl = p.city_slug ? placeUrl(en ? 'en' : 'cs', specialty, p.city_slug) : null;
+---
+{rows.length > 0 && (
+  <section class="card accepting-nearby" aria-label={h}>
+    <p class="an-title">✓ {h}</p>
+    <ul>
+      {rows.map((r) => (
+        <li><a href={doctorUrl(en ? 'en' : 'cs', r)}>{r.name}</a> <span class="muted nowrap">· {km(r.km)}{r.city && r.city !== p.city ? ` · ${r.city}` : ''}</span></li>
+      ))}
+    </ul>
+    {allUrl && <a class="small" href={allUrl}>{all}</a>}
+  </section>
+)}

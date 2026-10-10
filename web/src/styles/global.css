@@ -477,3 +477,9 @@ details.legend[open] dl { margin-top: .5rem; padding: .75rem 1rem; background: v
 .how-step { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
 .how-step h3 { margin: 0; font-size: 1.1rem; line-height: 1.3; }
 .how-step p { margin: 0; }
+
+/* Practice page: accepting practices nearby, right under the status */
+.accepting-nearby { border-color: color-mix(in srgb, var(--ok, #1a7f4b) 45%, var(--border)); background: color-mix(in srgb, var(--ok, #1a7f4b) 6%, var(--surface)); padding: .8rem 1rem; margin: .4rem 0 1rem; }
+.accepting-nearby .an-title { margin: 0 0 .3rem; font-weight: 700; }
+.accepting-nearby ul { margin: 0 0 .4rem; padding-left: 1.1rem; }
+.accepting-nearby li { margin: .2rem 0; }

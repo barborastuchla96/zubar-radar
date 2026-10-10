@@ -1,4 +1,5 @@
 ---
+import AcceptingNearby from '../../../components/AcceptingNearby.astro';
 // English practice page. Same data as /lekar/[id]; reports go to the same place.
 import Base from '../../../layouts/Base.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
@@ -49,6 +50,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
     <StatusBadge status={p.status} />
     <span class="muted small">{when ? (crawl ? `on the practice website, checked ${when}` : p.last_source === 'clinic' ? `confirmed by the practice ${when}` : `last report ${when}`) : status.hint}</span>
   </p>
+  {main && <AcceptingNearby p={p} specialty={main.slug} en />}
   {p.english
     ? <p class="notice english-note">🗣️ <strong>You can speak English here.</strong> According to the practice website or patients' reports, someone here speaks English.</p>
     : p.english_site
@@ -99,7 +101,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
     <AlertForm spec={main} lat={p.lat} lng={p.lng} place={p.city ?? 'this practice'} radius={p.city_slug?.startsWith('praha') ? 2 : 5} />
   )}
   {alts.length > 0 && main && (
-    <section>
+    <section id="okoli">
       <h2>{enOf(main.slug).nearby}</h2>
       <div class="grid grid-2">{alts.map((a) => <ProviderCard p={a} kmFrom="here" />)}</div>
     </section>

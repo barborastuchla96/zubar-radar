@@ -101,6 +101,13 @@ export async function alternatives(p: ProviderRow, specialty: string, limit = 5)
   return rows.filter((r) => r.id !== p.id).slice(0, limit);
 }
 
+/** Practices of the same kind nearby that are accepting, closest first (the box at the top of a practice page). */
+export async function acceptingNearby(p: ProviderRow, specialty: string, km = 10, limit = 3) {
+  if (p.lat == null || p.lng == null) return [];
+  const rows = await nearby(specialty, p.lat, p.lng, km, limit + 1);
+  return rows.filter((r) => r.id !== p.id && r.status === 'accepting').sort((a, b) => a.km - b.km).slice(0, limit);
+}
+
 export interface CityCount {
   city_slug: string; city: string; region: string | null; district: string | null;
   n: number; accepting: number; lat: number | null; lng: number | null;
