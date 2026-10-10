@@ -17,17 +17,23 @@ const contact = contactEmail();
      a hledá věty jako „přijímáme nové pacienty“ nebo „nepřijímáme nové pacienty“. Takto zjištěný stav
      označujeme „podle webu ordinace“ a má menší váhu než zprávy pacientů a ordinací. Robot respektuje
      soubor robots.txt. Ordinace, která si kontrolu nepřeje, ho může zakázat pro <code>PrijimaNovePacientyBot</code>.</p>
+  <p>U ordinací, které v registru web uvedený nemají, ho zkusíme dohledat: podle domény jejich e-mailové
+     adresy z registru (např. ordinace@zubar-novak.cz → zubar-novak.cz), nebo podle adresy, kterou nám pošle
+     návštěvník. Web použijeme, jen když na něm opravdu je tato ordinace (její jméno nebo IČO).</p>
   <p>Když web ordinace píše, že nemá smlouvu se zdravotními pojišťovnami (péči si platíte sami), označíme ji
      „Bez smlouvy s pojišťovnou“. Když web uvádí smluvní pojišťovny (např. 111, 207), zobrazíme je. Podobně označíme
      ordinace, kde se domluvíte anglicky. Všechno tohle mohou nahlásit i pacienti.</p>
   <h2 id="ochrana-udaju">Ochrana údajů</h2>
   <p>U hlášení neukládáme jméno ani IP adresu. Ukládáme jen anonymní otisk (hash), který slouží
-     k ochraně před spamem a po 90 dnech ho mažeme. Do poznámky prosím nepište jména ani zdravotní údaje.</p>
+     k ochraně před spamem a po 90 dnech ho mažeme (oprávněný zájem na ochraně webu před zneužitím).
+     Do poznámky prosím nepište jména ani zdravotní údaje.</p>
   <p>Když si zapnete upozornění e-mailem, uložíme vaši e-mailovou adresu, obor a místo, které vás zajímá.
      Používáme je jen k tomu, abychom vám poslali upozornění. Adresu nikomu nedáváme ani neprodáváme.
      Když přihlášení do týdne nepotvrdíte, adresu smažeme. Smažeme ji také hned, jakmile se odhlásíte
-     (odkaz najdete v každém e-mailu). Zálohy databáze jsou šifrované a adresa z nich zmizí nejpozději do 14 dnů.</p>
-  <p>Návštěvnost měříme nástrojem Umami bez cookies a bez ukládání IP adres
+     (odkaz najdete v každém e-mailu). Zálohy databáze jsou šifrované a adresa z nich zmizí nejpozději do 14 dnů.
+     Z oboru, který si vyberete (např. psychiatr), by šlo usuzovat na váš zdravotní stav. Proto ho ukládáme
+     jen s vaším výslovným souhlasem, který dáte potvrzením v e-mailu, a jen spolu s místem, nikdy se jménem.</p>
+  <p>Návštěvnost měříme nástrojem Umami Cloud (servery v EU) bez cookies a bez ukládání IP adres
      (viz <a href="/cookies">Cookies</a>). Web běží na serveru společnosti Hetzner v Německu,
      e-maily odesíláme přes Wedos v Česku.</p>
   <h2>Kdo za webem stojí</h2>
@@ -38,7 +44,8 @@ const contact = contactEmail();
      nechat je opravit nebo smazat a vznést námitku. Stačí napsat na e-mail výše. Pokud nebudete
      spokojeni, můžete se obrátit na <a href="https://uoou.gov.cz">Úřad pro ochranu osobních údajů</a>.</p>
   <p>Údaje o ordinacích (název, adresa, telefon, web) přebíráme z veřejného registru, abychom pacientům
-     usnadnili najít péči. Lékař nebo ordinace může požádat o opravu nebo vznést námitku, viz{' '}
+     usnadnili najít péči (oprávněný zájem pacientů na dostupnosti informací o péči; jde o údaje, které
+     ordinace samy zveřejňují). Lékař nebo ordinace může požádat o opravu nebo vznést námitku, viz{' '}
      <a href="/pro-ordinace">Pro ordinace</a>.</p>
   <h2>Nejde o oficiální službu</h2>
   <p>Informace nemusí být přesné. Před návštěvou si to ověřte přímo v ordinaci. Pokud nemůžete lékaře najít,
