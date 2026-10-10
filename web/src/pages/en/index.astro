@@ -36,13 +36,21 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
         <>
           {g === 1 && <p class="tile-group">Specialists</p>}
           {g === 1 ? (
-            <div class="spec-pills">
-              {group.map(({ s, english: en }) => (
-                <label class="spec-pill">
-                  <input type="radio" name="s" value={s.slug} data-en={enOf(s.slug).en} data-english={en} />
-                  <span aria-hidden="true">{s.icon}</span> {enOf(s.slug).plural}
-                </label>
+            <div class="spec-group">
+              <div class="spec-pills">
+                {group.map(({ s, english: en }) => (
+                  <label class="spec-pill">
+                    <input type="radio" name="s" value={s.slug} data-en={enOf(s.slug).en} data-english={en} />
+                    <span aria-hidden="true">{s.icon}</span> {enOf(s.slug).plural}
+                  </label>
+                ))}
+              </div>
+              {group.map(({ s, n, accepting, english: en }) => (
+                <p class="pill-info" data-for={s.slug} aria-hidden="true">
+                  <span>{s.icon}</span> <strong>{enOf(s.slug).plural}:</strong> {practices(n)}{accepting > 0 && <> · <span class="tile-ok">✓ {acceptingN(accepting)}</span></>}{en > 0 && <> · 🗣️ {en} {en === 1 ? 'speaks' : 'speak'} English</>}
+                </p>
               ))}
+              <style is:inline set:html={group.map(({ s }) => `.spec-group:has(input[value="${s.slug}"]:checked) .pill-info[data-for="${s.slug}"]{display:block}`).join('')} />
             </div>
           ) : (
           <div class="grid grid-cards">

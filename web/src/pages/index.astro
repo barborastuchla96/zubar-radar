@@ -35,13 +35,21 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
         <>
           {g === 1 && <p class="tile-group">Specialisté</p>}
           {g === 1 ? (
-            <div class="spec-pills">
-              {group.map(({ s }) => (
-                <label class="spec-pill">
-                  <input type="radio" name="s" value={s.slug} />
-                  <span aria-hidden="true">{s.icon}</span> {s.plural}
-                </label>
+            <div class="spec-group">
+              <div class="spec-pills">
+                {group.map(({ s }) => (
+                  <label class="spec-pill">
+                    <input type="radio" name="s" value={s.slug} />
+                    <span aria-hidden="true">{s.icon}</span> {s.plural}
+                  </label>
+                ))}
+              </div>
+              {group.map(({ s, n, accepting }) => (
+                <p class="pill-info" data-for={s.slug} aria-hidden="true">
+                  <span>{s.icon}</span> <strong>{s.plural}:</strong> {ordinaci(n)}{accepting > 0 && <> · <span class="tile-ok">✓ {prijima(accepting)}</span></>}
+                </p>
               ))}
+              <style is:inline set:html={group.map(({ s }) => `.spec-group:has(input[value="${s.slug}"]:checked) .pill-info[data-for="${s.slug}"]{display:block}`).join('')} />
             </div>
           ) : (
           <div class="grid grid-cards">
