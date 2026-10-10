@@ -10,12 +10,12 @@ const { spec, lat, lng, place, radius = 5 } = Astro.props;
 const result = Astro.url.searchParams.get('u');
 const en = Astro.url.pathname.startsWith('/en');
 const MESSAGES: Record<string, [string, string]> = en ? {
-  sent: ['ok', "Done. We've sent you an e-mail with a link. The alert starts once you click it. (If it doesn't arrive, check your Spam or Promotions folder.)"],
+  sent: ['ok', "Done. We've sent you a confirmation e-mail. Alerts will start once you confirm in it. (If it hasn't arrived, check your Spam or Promotions folder.)"],
   too_many: ['bad', "We've already sent many e-mails to this address or from this device today. Please try again tomorrow."],
   invalid: ['bad', "That doesn't look like an e-mail address. Please check it."],
   error: ['bad', "We couldn't send the e-mail right now. Please try again in a moment."],
 } : {
-  sent: ['ok', 'Hotovo. Poslali jsme vám e-mail s odkazem. Upozornění začne platit, až na něj kliknete. (Když e-mail nepřijde, podívejte se do složky Spam nebo Hromadné.)'],
+  sent: ['ok', 'Hotovo. Poslali jsme vám potvrzovací e-mail. Upozornění vám začnou chodit, až v něm odběr potvrdíte. (Pokud e-mail nepřišel, podívejte se do složky Spam nebo Hromadné.)'],
   too_many: ['bad', 'Dnes už jsme na tuto adresu nebo z tohoto zařízení posílali hodně e-mailů. Zkuste to prosím zítra.'],
   invalid: ['bad', 'Tohle nevypadá jako e-mailová adresa. Zkontrolujte ji prosím.'],
   error: ['bad', 'E-mail se nám teď nepodařilo odeslat. Zkuste to prosím za chvíli.'],
