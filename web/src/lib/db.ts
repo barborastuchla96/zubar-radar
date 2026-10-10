@@ -29,6 +29,7 @@ export interface ProviderRow {
   last_source: 'clinic' | 'region' | 'user' | 'web_crawl' | null;
   self_pay: boolean;      // no contract with any health insurer
   english: boolean;       // someone there speaks English
+  english_site: boolean;  // the practice website has an English version (weaker: nobody promised English)
   insurers: string[] | null;   // health insurer codes it has contracts with ('111', '207'…), where known
   specialties: string[];
 }
@@ -45,6 +46,7 @@ const PROVIDER_COLS = sql`
            AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS self_pay,
   EXISTS (SELECT 1 FROM provider_flags f WHERE f.provider_id = p.id AND f.flag = 'english'
            AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS english,
+  EXISTS (SELECT 1 FROM provider_flags f WHERE f.provider_id = p.id AND f.flag = 'english_site') AS english_site,
   (SELECT array_agg(DISTINCT substr(f.flag, 4) ORDER BY substr(f.flag, 4)) FROM provider_flags f
     WHERE f.provider_id = p.id AND f.flag LIKE 'ins%'
       AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS insurers,

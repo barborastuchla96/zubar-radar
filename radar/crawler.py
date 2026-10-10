@@ -92,6 +92,18 @@ ENGLISH = [
 _EN_NEGATION = re.compile(r"\b(?:don'?t|do not|doesn'?t|does not|cannot|can'?t|no|not|unfortunately|bohuzel|nikdo)\s+(?:\w+\s+)?$")
 
 
+_EN_WORDS = {"the", "and", "of", "to", "for", "our", "we", "you", "your", "with", "is", "are", "in", "on", "at"}
+_CS_WORDS = {"je", "se", "na", "pro", "jsme", "ve", "nebo", "jako", "ktere", "ktery", "ordinace", "pacienty", "nas", "vas"}
+
+
+def looks_english(raw_text: str) -> bool:
+    """The page is actually written in English (not a Czech page behind an "EN" link)."""
+    words = re.findall(r"[a-z]+", normalize(raw_text))
+    en = sum(w in _EN_WORDS for w in words)
+    cs = sum(w in _CS_WORDS for w in words)
+    return en >= 15 and en > 2 * cs
+
+
 def english(raw_text: str) -> str | None:
     """Snippet saying someone at the practice speaks English, or None."""
     text, src = _normalize_with_map(raw_text)
@@ -582,8 +594,12 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
         if "english" not in res.flags and (en_url := english_link(final_url, links)) and robots.can_fetch(USER_AGENT, en_url):
             time.sleep(delay)
             try:
-                if snippet := english(extract(fetch(en_url, allow_private)[1])[0]):
+                en_text = extract(fetch(en_url, allow_private)[1])[0]
+                if snippet := english(en_text):
                     res.flags["english"] = snippet
+                elif looks_english(en_text):
+                    # Weaker fact, shown as "Web i v angličtině": a page in English, nobody promises English at the desk.
+                    res.flags["english_site"] = "Web má i anglickou verzi."
             except Exception:
                 pass  # the English page is a bonus; the Czech result stands
         res.verdict, res.page_url = best, best_page

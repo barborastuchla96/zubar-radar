@@ -96,7 +96,9 @@ PAGES = {
     "/en/": ("text/html", "<p>Dental practice. Our staff speak English and German.</p>"),
     # English page that says nothing about the staff: no tag
     "/cs/": ("text/html", '<body><p>Ordinace</p><a href="/en/translated">English</a></body>'),
-    "/en/translated": ("text/html", "<p>Dental practice. Opening hours Mon-Fri.</p>"),
+    "/en/translated": ("text/html", "<p>Welcome to our dental practice in the centre of the town. We are open on Monday to Friday "
+                       "and you can book an appointment with the dentist of your choice by phone or e-mail. Our team takes "
+                       "care of the whole family and we look forward to your visit at the practice.</p>"),
 }
 
 
@@ -315,6 +317,13 @@ def test_check_site_finds_english_on_the_english_page(site):
 def test_an_english_page_alone_is_not_english_speaking(site):
     r = crawler.check_site(site + "/cs/", allow_private=True, delay=0)
     assert "english" not in r.flags
+    assert "english_site" in r.flags                  # the weaker "Web i v angličtině"
+
+
+def test_looks_english():
+    assert crawler.looks_english(PAGES["/en/translated"][1])
+    assert not crawler.looks_english("Vítejte v naší ordinaci. Jsme tu pro vás a pro vaše děti, ordinace je otevřena " * 3)
+    assert not crawler.looks_english("Opening hours")
 
 
 @pytest.mark.parametrize("text,yes", [

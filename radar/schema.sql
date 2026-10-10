@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS provider_flags (
     PRIMARY KEY (provider_id, flag, source)
 );
 ALTER TABLE provider_flags DROP CONSTRAINT IF EXISTS provider_flags_flag_check;
-ALTER TABLE provider_flags ADD CONSTRAINT provider_flags_flag_check CHECK (flag IN ('self_pay', 'english',
+ALTER TABLE provider_flags ADD CONSTRAINT provider_flags_flag_check CHECK (flag IN ('self_pay', 'english', 'english_site',
     'ins111', 'ins201', 'ins205', 'ins207', 'ins209', 'ins211', 'ins213'));   -- insXXX: contract with that health insurer
 
 -- ---------------------------------------------------------------------------
