@@ -83,7 +83,8 @@ SELF_PAY_EXTRA = re.compile(r"\b(?:vsemi|vsech|nekter\w*|hygien\w*|belen\w*|este
 ENGLISH = [
     re.compile(rf"\b(?:mluvime|hovorime|domluvite se|domluvime se|komunikujeme|dorozumite se|mluvi|hovori|ovladame|ovlada)\b{_GAP}\banglick\w*"),
     re.compile(r"\banglick\w* (?:mluvic\w*|hovoric\w*)"),
-    re.compile(r"\b(?:we (?:also )?speak|english[- ]speaking|speaks? english|english (?:is )?spoken)\b"),
+    # "we speak English", "we speak Czech, English and German" (but not "we speak 10 languages")
+    re.compile(r"\bwe (?:also )?speak\b(?:\W+\w+){0,4}?\W+english\b|\b(?:english[- ]speaking|speaks? english|english (?:is )?spoken)\b"),
     re.compile(r"\b(?:we (?:also )?communicate|consultations?|treatment|care|appointments?) in english\b"),
 ]
 

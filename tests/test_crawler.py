@@ -322,6 +322,9 @@ def test_an_english_page_alone_is_not_english_speaking(site):
     ("We communicate in English.", True),
     ("We don't speak English.", False),
     ("English is not spoken here.", False),
+    ("We speak 10 languages.", False),            # English not named
+    ("We speak your language.", False),
+    ("We speak Czech, English and German.", True),
 ])
 def test_english_phrasings(text, yes):
     assert bool(crawler.english(text)) is yes
