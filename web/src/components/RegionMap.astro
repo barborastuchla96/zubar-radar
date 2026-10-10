@@ -15,11 +15,17 @@ const { specialty, active, syncWith, fills = {}, titles = {}, pills = true } = A
          aria-current={r.slug === active ? 'page' : undefined}>
         <title>{titles[r.slug] ?? r.name}</title>
         <path d={r.d} class={`kraj${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`} style={fills[r.slug] ? `--fill:${fills[r.slug]}` : undefined} />
-        <text x={r.lx} y={r.ly} class={`kraj-label${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}`}
-              text-anchor="middle" dominant-baseline="middle">{r.label}</text>
       </a>
     ))}
+    {/* Names on top of all regions, so a neighbouring region never covers part of one. */}
+    <g aria-hidden="true">
+      {REGIONS.map((r) => (
+        <text x={r.lx} y={r.ly} data-kraj={r.slug} class={`kraj-label${r.slug === 'hlavni-mesto-praha' ? ' praha' : ''}${r.slug === active ? ' current' : ''}`}
+              text-anchor="middle" dominant-baseline="middle">{r.label}</text>
+      ))}
+    </g>
   </svg>
+  <style is:inline set:html={REGIONS.map((r) => `.region-map svg:has(a[data-kraj="${r.slug}"]:is(:hover,:focus-visible)) .kraj-label[data-kraj="${r.slug}"]`).join(',') + '{fill:var(--brand-ink);stroke:var(--brand)}'} />
   {pills && <ul class="pills region-pills">
     {[...REGIONS].sort((a, b) => (a.slug === 'hlavni-mesto-praha' ? -1 : b.slug === 'hlavni-mesto-praha' ? 1
         : a.name.localeCompare(b.name, 'cs'))).map((r) => (
