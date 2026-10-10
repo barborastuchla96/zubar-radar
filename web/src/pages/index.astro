@@ -34,7 +34,17 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
       {[totals.filter((t) => !t.s.specialist), totals.filter((t) => t.s.specialist)].map((group, g) => (
         <>
           {g === 1 && <p class="tile-group">Specialisté</p>}
-          <div class={`grid grid-cards${g === 1 ? ' compact' : ''}`}>
+          {g === 1 ? (
+            <div class="spec-pills">
+              {group.map(({ s }) => (
+                <label class="spec-pill">
+                  <input type="radio" name="s" value={s.slug} />
+                  <span aria-hidden="true">{s.icon}</span> {s.plural}
+                </label>
+              ))}
+            </div>
+          ) : (
+          <div class="grid grid-cards">
             {group.map(({ s, n, accepting }, i) => (
               <label class="card spec-tile pick">
                 <input type="radio" name="s" value={s.slug} checked={g === 0 && i === 0} />
@@ -47,6 +57,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300');
               </label>
             ))}
           </div>
+          )}
         </>
       ))}
     </fieldset>

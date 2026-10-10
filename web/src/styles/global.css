@@ -461,3 +461,12 @@ details.legend[open] dl { margin-top: .5rem; padding: .75rem 1rem; background: v
 
 /* Confirmed alert: make the change obvious after the button */
 .done-card { border: 2px solid var(--ok); background: var(--ok-bg); }
+
+/* Specialists on the homepage: one row of small buttons instead of more big tiles */
+.spec-pills { display: flex; flex-wrap: wrap; gap: .5rem; }
+.spec-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem .9rem; border: 2px solid var(--border); border-radius: 999px; background: var(--surface); cursor: pointer; font-weight: 600; position: relative; }
+.spec-pill:hover { border-color: var(--brand); }
+.spec-pill input { position: absolute; opacity: 0; pointer-events: none; }
+.spec-pill:has(input:checked) { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 9%, var(--surface)); box-shadow: 0 0 0 2px var(--brand); }
+.spec-pill:has(input:checked)::before { content: "✓"; color: var(--brand); font-weight: 800; }
+.spec-pill:has(input:focus-visible) { outline: 3px solid var(--text); outline-offset: 2px; }
