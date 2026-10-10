@@ -88,3 +88,36 @@ def test_same_named_towns_get_separate_slugs():
     provs = [mk("1", "Benešov"), mk("2", "Benešov"), mk("3", "Blansko"), mk("4", None)]
     nrpzs.disambiguate_slugs(provs)
     assert [p.city_slug for p in provs] == ["benesov", "benesov", "benesov-blansko", "benesov"]
+
+
+@pytest.mark.parametrize("facility,raw,expected", [
+    ("Koroner", "všeobecné praktické lékařství", set()),
+    ("Zdravotnická zachranná služba", "všeobecné praktické lékařství", set()),
+    ("Samostatná stomatologická laboratoř", "zubní lékařství", set()),
+    ("Lázeňská léčebna", "neurologie", set()),
+    ("Zařízení závodní preventivní péče", "všeobecné praktické lékařství", set()),
+    ("Psychiatrická nemocnice", "psychiatrie, dermatovenerologie", {"psychiatr"}),
+    ("Nemocnice", "urologie", {"urolog"}),                       # hospital outpatient clinic: stays
+    ("Samostatná ordinace lékaře specialisty", "chirurgie", {"chirurg"}),
+])
+def test_closed_facilities_are_left_out(facility, raw, expected):
+    assert nrpzs.parse_specialties(raw, "ambulantní péče", facility) == expected
+
+
+def test_care_home_and_company_doctors_are_left_out():
+    cols = {"name": "n", "specialties": "s", "place_id": "id", "city": "c"}
+    rows = [{"n": "Domov pro seniory Chodov", "s": "všeobecné praktické lékařství", "id": "1", "c": "Praha"},
+            {"n": "ČESKÁ NÁRODNÍ BANKA, závodní ordinace", "s": "všeobecné praktické lékařství", "id": "2", "c": "Praha"},
+            {"n": "MUDr. Poupová, praktický a závodní lékař, s.r.o.", "s": "všeobecné praktické lékařství", "id": "3", "c": "Plzeň"}]
+    assert [p.place_id for p in nrpzs.iter_providers(rows, cols)] == ["3"]
+
+
+
+@pytest.mark.parametrize("facility,raw,expected", [
+    ("Samostatná ordinace PL - gynekologa", "gynekologie a porodnictví, chirurgie", {"gynekolog"}),
+    ("Samost. ordinace všeob. prakt. lékaře", "všeobecné praktické lékařství, neurologie", {"praktik"}),
+    ("Samostatná ordinace PL - stomatologa", "zubní lékařství, dentální hygiena", {"zubar", "hygienistka"}),
+    ("Poskytovatel amb. služeb (do 5 oborů)", "gynekologie a porodnictví, ortopedie a traumatologie pohybového ústrojí", {"gynekolog", "ortoped"}),
+])
+def test_single_kind_practices(facility, raw, expected):
+    assert nrpzs.parse_specialties(raw, "ambulantní péče", facility) == expected

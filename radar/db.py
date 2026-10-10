@@ -200,7 +200,7 @@ BIG_FACILITY = re.compile(r"nemocnic|nad 5 obor|poliklinik|centrum duševního z
 def record_crawl(conn: psycopg.Connection, results) -> int:
     """Store crawl verdicts as web_crawl signals. Skips repeats of an unchanged
     verdict within RECHECK_DAYS so weekly runs don't pile up duplicates."""
-    from .crawler import fits_specialty
+    from .crawler import attributable
 
     written = 0
     with conn.transaction():
@@ -222,8 +222,9 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
                                           " WHERE provider_id = ANY(%s)", (list(r.provider_ids),)):
                 specs.setdefault(pid, set()).add(slug)
             for pid in r.provider_ids:
-                if not fits_specialty(v.snippet, specs.get(pid, set())):
-                    # About another department (a hospital site): not this practice's news.
+                if not attributable(v.snippet, specs.get(pid, set())):
+                    # About another department (a hospital site), or a shared practice where we
+                    # can't tell whose news it is: not this practice's news.
                     conn.execute("DELETE FROM availability_signals WHERE source = 'web_crawl' AND provider_id = %s", (pid,))
                     continue
                 # Same verdict seen recently: just refresh its quote (e.g. after a wording fix).

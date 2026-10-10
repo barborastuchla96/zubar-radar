@@ -246,17 +246,27 @@ def _scope(window: str) -> str:
     return "all"
 
 
+_FILTER_UI = re.compile(r"filtr|vyhledat lekar|hledat lekar")
+
+
+def _ui_label(text: str, m: re.Match) -> bool:
+    """A search filter on a clinic network's site ("Ošetřuje děti · Přijímá nové pacienty · Zrušit
+    všechny filtry"), not a statement about any practice."""
+    return bool(_FILTER_UI.search(text[max(0, m.start() - 80):m.end() + 80]))
+
+
 def classify(raw_text: str) -> Verdict:
     """Decide what a page says about taking new patients."""
     text, src = _normalize_with_map(raw_text)
-    neg = next((m for p in NEGATIVE for m in p.finditer(text)), None)
-    wait = next((m for p in WAITLIST for m in p.finditer(text) if not _stale(_sentence(text, m))), None)
+    neg = next((m for p in NEGATIVE for m in p.finditer(text) if not _ui_label(text, m)), None)
+    wait = next((m for p in WAITLIST for m in p.finditer(text) if not _stale(_sentence(text, m)) and not _ui_label(text, m)), None)
     # Blank out negative matches so "nepřijímáme" text can't also count as positive.
     masked = text
     for p in NEGATIVE:
         masked = p.sub(lambda m: " " * len(m.group(0)), masked)
     pos = next((m for p in POSITIVE for m in p.finditer(masked)
-                if not NOT_REGISTRATION.search(_sentence(masked, m)) and not _stale(_sentence(masked, m))), None)
+                if not NOT_REGISTRATION.search(_sentence(masked, m)) and not _stale(_sentence(masked, m))
+                and not _ui_label(masked, m)), None)
 
     found = [(s, m) for s, m in (("not_accepting", neg), ("waitlist", wait), ("accepting", pos)) if m]
     if not found:
@@ -474,6 +484,22 @@ def fits_specialty(snippet: str, specialties: set[str]) -> bool:
         return True
     others = [w for k, w in FIELD_WORDS.items() if k not in specialties] + [OTHER_FIELDS]
     return not any(re.search(w, s) for w in others)
+
+
+# One practice under two fields: a dentist with a hygienist, a family doctor who also sees children.
+_ONE_PRACTICE = [{"zubar", "hygienistka"}, {"praktik", "pediatr"}]
+
+
+def attributable(snippet: str, specialties: set[str]) -> bool:
+    """Can this "přijímáme / nepřijímáme" sentence be pinned on a practice with these fields?
+    One field: unless the sentence is about another field. Several fields (a shared practice):
+    only when the sentence names all of them; "přijímáme nové pacientky" at a place that is both
+    gynaecology and orthopaedics says nothing about the orthopaedist."""
+    if len(specialties) <= 1 or any(specialties <= g for g in _ONE_PRACTICE):
+        return fits_specialty(snippet, specialties)
+    s = normalize(snippet)
+    named = {x for x in specialties if x in FIELD_WORDS and re.search(FIELD_WORDS[x], s)}
+    return named == specialties
 
 
 def normalize_site(web: str) -> str | None:

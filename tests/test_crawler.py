@@ -342,3 +342,21 @@ def test_english_phrasings(text, yes):
 def test_no_english_page_for_a_doctor_on_a_portal():
     assert crawler.english_link("http://www.gynekolog.cz/novak/", [("/en/", "hreflang:en")]) is None
     assert crawler.english_link("https://zubar.cz/cs/", [("/en/", "hreflang:en")]) == "https://zubar.cz/en/"
+
+
+
+def test_search_filter_labels_are_not_statements():
+    assert crawler.classify("Najít lékaře Ošetřuje děti Přijímá nové pacienty Zrušit všechny filtry").status is None
+    assert crawler.classify("Stále přijímáme nové pacienty.").status == "accepting"
+
+
+@pytest.mark.parametrize("snippet,specs,ok", [
+    ("Přijímáme nové pacienty.", {"neurolog"}, True),
+    ("Přijímáme nové pacienty.", {"zubar", "hygienistka"}, True),             # one dental practice
+    ("Přijímáme nové pacienty.", {"praktik", "pediatr"}, True),               # family doctor for all ages
+    ("Stále přijímáme nové pacientky.", {"gynekolog", "ortoped"}, False),      # whose news? unknown
+    ("Přijímá do gynekologické ambulantní péče nové pacientky.", {"gynekolog", "ortoped"}, False),
+    ("Na ortopedii i gynekologii přijímáme nové pacienty.", {"gynekolog", "ortoped"}, True),
+])
+def test_attributable(snippet, specs, ok):
+    assert crawler.attributable(snippet, specs) is ok

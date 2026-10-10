@@ -110,12 +110,51 @@ def resolve_columns(headers: list[str], overrides: dict[str, str] | None = None)
     return resolved
 
 
-def parse_specialties(raw: str, care_form: str | None = None) -> set[str]:
-    """'Zubní lékařství, ortodoncie' -> {'zubar'}. Specialists only with outpatient care."""
+# Places in the register where nobody from the public can sign up or simply come with a referral:
+# emergency and transport services, coroners, labs, spas, long-term and closed institutions,
+# company doctors (employees only), non-doctors. Matched against the lower-cased "DruhZarizeni".
+CLOSED_FACILITIES = (
+    "zdravotnická zachranná služba", "zdravotnická záchranná služba", "přeprava pacientů", "zdravotnická dopravní služba",
+    "koroner", "záchytná stanice", "státní zdravotní ústav", "hospic", "zařízení lps",
+    "zařízení závodní preventivní péče", "lékárna", "oční optika",
+    "samostatná odborná laboratoř", "samostatná stomatologická laboratoř",
+    "samostatné zařízení fyzioterapeuta", "samostatné zařízení psychologa", "domácí zdravotní péče",
+    "lázeňská léčebna", "léčebna pro dlouhodobě nemocné", "nemocnice následné péče", "rehabilitační ústav",
+    "další lůžkové zařízení", "léčebné ústavy", "léčebna tuberkul", "ústavech sociální p",
+    "hemodialyzační středisko", "centrum asistované reprodukce", "stacionář", "krizové centrum",
+    "centrum komplexní péče o děti", "ostatní zvláštní zdravotnická zařízení",
+)
+# Psychiatric hospitals and addiction clinics do see outpatients, but only for psychiatry; their
+# dermatologist or eye doctor only looks after the inpatients.
+# Ordinace that only see their own residents, clients or employees, by name.
+CLOSED_NAMES = re.compile(r"domov pro seniory|domov důchodců|domov se zvláštním režimem|armáda spásy|závodní ordinace|^závodní lékař", re.I)
+SINGLE_KIND = (
+    # A family doctor may look after children too (and the other way round): both are real.
+    ("ordinace všeob. prakt. lékaře", {"praktik", "pediatr"}),
+    ("ord.prakt.lékaře pro děti", {"pediatr", "praktik"}),
+    ("ordinace pl - gynekologa", {"gynekolog"}),
+    ("ordinace pl - stomatologa", {"zubar", "hygienistka"}),
+)
+PSYCHIATRY_ONLY = ("psychiatrická nemocnice", "psychiatrická léčebna", "zařízení pro léčbu závislostí")
+
+
+def parse_specialties(raw: str, care_form: str | None = None, facility_type: str | None = None) -> set[str]:
+    """'Zubní lékařství, ortodoncie' -> {'zubar'}. Specialists only with outpatient care,
+    nothing at places the public can't use (see CLOSED_FACILITIES)."""
     labels = (p.strip().lower() for p in re.split(r"[,;|]", raw or ""))
     found = {SPECIALTY_LABELS[l] for l in labels if l in SPECIALTY_LABELS}
     if care_form and "ambulant" not in care_form.lower():
         found -= SPECIALISTS
+    ft = (facility_type or "").lower()
+    if any(c in ft for c in CLOSED_FACILITIES):
+        return set()
+    # A GP's, paediatrician's, gynaecologist's or dentist's own practice is that, even when the
+    # register also lists the doctor's other qualification ("chirurgie" at a gynaecologist's).
+    for kind, keep in SINGLE_KIND:
+        if kind in ft:
+            return found & keep
+    if any(c in ft for c in PSYCHIATRY_ONLY):
+        found &= {"psychiatr"}
     return found
 
 
@@ -223,12 +262,14 @@ def iter_providers(
         raw_spec = g("specialties") or ""
         if not name:
             continue
+        if CLOSED_NAMES.search(name):
+            raw_spec = ""   # a care home's or a company's own doctor: nothing for the public
         # No place id column in some exports: fall back to facility + address.
         place_id = g("place_id") or "|".join(
             filter(None, [g("facility_id") or g("ico") or name, g("city"), g("street"), g("house_no")])
         )
         if (p := by_place.get(place_id)) is not None:
-            p.specialties |= parse_specialties(raw_spec, g("care_form"))
+            p.specialties |= parse_specialties(raw_spec, g("care_form"), g("facility_type"))
             if raw_spec and raw_spec not in p._merged_labels:
                 p._merged_labels.append(raw_spec)
                 p.raw_specialties = ", ".join(p._merged_labels)
@@ -237,7 +278,7 @@ def iter_providers(
         city = g("city")
         p = Provider(
             place_id=place_id, name=name,
-            specialties=parse_specialties(raw_spec, g("care_form")), raw_specialties=raw_spec,
+            specialties=parse_specialties(raw_spec, g("care_form"), g("facility_type")), raw_specialties=raw_spec,
             facility_id=g("facility_id"), ico=g("ico"), facility_type=g("facility_type"),
             street=g("street"), house_no=g("house_no"),
             city=city, city_slug=slugify(city) if city else None,
