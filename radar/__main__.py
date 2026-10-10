@@ -179,12 +179,14 @@ def cmd_crawl(args) -> None:
             print(f"  … {done}/{len(sites)}", flush=True)
         ins = sorted(f[3:] for f in r.flags if f.startswith("ins"))
         for flag, snippet in r.flags.items():
-            if flag.startswith("ins"):
+            if flag.startswith("ins") or flag == "en_site":
                 continue
             stats[flag] += 1
             print(f"  {flag:<13} {r.page_url or r.url}\n                {snippet[:110]}", flush=True)
         if ins:
             stats["insurers"] += 1
+        if "en_site" in r.flags:
+            stats["en_site"] += 1
 
     # Save in batches, so a crash or restart halfway through a long run keeps what was found.
     written = 0
@@ -195,7 +197,7 @@ def cmd_crawl(args) -> None:
             with psycopg.connect(_dsn(args)) as conn:
                 written += record_crawl(conn, results)
     print("\nsummary: " + ", ".join(f"{k} {stats[k]}" for k in
-          ("accepting", "waitlist", "not_accepting", "conflicting", "nothing", "error", "self_pay", "english", "insurers")))
+          ("accepting", "waitlist", "not_accepting", "conflicting", "nothing", "error", "self_pay", "english", "en_site", "insurers")))
     if errors:
         print("errors by type: " + ", ".join(f"{k} {n}" for k, n in errors.most_common(10)))
     print("dry run: nothing written" if args.dry_run else f"wrote {written} web_crawl signals")

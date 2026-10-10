@@ -102,7 +102,8 @@ CREATE INDEX IF NOT EXISTS availability_signals_reporter_idx
 
 -- ---------------------------------------------------------------------------
 -- Facts about a practice beyond "accepting?": 'self_pay' (no contract with any
--- health insurer, patients pay everything) and 'english' (someone there speaks English).
+-- health insurer, patients pay everything), 'english' (someone there speaks English) and
+-- 'en_site' (the practice website has an English version: a hint, not proof anyone speaks English).
 -- One row per practice, fact and source; a newer report replaces the older one.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS provider_flags (
@@ -114,8 +115,13 @@ CREATE TABLE IF NOT EXISTS provider_flags (
     PRIMARY KEY (provider_id, flag, source)
 );
 ALTER TABLE provider_flags DROP CONSTRAINT IF EXISTS provider_flags_flag_check;
-ALTER TABLE provider_flags ADD CONSTRAINT provider_flags_flag_check CHECK (flag IN ('self_pay', 'english',
+ALTER TABLE provider_flags ADD CONSTRAINT provider_flags_flag_check CHECK (flag IN ('self_pay', 'english', 'en_site',
     'ins111', 'ins201', 'ins205', 'ins207', 'ins209', 'ins211', 'ins213'));   -- insXXX: contract with that health insurer
+
+-- When the crawler last read the practice's website (NULL: never), and why it couldn't
+-- (NULL: it could). Lets us tell "nothing said there" from "never looked".
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_checked_at timestamptz;
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_check_error text;
 
 -- ---------------------------------------------------------------------------
 -- Alert subscriptions ("email me when a dentist near Praha 6 opens up").

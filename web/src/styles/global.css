@@ -111,6 +111,7 @@ input[type="date"], input[type="email"], textarea, select { font: inherit; color
 .fact-tag { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .9rem; font-weight: 700; border: 1px solid currentColor; }
 .fact-tag.self-pay { color: var(--warn); background: var(--warn-bg); }
 .fact-tag.english { color: var(--brand); background: color-mix(in srgb, var(--brand) 9%, var(--surface)); }
+.fact-tag.en-site { color: var(--muted); background: var(--surface); font-weight: 600; border-style: dashed; }
 .notice.english-note { background: color-mix(in srgb, var(--brand) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border)); }
 .notice.self-pay-note { background: var(--warn-bg); color: var(--text); border: 1px solid var(--warn); }
 .notice.bad { background: var(--bad-bg); color: var(--bad); }

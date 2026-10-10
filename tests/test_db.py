@@ -199,6 +199,24 @@ def test_crawl_remembers_and_forgets_self_pay(conn):
     assert flags() == 0                     # site no longer says it: forget it
 
 
+def test_crawl_records_english_website_and_when_it_looked(conn):
+    from radar.crawler import SiteResult, Verdict
+    db.import_providers(conn, providers())
+    a = pid(conn, "1001")
+    conn.execute("INSERT INTO provider_specialties VALUES (%s, 'neurolog') ON CONFLICT DO NOTHING", (a,))
+    # The English page's address names another field: still the whole site's English version.
+    r = SiteResult("http://x.cz/", Verdict(None), "http://x.cz/", flags={"en_site": "http://x.cz/en/kardiologie"},
+                   provider_ids=[a])
+    db.record_crawl(conn, [r])
+    assert conn.execute("SELECT flag FROM provider_flags WHERE provider_id = %s", (a,)).fetchall() == [("en_site",)]
+    checked = lambda: conn.execute("SELECT web_checked_at IS NOT NULL, web_check_error FROM providers WHERE id = %s",
+                                   (a,)).fetchone()
+    assert checked() == (True, None)
+    r.error = "HTTP 503"
+    db.record_crawl(conn, [r])
+    assert checked() == (True, "HTTP 503")
+
+
 def test_crawl_skips_hospitals_and_many_field_places(conn):
     db.import_providers(conn, providers())
     a, b = pid(conn, "1001"), pid(conn, "1002")

@@ -51,6 +51,9 @@ const jsonLd = breadcrumbLd(Astro.site, [
   </p>
   {p.english
     ? <p class="notice english-note">🗣️ <strong>You can speak English here.</strong> According to the practice website or patients' reports, someone here speaks English.</p>
+    : p.en_site
+    ? <p class="small muted">🌐 The practice website has an English version. That's a good sign, but it doesn't tell us the staff speak English:
+        it's worth asking. If you find out, please tell others below.</p>
     : <p class="small muted">We don't know yet whether they speak English. That doesn't mean they don't: it's worth asking. If you find out, please tell others below.</p>}
   {p.self_pay && (
     <p class="notice self-pay-note">💳 <strong>No contract with Czech health insurers.</strong> According to the practice website or patients,

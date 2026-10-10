@@ -84,6 +84,7 @@ ENGLISH = [
     re.compile(rf"\b(?:mluvime|hovorime|domluvite se|domluvime se|komunikujeme|dorozumite se|mluvi|hovori|ovladame|ovlada)\b{_GAP}\banglick\w*"),
     re.compile(r"\banglick\w* (?:mluvic\w*|hovoric\w*)"),
     re.compile(r"\b(?:we (?:also )?speak|english[- ]speaking|speaks? english|english (?:is )?spoken)\b"),
+    re.compile(r"\b(?:communicate|consultations?|treatment|care is provided) (?:also |fully )?in english\b"),
 ]
 
 
@@ -132,6 +133,53 @@ def insurers(raw_text: str) -> tuple[set[str], str | None]:
             found |= hits
             first = first or _snippet(text, m, pad=90, original=raw_text, src=src)
     return found, first
+
+
+# A link to the site's English version: hreflang="en", "EN" / "English" / "Anglicky" / 🇬🇧 as the
+# label, an /en/ path or ?lang=en. That's only a hint: an English page doesn't mean the staff speak English.
+HREFLANG_EN = "\x00hreflang=en"     # added to a link's label by extract() when the tag says hreflang="en"
+EN_LABELS = {"en", "eng", "english", "in english", "english version", "anglicky", "anglictina", "anglicka verze"}
+EN_FLAGS = ("\U0001F1EC\U0001F1E7", "\U0001F1FA\U0001F1F8")    # 🇬🇧 🇺🇸
+_EN_PATH = re.compile(r"(?:^|/)(?:en|eng|english|en[-_](?:gb|us))(?:/|\.html?$|\.php$|$)", re.I)
+_EN_QUERY = re.compile(r"(?:^|&)(?:lang|language|lng|hl|locale)=en(?:[-_]\w+)?(?:&|$)", re.I)
+
+
+def is_english_link(url: str, label: str = "") -> bool:
+    """Does this link (absolute URL and its label) point to an English version of the site?"""
+    if HREFLANG_EN in label or any(f in label for f in EN_FLAGS):
+        return True
+    u = urllib.parse.urlsplit(url)
+    if _EN_PATH.search(u.path) or _EN_QUERY.search(u.query):
+        return True
+    return re.sub(r"[^a-z ]", "", normalize(label)).strip() in EN_LABELS
+
+
+def _same_site(host: str | None, base_host: str | None) -> bool:
+    strip = lambda h: (h or "").lower().removeprefix("www.")
+    return bool(host) and strip(host) in (strip(base_host), "en." + strip(base_host))
+
+
+def _folder(path: str) -> str:
+    """/novak/ and /novak are a folder; /novak/index.html is a page inside /novak/"""
+    last = path.rsplit("/", 1)[-1]
+    return path if path.endswith("/") else (path.rsplit("/", 1)[0] + "/" if "." in last else path + "/")
+
+
+def english_version(base_url: str, links: list[tuple[str, str]]) -> str | None:
+    """URL of the site's English version (on the same site), or None. On a doctor's page on a
+    shared portal (gynekolog.cz/novak/), only inside that page: the portal's own "EN" isn't theirs."""
+    base = urllib.parse.urlsplit(base_url)
+    scope = _folder(base.path)
+    for href, label in links:
+        if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+            continue
+        url = urllib.parse.urljoin(base_url, href).split("#")[0]
+        u = urllib.parse.urlsplit(url)
+        if scope != "/" and not (u.hostname == base.hostname and u.path.startswith(scope)):
+            continue
+        if u.scheme in ("http", "https") and _same_site(u.hostname, base.hostname) and is_english_link(url, label):
+            return url
+    return None
 
 
 def find_flags(raw_text: str) -> dict[str, str]:
@@ -265,8 +313,15 @@ class _Extractor(HTMLParser):
         if tag in ("script", "style", "noscript", "svg"):
             self._skip += 1
         elif tag == "a":
-            self._href = dict(attrs).get("href")
-            self._link_text = []
+            a = dict(attrs)
+            self._href = a.get("href")
+            self._link_text = [HREFLANG_EN] if (a.get("hreflang") or "").lower().startswith("en") else []
+        elif tag == "link":
+            a = dict(attrs)
+            if (a.get("hreflang") or "").lower().startswith("en") and a.get("href"):
+                self.links.append((a["href"], HREFLANG_EN))
+        elif tag == "img" and self._href is not None and dict(attrs).get("alt"):
+            self._link_text.append(dict(attrs)["alt"])      # a flag picture: alt="English"
         elif tag == "meta":
             a = dict(attrs)
             if (a.get("name") or "").lower() == "description" and a.get("content"):
@@ -278,7 +333,7 @@ class _Extractor(HTMLParser):
         if tag in ("script", "style", "noscript", "svg") and self._skip:
             self._skip -= 1
         elif tag == "a" and self._href:
-            self.links.append((self._href, " ".join(self._link_text)))
+            self.links.append((self._href, " ".join(self._link_text).strip()))
             self._href = None
         if tag in self.BLOCK:
             self.parts.append("\n")
@@ -302,15 +357,18 @@ def extract(html: str) -> tuple[str, list[tuple[str, str]]]:
 
 
 LINK_HINTS = ["pacient", "registrac", "objedn", "kontakt", "ordinac", "o-nas", "onas", "aktual", "novinky"]
+# English pages are where "we speak English" is written. Their own words, since "o-nas" is "about-us" there.
+EN_LINK_HINTS = ["about", "contact", "team", "patient"]
 
 
 def pick_links(base_url: str, links: list[tuple[str, str]], limit: int = MAX_EXTRA_PAGES) -> list[str]:
-    """Same-site links most likely to mention new patients, best first."""
+    """Same-site links most likely to mention new patients, best first. When the site has an
+    English version, its best page takes the last slot (within the same budget), so the
+    "we speak English" check gets to read it."""
     base = urllib.parse.urlsplit(base_url)
-    last = base.path.rsplit("/", 1)[-1]
-    # /novak/ and /novak are a folder; /novak/index.html is a page inside /novak/
-    scope = base.path if base.path.endswith("/") else (base.path.rsplit("/", 1)[0] + "/" if "." in last else base.path + "/")
+    scope = _folder(base.path)
     scored: dict[str, int] = {}
+    english: dict[str, int] = {}
     for href, label in links:
         if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
             continue
@@ -324,10 +382,19 @@ def pick_links(base_url: str, links: list[tuple[str, str]], limit: int = MAX_EXT
         if re.search(r"\.(?:pdf|jpe?g|png|gif|webp|docx?|xlsx?|zip)$", u.path, re.I):
             continue
         hay = normalize(f"{u.path} {label}")
+        if is_english_link(url, label):
+            # The English homepage first, then its about/contact pages.
+            score = next((len(EN_LINK_HINTS) - i for i, h in enumerate(EN_LINK_HINTS) if h in hay), len(EN_LINK_HINTS) + 1)
+            english[url] = max(score, english.get(url, 0))
+            continue
         score = next((len(LINK_HINTS) - i for i, h in enumerate(LINK_HINTS) if h in hay), 0)
         if score:
             scored[url] = max(score, scored.get(url, 0))
-    return [u for u, _ in sorted(scored.items(), key=lambda kv: -kv[1])[:limit]]
+    best = lambda d: [u for u, _ in sorted(d.items(), key=lambda kv: -kv[1])]
+    czech, en = best(scored), best(english)
+    if en and limit > 0:
+        return czech[:limit - 1] + en[:1]
+    return czech[:limit]
 
 
 # --------------------------------------------------------------------------
@@ -521,21 +588,30 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
         best = classify(text)
         best_page = final_url
         res.flags = find_flags(text)
-        if best.status is None and not best.conflicting:
-            for extra in pick_links(final_url, links):
-                if not robots.can_fetch(USER_AGENT, extra):
-                    continue
-                time.sleep(delay)
-                try:
-                    page_url, page_html = fetch(extra, allow_private)
-                except Exception:
-                    continue
-                page_text = extract(page_html)[0]
-                res.flags = {**find_flags(page_text), **res.flags}
+        if en_url := english_version(final_url, links):
+            res.flags["en_site"] = en_url
+        labels: dict[str, str] = defaultdict(str)
+        for href, label in links:
+            labels[urllib.parse.urljoin(final_url, href or "").split("#")[0]] += " " + label
+        for extra in pick_links(final_url, links):
+            # Czech pages only while we still don't know about new patients; the English
+            # page only while we still don't know whether they speak English.
+            is_en = is_english_link(extra, labels[extra])
+            if (best.status or best.conflicting) and not (is_en and "english" not in res.flags):
+                continue
+            if not robots.can_fetch(USER_AGENT, extra):
+                continue
+            time.sleep(delay)
+            try:
+                page_url, page_html = fetch(extra, allow_private)
+            except Exception:
+                continue
+            page_text = extract(page_html)[0]
+            res.flags = {**find_flags(page_text), **res.flags}
+            if best.status is None and not best.conflicting:
                 v = classify(page_text)
                 if v.status or v.conflicting:
                     best, best_page = v, page_url
-                    break
         res.verdict, res.page_url = best, best_page
     except BlockedURL as e:
         res.error = str(e)

@@ -164,7 +164,7 @@ def crawl_targets(
     return sites
 
 
-FLAGS = ("self_pay", "english", "ins111", "ins201", "ins205", "ins207", "ins209", "ins211", "ins213")
+FLAGS = ("self_pay", "english", "en_site", "ins111", "ins201", "ins205", "ins207", "ins209", "ins211", "ins213")
 
 
 def _record_flags(conn: psycopg.Connection, r) -> None:
@@ -179,7 +179,8 @@ def _record_flags(conn: psycopg.Connection, r) -> None:
             specs.setdefault(pid, set()).add(slug)
     for flag in FLAGS:
         snippet = r.flags.get(flag)
-        keep = [pid for pid in ids if snippet and fits_specialty(snippet, specs.get(pid, set()))]
+        # en_site's "snippet" is the English page's address: about the whole site, not one department.
+        keep = [pid for pid in ids if snippet and (flag == "en_site" or fits_specialty(snippet, specs.get(pid, set())))]
         if snippet:
             note = f"„{snippet[:300]}“ — {r.page_url or r.url}"[:500]
             for pid in keep:
@@ -206,6 +207,8 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
     with conn.transaction():
         for r in results:
             v = r.verdict
+            conn.execute("UPDATE providers SET web_checked_at = now(), web_check_error = %s WHERE id = ANY(%s)",
+                         (r.error and r.error[:200], list(r.provider_ids)))
             if r.error is None:
                 _record_flags(conn, r)
             if r.error is None and (not v or not v.status):

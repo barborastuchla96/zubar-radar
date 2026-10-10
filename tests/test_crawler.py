@@ -88,7 +88,14 @@ PAGES = {
     "/novi-pacienti": ("text/html; charset=windows-1250",
                        "<p>Od září opět přijímáme nové pacienty, prosíme volejte.</p>".encode("cp1250")),
     "/kontakt": ("text/html", "<p>Tel. 123</p>"),
-    "/robots.txt": ("text/plain", "User-agent: *\nDisallow: /tajne\n"),
+    "/robots.txt": ("text/plain", "User-agent: *\nDisallow: /tajne\nDisallow: /jen-web/en/\n"),
+    # A bilingual site: says nothing in Czech, "we speak English" on its English page.
+    "/dvojjazycny/": ("text/html", '<html><head><link rel="alternate" hreflang="en" href="/dvojjazycny/en/"></head><body>'
+                      '<p>Zubní ordinace.</p><a href="/dvojjazycny/kontakt">Kontakt</a> <a href="/dvojjazycny/en/">EN</a></body></html>'),
+    "/dvojjazycny/kontakt": ("text/html", "<p>Přijímáme nové pacienty.</p>"),
+    "/dvojjazycny/en/": ("text/html", "<p>Dental practice in Prague. Our staff speak English.</p>"),
+    # English page exists but its text doesn't say anyone speaks English (and robots.txt keeps us out).
+    "/jen-web/": ("text/html", '<p>Přijímáme nové pacienty.</p><a href="/jen-web/en/"><img src="/gb.png" alt="English"></a>'),
     "/tajne": ("text/html", "<p>Nepřijímáme nové pacienty.</p>"),
 }
 
@@ -273,3 +280,66 @@ def test_insurers(text, codes):
 
 def test_self_pay_wins_over_insurer_names():
     assert not any(f.startswith("ins") for f in crawler.find_flags("Nemáme smlouvy se zdravotními pojišťovnami. Dříve VZP 111, OZP 207."))
+
+
+@pytest.mark.parametrize("href,label,yes", [
+    ("/en/", "EN", True),
+    ("/en", "", True),
+    ("/en/kontakt", "Contact", True),
+    ("/english.html", "", True),
+    ("/?lang=en", "", True),
+    ("/index.php?page=1&lang=en-gb", "", True),
+    ("/uvod", "English", True),
+    ("/uvod", "Anglicky", True),
+    ("/uvod", "🇬🇧", True),
+    ("/uvod", crawler.HREFLANG_EN, True),
+    ("/endodoncie", "Endodoncie", False),
+    ("/cenik", "Ceník", False),
+    ("/kurzy", "Kurzy angličtiny pro děti", False),
+    ("/de/", "DE", False),
+])
+def test_is_english_link(href, label, yes):
+    assert crawler.is_english_link("https://zubar.cz" + href, label) is yes
+
+
+def test_extract_marks_hreflang_and_flag_pictures():
+    _, links = crawler.extract('<link rel="alternate" hreflang="en-GB" href="/en/"><link rel="alternate" hreflang="cs" href="/">'
+                               '<a href="/en-verze"><img src="gb.svg" alt="English"></a><a href="/x" hreflang="en">x</a>')
+    assert [h for h, label in links if crawler.is_english_link("https://zubar.cz" + h, label)] == ["/en/", "/en-verze", "/x"]
+
+
+def test_english_version_stays_on_the_site():
+    assert crawler.english_version("https://www.zubar.cz/", [("https://translate.google.com/?hl=en", "English")]) is None
+    assert crawler.english_version("https://www.zubar.cz/", [("https://en.zubar.cz/", "EN")]) == "https://en.zubar.cz/"
+    assert crawler.english_version("https://www.zubar.cz/", [("/kontakt", "Kontakt"), ("/en/", "EN")]) == "https://www.zubar.cz/en/"
+    assert crawler.english_version("http://www.gynekolog.cz/novak/", [("/en/", "EN")]) is None          # the portal's, not hers
+    assert crawler.english_version("http://www.gynekolog.cz/novak/", [("/novak/en/", "EN")]) == "http://www.gynekolog.cz/novak/en/"
+
+
+def test_pick_links_keeps_one_slot_for_the_english_page():
+    links = [("/kontakt", "Kontakt"), ("/novi-pacienti", "Noví pacienti"), ("/ordinace", "Ordinace"),
+             ("/en/contact", "Contact"), ("/en/", "EN")]
+    assert crawler.pick_links("https://zubar.cz/", links) == ["https://zubar.cz/novi-pacienti", "https://zubar.cz/en/"]
+    assert crawler.pick_links("https://zubar.cz/", [("/en/contact", "Contact"), ("/en/about-us", "About us")]) == [
+        "https://zubar.cz/en/about-us"]                              # "about" before "contact", one English page only
+
+
+def test_check_site_reads_the_english_page(site):
+    r = crawler.check_site(site + "/dvojjazycny/", allow_private=True, delay=0)
+    assert r.error is None
+    assert r.verdict.status == "accepting" and r.page_url == site + "/dvojjazycny/kontakt"
+    assert r.flags["en_site"] == site + "/dvojjazycny/en/"
+    assert "speak English" in r.flags["english"]
+
+
+def test_english_website_alone_is_not_speaks_english(site):
+    r = crawler.check_site(site + "/jen-web/", allow_private=True, delay=0)   # its English page is off limits in robots.txt
+    assert r.verdict.status == "accepting"
+    assert r.flags["en_site"] == site + "/jen-web/en/"
+    assert "english" not in r.flags
+
+
+def test_english_phrases_on_english_pages():
+    assert crawler.english("All our dentists communicate in English and German.")
+    assert crawler.english("Consultations in English are possible.")
+    assert not crawler.english("This page in English.")
