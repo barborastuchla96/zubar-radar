@@ -92,7 +92,7 @@ const jsonLd = breadcrumbLd(Astro.site, [
       <Map providers={[p]} />
       <p class="small muted">Tip: many practices answer e-mails in English more easily than phone calls. Mention your health insurer and where you live.</p>
     </div>
-    <ReportForm providerId={p.id} {result} />
+    <ReportForm providerId={p.id} {result} askWeb={!web} />
   </div>
 
   {main && p.lat != null && p.lng != null && p.status !== 'accepting' && (

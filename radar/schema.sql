@@ -125,6 +125,14 @@ ALTER TABLE provider_flags ADD CONSTRAINT provider_flags_flag_check CHECK (flag 
 ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_checked_at timestamptz;
 ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_check_error text;
 
+-- Websites the register doesn't list, found by `radar discover-web`: from the practice's
+-- own e-mail domain ('email') or a visitor's suggestion ('user'), kept only when the site
+-- names the practice. The register's own address always wins (coalesce(web, web_found)).
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_found text;
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_found_source text;
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_suggested text;      -- from the report form, not yet checked
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_search_at timestamptz;
+
 -- ---------------------------------------------------------------------------
 -- Alert subscriptions ("email me when a dentist near Praha 6 opens up").
 -- Store only what the alert needs: no names, no health details.

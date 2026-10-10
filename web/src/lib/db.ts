@@ -40,7 +40,7 @@ const STATUS_ORDER = sql`CASE coalesce(s.status, 'unknown')
 
 const PROVIDER_COLS = sql`
   p.id, p.name, p.street, p.house_no, p.city, p.city_slug, p.postcode, p.district, p.region,
-  p.lat, p.lng, p.phone, p.email, p.web, p.facility_type,
+  p.lat, p.lng, p.phone, p.email, coalesce(nullif(p.web, ''), p.web_found) AS web, p.facility_type,
   coalesce(s.status, 'unknown') AS status, s.last_signal_at, s.last_source,
   EXISTS (SELECT 1 FROM provider_flags f WHERE f.provider_id = p.id AND f.flag = 'self_pay'
            AND (f.source <> 'user' OR f.observed_at > now() - interval '1 year')) AS self_pay,
@@ -151,6 +151,7 @@ export interface ReportInput {
   selfPay?: boolean;      // "no contract with insurers, everything is paid"
   english?: boolean;      // "they speak English"
   insurers?: string[];    // insurer codes the reporter knows the practice has a contract with
+  site?: string;          // the practice's website, when the register doesn't list one (checked before use)
   reporterHash: string;
 }
 
@@ -181,6 +182,9 @@ export async function addReport(r: ReportInput): Promise<ReportResult> {
         VALUES (${r.providerId}, ${flag}, 'user', ${r.observedAt})
         ON CONFLICT (provider_id, flag, source) DO UPDATE SET observed_at = greatest(provider_flags.observed_at, EXCLUDED.observed_at)`;
     }
+    if (r.site) await tx`
+      UPDATE providers SET web_suggested = ${r.site}
+       WHERE id = ${r.providerId} AND coalesce(web, '') = '' AND web_found IS NULL`;
     return 'ok';
   });
 }

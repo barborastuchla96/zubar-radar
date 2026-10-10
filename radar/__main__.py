@@ -201,6 +201,36 @@ def cmd_crawl(args) -> None:
     print("dry run: nothing written" if args.dry_run else f"wrote {written} web_crawl signals")
 
 
+def cmd_discover_web(args) -> None:
+    """Find practice websites the register doesn't list (own e-mail domains, visitors' suggestions)."""
+    import psycopg
+    from . import discover
+
+    with psycopg.connect(_dsn(args)) as conn:
+        cands = discover.candidates(conn, args.limit)
+    n = sum(len(c.providers) for c in cands)
+    print(f"trying {len(cands)} addresses for {n} practices without a website…", flush=True)
+    stats: Counter[str] = Counter()
+
+    def progress(r):
+        key = "found" if r.matched else ("error" if r.error else "not theirs")
+        stats[key] += 1
+        stats[f"{key} ({r.candidate.source})"] += 1
+        if r.matched:
+            names = ", ".join(p[1] for p in r.candidate.providers if p[0] in r.matched)[:90]
+            print(f"  found  {r.url}  ← {names}", flush=True)
+        elif args.verbose:
+            print(f"  {key:<10} {r.candidate.url}  {r.error or ''}", flush=True)
+
+    results = discover.run(cands, workers=args.workers, progress=progress)
+    print("summary: " + ", ".join(f"{k} {v}" for k, v in sorted(stats.items())))
+    if args.dry_run:
+        print("dry run: nothing written")
+        return
+    with psycopg.connect(_dsn(args)) as conn:
+        print(f"saved websites for {discover.record(conn, results)} practices")
+
+
 def cmd_alerts(args) -> None:
     """Email subscribers about practices near them that started accepting."""
     import psycopg
@@ -285,6 +315,13 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--dry-run", action="store_true", help="print findings, write nothing")
     p.add_argument("--verbose", action="store_true", help="also print fetch errors")
     p.set_defaults(func=cmd_crawl)
+
+    p = sub.add_parser("discover-web", help="find practice websites the register doesn't list")
+    p.add_argument("--limit", type=int, help="max addresses to try")
+    p.add_argument("--workers", type=int, default=16)
+    p.add_argument("--dry-run", action="store_true", help="print findings, write nothing")
+    p.add_argument("--verbose", action="store_true", help="also print misses")
+    p.set_defaults(func=cmd_discover_web)
 
     p = sub.add_parser("alerts", help="send email alerts to subscribers (run daily)")
     p.add_argument("--dry-run", action="store_true", help="print the emails instead of sending them")

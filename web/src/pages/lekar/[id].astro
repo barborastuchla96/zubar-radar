@@ -121,7 +121,7 @@ const jsonLd = [
       <Map providers={[p]} />
       <p class="small muted">Je tu chyba, nebo jste z této ordinace? <a href="/pro-ordinace">Napište nám</a>, údaje zdarma opravíme.</p>
     </div>
-    <ReportForm providerId={p.id} {result} />
+    <ReportForm providerId={p.id} {result} askWeb={!web} />
   </div>
 
   <AdSlot name="provider" />

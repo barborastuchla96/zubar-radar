@@ -130,10 +130,10 @@ def crawl_targets(
 
     rows = conn.execute(
         """
-        SELECT DISTINCT p.id, p.web, p.name, p.facility_type,
+        SELECT DISTINCT p.id, coalesce(nullif(p.web, ''), p.web_found) AS web, p.name, p.facility_type,
                (SELECT count(*) FROM provider_specialties x WHERE x.provider_id = p.id) AS n_spec
           FROM providers p JOIN provider_specialties ps ON ps.provider_id = p.id
-         WHERE p.active AND p.web IS NOT NULL AND p.city_slug ~ %s
+         WHERE p.active AND coalesce(nullif(p.web, ''), p.web_found) IS NOT NULL AND p.city_slug ~ %s
            AND (%s::text[] IS NULL OR ps.specialty_slug = ANY(%s::text[]))
          ORDER BY p.id
         """,

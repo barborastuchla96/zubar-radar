@@ -2,8 +2,8 @@
 import { formToken } from '../lib/report';
 import { INSURERS } from '../lib/site';
 
-interface Props { providerId: number; result?: string | null }
-const { providerId, result } = Astro.props;
+interface Props { providerId: number; result?: string | null; askWeb?: boolean }
+const { providerId, result, askWeb = false } = Astro.props;
 const en = Astro.url.pathname.startsWith('/en');
 const today = new Date().toISOString().slice(0, 10);
 const min = new Date(Date.now() - 60 * 86_400_000).toISOString().slice(0, 10);
@@ -14,6 +14,7 @@ const T = en ? {
   what: 'What did you find out?', acc: 'They took me / they accept new patients', wait: 'They put me on a waiting list', not: "They don't accept new patients",
   who: 'Whom do they accept?', all: 'Everyone / not sure', adults: 'Adults only', kids: 'Children only',
   extra: 'Anything else? (optional)', english: 'You can speak English there', selfPay: 'No contract with health insurers, you pay everything',
+  site: 'Do you know their website? (optional)', sitePh: 'e.g. www.dentist-novak.cz',
   when: 'When did you find out?', note: 'Note (optional)', ph: 'E.g. "only children living in Praha 6". Please no names or health details.',
   send: 'Send report', privacy: "We don't store your name or IP address, only an anonymous fingerprint that protects us from spam.",
 } : {
@@ -23,6 +24,7 @@ const T = en ? {
   what: 'Co jste zjistili?', acc: 'Vzali mě / přijímají nové pacienty', wait: 'Zapsali mě do pořadníku', not: 'Nové pacienty nepřijímají',
   who: 'Koho přijímají?', all: 'Všechny / nevím', adults: 'Jen dospělé', kids: 'Jen děti',
   extra: 'Víte ještě něco? (nepovinné)', english: 'Domluvíte se tam anglicky', selfPay: 'Nemají smlouvu se zdravotní pojišťovnou, všechno se platí',
+  site: 'Znáte web ordinace? (nepovinné)', sitePh: 'např. www.zubar-novak.cz',
   when: 'Kdy jste to zjistili?', note: 'Poznámka (nepovinné)', ph: 'Např. „přijímají jen děti s trvalým bydlištěm v Praze 6“. Nepište prosím jména ani zdravotní údaje.',
   send: 'Odeslat hlášení', privacy: 'Neukládáme vaše jméno ani IP adresu. Jen anonymní otisk, který nás chrání před spamem.',
 };
@@ -65,6 +67,12 @@ const msg = result ? MESSAGES[result] : null;
         {Object.entries(INSURERS).map(([code, name]) => <label class="ins-choice"><input type="checkbox" name="ins" value={code} /> {name} <span class="muted">{code}</span></label>)}
       </div>
     </fieldset>
+    {askWeb && (
+      <fieldset>
+        <legend><label for="report-site">{T.site}</label></legend>
+        <input id="report-site" type="text" name="site" inputmode="url" maxlength="200" autocomplete="off" placeholder={T.sitePh} />
+      </fieldset>
+    )}
     <fieldset>
       <legend><label for="report-date">{T.when}</label></legend>
       <input id="report-date" type="date" name="date" value={today} min={min} max={today} required />

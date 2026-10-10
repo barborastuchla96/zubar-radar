@@ -43,6 +43,21 @@ export type Parsed = { ok: true; value: Omit<ReportInput, 'reporterHash'> } | { 
 const STATUSES = new Set(['accepting', 'not_accepting', 'waitlist']);
 const SCOPES = new Set(['adults', 'children', 'all']);
 
+/** A website a visitor typed ("www.zubar-novak.cz", "https://…"): the address, null when empty,
+ *  false when it isn't one. It is only a suggestion: the crawler keeps it if the site names the practice. */
+export function siteAddress(raw: string): string | null | false {
+  const v = raw.trim();
+  if (!v) return null;
+  if (v.length > 200 || /\s|@/.test(v)) return false;
+  try {
+    const u = new URL(/^https?:\/\//i.test(v) ? v : `http://${v}`);
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(u.hostname) || u.username || u.password || u.port) return false;
+    return `${u.protocol}//${u.hostname.toLowerCase()}${u.pathname}`;
+  } catch {
+    return false;
+  }
+}
+
 export function parseReport(form: FormData, now = new Date()): Parsed {
   const get = (k: string) => (form.get(k) ?? '').toString().trim();
   if (get('web') !== '') return { ok: false, reason: 'bot' };          // honeypot
@@ -63,12 +78,15 @@ export function parseReport(form: FormData, now = new Date()): Parsed {
   const clamped = observedAt > now ? now : observedAt;
 
   const note = get('note').replace(/\s+/g, ' ').slice(0, 300) || null;
+  // A mistyped website shouldn't cost the whole report: just leave it out.
+  const site = siteAddress(get('site')) || null;
   return {
     ok: true,
     value: {
       providerId, status: status as ReportInput['status'], scope: scope as ReportInput['scope'],
       observedAt: clamped, note, selfPay: get('self_pay') === '1', english: get('english') === '1',
       insurers: [...new Set(form.getAll('ins').map(String))].filter((c) => /^(111|201|205|207|209|211|213)$/.test(c)),
+      site: site ?? undefined,
     },
   };
 }
