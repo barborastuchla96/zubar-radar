@@ -4,7 +4,9 @@ import { clientIp, parseReport, reporterHash } from '../../lib/report';
 import { doctorUrl } from '../../lib/i18n';
 
 export const POST: APIRoute = async ({ request, clientAddress, redirect }) => {
-  const form = await request.formData();
+  // Not a form at all (a bot or a broken client): say so instead of crashing.
+  const form = await request.formData().catch(() => null);
+  if (!form) return new Response('Bad request', { status: 400 });
   const parsed = parseReport(form);
   const lang = form.get('lang') === 'en' ? 'en' : 'cs';
   const id = Number(form.get('provider_id'));

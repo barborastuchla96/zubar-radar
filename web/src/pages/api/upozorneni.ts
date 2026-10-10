@@ -4,7 +4,9 @@ import { MAIL_FROM_NAME_CS, mailEnabled, sendMail } from '../../lib/mail';
 import { clientIp, reporterHash } from '../../lib/report';
 
 export const POST: APIRoute = async ({ request, clientAddress, redirect, site }) => {
-  const form = await request.formData();
+  // Not a form at all (a bot or a broken client): say so instead of crashing.
+  const form = await request.formData().catch(() => null);
+  if (!form) return new Response('Bad request', { status: 400 });
   const parsed = parseSignup(form);
   const back = (u: string) => redirect(`${parsed.back}${parsed.back.includes('?') ? '&' : '?'}u=${u}#upozorneni`, 303);
   if (!mailEnabled()) return back('off');
