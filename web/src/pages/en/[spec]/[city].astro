@@ -20,7 +20,8 @@ const raw = await cityProviders(spec.slug, citySlug);
 if (raw.length === 0) return Astro.rewrite('/404');
 
 const RANK: Record<string, number> = { accepting: 0, waitlist: 1, mixed: 2, unknown: 3, not_accepting: 4 };
-const rows = [...raw].sort((a, b) => (RANK[a.status] ?? 3) - (RANK[b.status] ?? 3) || Number(b.english) - Number(a.english));
+const rows = [...raw].sort((a, b) => (RANK[a.status] ?? 3) - (RANK[b.status] ?? 3) || Number(b.english) - Number(a.english)
+  || Number(b.english_site) - Number(a.english_site));
 const city = placeEn(placeLabel(rows[0].city!, rows[0].city_slug!, rows[0].district));
 const counts: Record<string, number> = {};
 for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;

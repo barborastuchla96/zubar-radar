@@ -206,6 +206,8 @@ def record_crawl(conn: psycopg.Connection, results) -> int:
     with conn.transaction():
         for r in results:
             v = r.verdict
+            conn.execute("UPDATE providers SET web_checked_at = now(), web_check_error = %s WHERE id = ANY(%s)",
+                         (r.error and r.error[:200], list(r.provider_ids)))
             if r.error is None:
                 _record_flags(conn, r)
             if r.error is None and (not v or not v.status):

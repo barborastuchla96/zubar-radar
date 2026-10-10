@@ -120,6 +120,11 @@ ALTER TABLE provider_flags DROP CONSTRAINT IF EXISTS provider_flags_flag_check;
 ALTER TABLE provider_flags ADD CONSTRAINT provider_flags_flag_check CHECK (flag IN ('self_pay', 'english', 'english_site',
     'ins111', 'ins201', 'ins205', 'ins207', 'ins209', 'ins211', 'ins213'));   -- insXXX: contract with that health insurer
 
+-- When the crawler last read the practice's website (NULL: never), and why it couldn't
+-- (NULL: it could). Lets us tell "nothing said there" from "never looked".
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_checked_at timestamptz;
+ALTER TABLE providers ADD COLUMN IF NOT EXISTS web_check_error text;
+
 -- ---------------------------------------------------------------------------
 -- Alert subscriptions ("email me when a dentist near Praha 6 opens up").
 -- Store only what the alert needs: no names, no health details.

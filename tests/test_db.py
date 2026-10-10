@@ -199,6 +199,21 @@ def test_crawl_remembers_and_forgets_self_pay(conn):
     assert flags() == 0                     # site no longer says it: forget it
 
 
+def test_crawl_records_when_it_looked(conn):
+    from radar.crawler import SiteResult, Verdict
+    db.import_providers(conn, providers())
+    a = pid(conn, "1001")
+    r = SiteResult("http://x.cz/", Verdict(None), "http://x.cz/", provider_ids=[a])
+    checked = lambda: conn.execute("SELECT web_checked_at IS NOT NULL, web_check_error FROM providers WHERE id = %s",
+                                   (a,)).fetchone()
+    assert checked() == (False, None)
+    db.record_crawl(conn, [r])
+    assert checked() == (True, None)
+    r.error = "HTTP 503"
+    db.record_crawl(conn, [r])
+    assert checked() == (True, "HTTP 503")
+
+
 def test_crawl_skips_hospitals_and_many_field_places(conn):
     db.import_providers(conn, providers())
     a, b = pid(conn, "1001"), pid(conn, "1002")
