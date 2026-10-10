@@ -50,7 +50,9 @@ def gather(conn: psycopg.Connection, hours: int = 24) -> dict:
 
 
 def is_empty(d: dict) -> bool:
-    return not (d["reports"] or d["flags"] or d["sites"] or d["subs"]["new"] or d["subs"]["confirmed"])
+    # Only something to look at (a report, a suggested website) is worth an e-mail;
+    # sign-up counts ride along when there is one.
+    return not (d["reports"] or d["sites"])
 
 
 def compose(d: dict, site_url: str, mail_from: str, to: str) -> EmailMessage:
