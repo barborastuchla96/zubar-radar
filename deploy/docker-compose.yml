@@ -80,6 +80,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
+      DIGEST_TO: ${DIGEST_TO:-}
       MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-450}
     volumes:
       - ../data:/data:ro

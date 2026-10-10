@@ -231,6 +231,30 @@ def cmd_discover_web(args) -> None:
         print(f"saved websites for {discover.record(conn, results)} practices")
 
 
+def cmd_digest(args) -> None:
+    """Evening summary for the site owner: today's visitor reports."""
+    import psycopg
+    from . import alerts, digest
+    site = os.environ.get("SITE_URL", "https://prijimanovepacienty.cz")
+    mail_from = os.environ.get("MAIL_FROM") or os.environ.get("SMTP_USER") or "info@prijimanovepacienty.cz"
+    to = args.to or os.environ.get("DIGEST_TO") or mail_from
+    with psycopg.connect(_dsn(args)) as conn:
+        d = digest.gather(conn, args.hours)
+    if digest.is_empty(d) and not args.always:
+        print("nothing new: no e-mail")
+        return
+    msg = digest.compose(d, site, mail_from, to)
+    if args.dry_run:
+        print(msg)
+        return
+    sender = alerts.sender_from_env()
+    try:
+        sender.send(msg)
+    finally:
+        sender.close()
+    print(f"digest sent to {to}: {len(d['reports'])} reports")
+
+
 def cmd_alerts(args) -> None:
     """Email subscribers about practices near them that started accepting."""
     import psycopg
@@ -322,6 +346,13 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--dry-run", action="store_true", help="print findings, write nothing")
     p.add_argument("--verbose", action="store_true", help="also print misses")
     p.set_defaults(func=cmd_discover_web)
+
+    p = sub.add_parser("digest", help="e-mail the site owner today's visitor reports (run daily)")
+    p.add_argument("--to", help="recipient (default: $DIGEST_TO, else $MAIL_FROM)")
+    p.add_argument("--hours", type=int, default=24)
+    p.add_argument("--always", action="store_true", help="send even when nothing happened")
+    p.add_argument("--dry-run", action="store_true", help="print the e-mail instead of sending it")
+    p.set_defaults(func=cmd_digest)
 
     p = sub.add_parser("alerts", help="send email alerts to subscribers (run daily)")
     p.add_argument("--dry-run", action="store_true", help="print the emails instead of sending them")
