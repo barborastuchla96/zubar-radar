@@ -7,7 +7,7 @@ export const GET: APIRoute = ({ site }) => {
   const u = (p: string) => new URL(p, site).toString();
   const body = `# ${SITE_NAME}
 
-> Nezávislý web, který u všech ordinací zubařů, praktických a dětských lékařů, gynekologů, dentální hygieny a vybraných specialistů (oční, ORL, kožní, psychiatrie, neurologie) v Česku ukazuje, zda podle posledních zpráv přijímají nové pacienty.
+> Nezávislý web, který u všech ordinací zubařů, praktických a dětských lékařů, gynekologů, dentální hygieny a vybraných specialistů (oční, ORL, kožní, psychiatrie, neurologie, urologie, chirurgie, ortopedie) v Česku ukazuje, zda podle posledních zpráv přijímají nové pacienty.
 
 Seznam ordinací pochází z Národního registru poskytovatelů zdravotních služeb (ÚZIS ČR) a aktualizuje se měsíčně.
 Stav „přijímá / nepřijímá / pořadník“ vychází z hlášení pacientů po telefonátu, od samotných ordinací a z týdenní kontroly webů ordinací.

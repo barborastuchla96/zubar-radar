@@ -61,10 +61,15 @@ SPECIALTY_LABELS: dict[str, str] = {
     "dětská dermatovenerologie": "kozni",
     "psychiatrie": "psychiatr",
     "neurologie": "neurolog",
+    "urologie": "urolog",
+    "dětská urologie": "urolog",
+    "chirurgie": "chirurg",
+    "dětská chirurgie": "chirurg",
+    "ortopedie a traumatologie pohybového ústrojí": "ortoped",
 }
 
 # Specialists also sit in hospital wards; only count places that see outpatients.
-SPECIALISTS = {"ocni", "orl", "kozni", "psychiatr", "neurolog"}
+SPECIALISTS = {"ocni", "orl", "kozni", "psychiatr", "neurolog", "urolog", "chirurg", "ortoped"}
 
 # Rough bounding box of Czechia, to drop garbage coordinates.
 CZ_LAT = (48.5, 51.1)

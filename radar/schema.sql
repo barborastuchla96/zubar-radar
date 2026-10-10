@@ -26,7 +26,10 @@ INSERT INTO specialties (slug, name_cs, nrpzs_labels) VALUES
     ('orl',       'ORL lékař',                    ARRAY['otorinolaryngologie a chirurgie hlavy a krku', 'otorinolaryngologie', 'dětská otorinolaryngologie']),
     ('kozni',     'Kožní lékař',                  ARRAY['dermatovenerologie', 'dětská dermatovenerologie']),
     ('psychiatr', 'Psychiatr',                    ARRAY['psychiatrie']),
-    ('neurolog',  'Neurolog',                     ARRAY['neurologie'])
+    ('neurolog',  'Neurolog',                     ARRAY['neurologie']),
+    ('urolog',    'Urolog',                       ARRAY['urologie', 'dětská urologie']),
+    ('chirurg',   'Chirurg',                      ARRAY['chirurgie', 'dětská chirurgie']),
+    ('ortoped',   'Ortoped',                      ARRAY['ortopedie a traumatologie pohybového ústrojí'])
 ON CONFLICT (slug) DO UPDATE
     SET name_cs = EXCLUDED.name_cs, nrpzs_labels = EXCLUDED.nrpzs_labels;
 

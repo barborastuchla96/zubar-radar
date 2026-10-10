@@ -111,7 +111,7 @@ export async function unsubscribe(token: string): Promise<void> {
 /** Same words as the start of the alert subject (radar/alerts.py SPECIALTY_PLURAL). */
 const SUBJECT_LABEL: Record<string, string> = {
   zubar: 'Zubař', praktik: 'Praktický lékař', pediatr: 'Dětský lékař', gynekolog: 'Gynekologie', hygienistka: 'Dentální hygiena',
-  ocni: 'Oční lékař', orl: 'ORL lékař', kozni: 'Kožní lékař', psychiatr: 'Psychiatrie', neurolog: 'Neurologie',
+  ocni: 'Oční lékař', orl: 'ORL lékař', kozni: 'Kožní lékař', psychiatr: 'Psychiatrie', neurolog: 'Neurologie', urolog: 'Urologie', chirurg: 'Chirurgie', ortoped: 'Ortopedie',
 };
 /** Names the specialty and place, so Gmail doesn't fold several sign-ups into one conversation. */
 export const confirmationSubject = (v: Pick<SignupInput, 'specialty' | 'place' | 'lang'>) =>
@@ -124,6 +124,7 @@ const FROM_PRACTICES: Record<string, string> = {
   zubar: 'ze zubařských ordinací', praktik: 'z ordinací praktického lékaře', pediatr: 'z ordinací dětského lékaře',
   gynekolog: 'z gynekologických ordinací', hygienistka: 'z ordinací dentální hygieny', ocni: 'z ordinací očního lékaře',
   orl: 'z ordinací ORL', kozni: 'z ordinací kožního lékaře', psychiatr: 'z psychiatrických ambulancí', neurolog: 'z neurologických ordinací',
+  urolog: 'z urologických ordinací', chirurg: 'z chirurgických ambulancí', ortoped: 'z ortopedických ordinací',
 };
 
 export function confirmationText(siteUrl: string, token: string, v: Pick<SignupInput, 'specialty' | 'place' | 'radiusKm'> & { lang?: 'cs' | 'en' }) {

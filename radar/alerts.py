@@ -32,12 +32,14 @@ SPECIALTY_PLURAL = {   # start of the Czech subject line
     "gynekolog": "Gynekologie", "hygienistka": "Dentální hygiena",
     "ocni": "Oční lékař", "orl": "ORL lékař", "kozni": "Kožní lékař",
     "psychiatr": "Psychiatrie", "neurolog": "Neurologie",
+    "urolog": "Urologie", "chirurg": "Chirurgie", "ortoped": "Ortopedie",
 }
 # English, matches SPECIALTY_EN in web/src/lib/i18n.ts
 SPECIALTY_PLURAL_EN = {
     "zubar": "Dentists", "praktik": "GPs", "pediatr": "Pediatricians", "gynekolog": "Gynecologists",
     "hygienistka": "Dental hygienists", "ocni": "Eye doctors", "orl": "ENT doctors", "kozni": "Dermatologists",
     "psychiatr": "Psychiatrists", "neurolog": "Neurologists",
+    "urolog": "Urologists", "chirurg": "Surgeons", "ortoped": "Orthopaedists",
 }
 
 

@@ -39,6 +39,9 @@ export const SPECIALTIES: SpecialtyInfo[] = [
   { slug: 'kozni', singular: 'Kožní lékař', plural: 'Kožní lékaři', short: 'Kožní', acc: 'kožního lékaře', nearby: 'Další kožní lékaři v okolí', some: 'některý kožní lékař', seo: 'Kožní lékaři (dermatologové)', icon: '🩹', specialist: true },
   { slug: 'psychiatr', singular: 'Psychiatr', plural: 'Psychiatři', short: 'Psychiatři', acc: 'psychiatra', nearby: 'Další psychiatři v okolí', some: 'některý psychiatr', icon: '💬', specialist: true },
   { slug: 'neurolog', singular: 'Neurolog', plural: 'Neurologové', short: 'Neurologové', acc: 'neurologa', nearby: 'Další neurologové v okolí', some: 'některý neurolog', icon: '🧠', specialist: true },
+  { slug: 'urolog', singular: 'Urolog', plural: 'Urologové', short: 'Urologové', acc: 'urologa', nearby: 'Další urologové v okolí', some: 'některý urolog', icon: '💧', specialist: true },
+  { slug: 'chirurg', singular: 'Chirurg', plural: 'Chirurgové', short: 'Chirurgové', acc: 'chirurga', nearby: 'Další chirurgové v okolí', some: 'některý chirurg', seo: 'Chirurgové (chirurgické ambulance)', icon: '⚕️', specialist: true },
+  { slug: 'ortoped', singular: 'Ortoped', plural: 'Ortopedové', short: 'Ortopedové', acc: 'ortopeda', nearby: 'Další ortopedové v okolí', some: 'některý ortoped', icon: '🦴', specialist: true },
 ];
 export const MAIN_SPECIALTIES = SPECIALTIES.filter((s) => !s.specialist);
 export const SPECIALISTS = SPECIALTIES.filter((s) => s.specialist);

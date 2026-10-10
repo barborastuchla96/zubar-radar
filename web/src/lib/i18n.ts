@@ -17,6 +17,9 @@ export const SPECIALTY_EN: Record<string, SpecialtyEn> = {
   kozni:       { en: 'dermatologist',    singular: 'Dermatologist',        plural: 'Dermatologists',        short: 'Dermatologists', nearby: 'Other dermatologists nearby', specialist: true },
   psychiatr:   { en: 'psychiatrist',     singular: 'Psychiatrist',         plural: 'Psychiatrists',         short: 'Psychiatrists', nearby: 'Other psychiatrists nearby', specialist: true },
   neurolog:    { en: 'neurologist',      singular: 'Neurologist',          plural: 'Neurologists',          short: 'Neurologists', nearby: 'Other neurologists nearby', specialist: true },
+  urolog:      { en: 'urologist',        singular: 'Urologist',            plural: 'Urologists',            short: 'Urologists',   nearby: 'Other urologists nearby', specialist: true },
+  chirurg:     { en: 'surgeon',          singular: 'Surgeon',              plural: 'Surgeons',              short: 'Surgeons',     nearby: 'Other surgeons nearby', specialist: true },
+  ortoped:     { en: 'orthopaedist',     singular: 'Orthopaedist',         plural: 'Orthopaedists',         short: 'Orthopaedists', nearby: 'Other orthopaedists nearby', specialist: true },
 };
 /** /en/gp → the "praktik" specialty */
 export const specialtyFromEn = (en: string): SpecialtyInfo | undefined =>

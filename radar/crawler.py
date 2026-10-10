@@ -459,8 +459,9 @@ FIELD_WORDS = {   # matched against normalize()d text: lower-case, no diacritics
     "gynekolog": r"gynekolog|porodn", "ocni": r"\bocni|\bocn|oftalmolog",
     "orl": r"\borl\b|\busni|\bkrcni|otorinolaryng", "kozni": r"\bkozni|dermatolog",
     "psychiatr": r"psychiatr", "neurolog": r"neurolog",
+    "urolog": r"urolog", "chirurg": r"chirurg", "ortoped": r"ortoped|traumatolog",
 }
-OTHER_FIELDS = (r"diabetolog|kardiolog|\binterni|internist|ortoped|chirurg|urolog|endokrinolog|gastroenterolog|"
+OTHER_FIELDS = (r"diabetolog|kardiolog|\binterni|internist|endokrinolog|gastroenterolog|"
                 r"revmatolog|alergolog|\bplicni|pneumolog|onkolog|nefrolog|rehabilita|psycholog|logoped|"
                 r"fyzioterap|mamolog|\bcevni|hematolog|angiolog|geriatr|sexuolog|algeziolog")
 
