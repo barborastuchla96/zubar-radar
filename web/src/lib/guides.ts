@@ -1,6 +1,6 @@
 // Guide pages. Set REVIEWED to true once someone who knows Czech healthcare law and
 // practice has checked the texts; until then they stay out of search results.
-export const GUIDES_REVIEWED = false;
+export const GUIDES_REVIEWED = true;
 export const GUIDES_UPDATED = '2026-10-09';
 
 export interface Guide { slug: string; title: string; lead: string }
