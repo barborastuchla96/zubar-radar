@@ -4,6 +4,7 @@ import { REGIONS } from '../lib/regions';
 import data from '../lib/areas.json';
 import { SPECIALTIES, cityUrl, districtUrl, providerUrl, regionUrl, slugify } from '../lib/site';
 import { placeUrl, specUrl } from '../lib/i18n';
+import { GUIDES, GUIDES_REVIEWED } from '../lib/guides';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site!.toString().replace(/\/$/, '');
@@ -16,6 +17,8 @@ export const GET: APIRoute = async ({ site }) => {
   const urls = ['/', ...SPECIALTIES.map((s) => `/dostupnost?obor=${s.slug}`), ...SPECIALTIES.flatMap((s, i) => [`/${s.slug}`, cityUrl(s.slug, 'praha'),
     ...REGIONS.filter((r) => r.slug !== 'hlavni-mesto-praha').map((r) => regionUrl(s.slug, r.slug)),
     ...Object.keys(data.okresy).filter((o) => (townsPerDistrict[i].get(o) ?? 0) >= 2).map((o) => districtUrl(s.slug, o))])];
+  if (GUIDES_REVIEWED) urls.push('/pruvodce', ...GUIDES.map((g) => `/pruvodce/${g.slug}`));
+  urls.push('/o-projektu');
   // English: home, guide, specialty and town pages (practice pages are reachable from those).
   urls.push('/en', '/en/guide', ...SPECIALTIES.flatMap((s) => [specUrl('en', s.slug), placeUrl('en', s.slug, 'praha')]));
   for (const e of await sitemapEntries()) {
