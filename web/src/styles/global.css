@@ -472,3 +472,8 @@ details.legend[open] dl { margin-top: .5rem; padding: .75rem 1rem; background: v
 .spec-pill:has(input:checked)::before { content: "✓"; color: var(--brand); font-weight: 800; }
 .spec-pill:has(input:focus-visible) { outline: 3px solid var(--text); outline-offset: 2px; }
 .pill-info { display: none; margin: .7rem 0 0; padding: .55rem .9rem; border-radius: var(--radius); background: color-mix(in srgb, var(--brand) 7%, var(--surface)); }
+
+/* "Jak to funguje": number, title, text, the same in every card */
+.how-step { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
+.how-step h3 { margin: 0; font-size: 1.1rem; line-height: 1.3; }
+.how-step p { margin: 0; }
