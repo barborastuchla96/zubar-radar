@@ -84,14 +84,21 @@ ENGLISH = [
     re.compile(rf"\b(?:mluvime|hovorime|domluvite se|domluvime se|komunikujeme|dorozumite se|mluvi|hovori|ovladame|ovlada)\b{_GAP}\banglick\w*"),
     re.compile(r"\banglick\w* (?:mluvic\w*|hovoric\w*)"),
     re.compile(r"\b(?:we (?:also )?speak|english[- ]speaking|speaks? english|english (?:is )?spoken)\b"),
+    re.compile(r"\b(?:we (?:also )?communicate|consultations?|treatment|care|appointments?) in english\b"),
 ]
+
+
+_EN_NEGATION = re.compile(r"\b(?:don'?t|do not|doesn'?t|does not|cannot|can'?t|no|not|unfortunately|bohuzel|nikdo)\s+(?:\w+\s+)?$")
 
 
 def english(raw_text: str) -> str | None:
     """Snippet saying someone at the practice speaks English, or None."""
     text, src = _normalize_with_map(raw_text)
     for p in ENGLISH:
-        if m := p.search(text):
+        for m in p.finditer(text):
+            # "we don't speak English", "unfortunately no English is spoken"
+            if _EN_NEGATION.search(text[max(0, m.start() - 25):m.start()]):
+                continue
             return _snippet(text, m, original=raw_text, src=src)
     return None
 
@@ -265,8 +272,15 @@ class _Extractor(HTMLParser):
         if tag in ("script", "style", "noscript", "svg"):
             self._skip += 1
         elif tag == "a":
-            self._href = dict(attrs).get("href")
+            a = dict(attrs)
+            self._href = a.get("href")
             self._link_text = []
+            if a.get("hreflang") and self._href:
+                self.links.append((self._href, f"hreflang:{a['hreflang'].lower()}"))
+        elif tag == "link":
+            a = dict(attrs)
+            if "alternate" in (a.get("rel") or "").lower() and a.get("hreflang") and a.get("href"):
+                self.links.append((a["href"], f"hreflang:{a['hreflang'].lower()}"))
         elif tag == "meta":
             a = dict(attrs)
             if (a.get("name") or "").lower() == "description" and a.get("content"):
@@ -328,6 +342,34 @@ def pick_links(base_url: str, links: list[tuple[str, str]], limit: int = MAX_EXT
         if score:
             scored[url] = max(score, scored.get(url, 0))
     return [u for u, _ in sorted(scored.items(), key=lambda kv: -kv[1])[:limit]]
+
+
+# An English version of the site: <link hreflang="en">, /en/, /english, a link labelled "EN" or "English".
+_EN_PATH = re.compile(r"(?:^|/)(?:en|eng|english|en-gb|en-us)(?:/|$|[._-])|english|anglick", re.I)
+_EN_LABEL = re.compile(r"^(?:en|eng|english|in english|english version|anglicky|anglictina|v anglictine)$")
+
+
+def english_link(base_url: str, links: list[tuple[str, str]]) -> str | None:
+    """Same-site English version of the page, if the site has one. Only a place to look for
+    "we speak English": having an English page alone says nothing about the staff."""
+    base = urllib.parse.urlsplit(base_url)
+    if base.path.strip("/") and not re.fullmatch(r"/?(?:index\.\w+|cs|cz)?/?", base.path, re.I):
+        return None   # a doctor's page on a shared portal: the portal's English page is about someone else
+    found: list[tuple[int, str]] = []
+    for href, label in links:
+        if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+            continue
+        url = urllib.parse.urljoin(base_url, href).split("#")[0]
+        u = urllib.parse.urlsplit(url)
+        if u.scheme not in ("http", "https") or u.hostname != base.hostname or url.rstrip("/") == base_url.rstrip("/"):
+            continue
+        lab = normalize(label).strip()
+        if lab.startswith("hreflang:"):
+            if lab[9:].startswith("en"):
+                found.append((0, url))
+        elif _EN_LABEL.match(lab) or _EN_PATH.search(u.path) or re.search(r"(?:^|&)(?:lang|language|lng)=en\b", u.query, re.I):
+            found.append((1, url))
+    return min(found)[1] if found else None
 
 
 # --------------------------------------------------------------------------
@@ -536,6 +578,13 @@ def check_site(url: str, allow_private: bool = False, delay: float = HOST_DELAY)
                 if v.status or v.conflicting:
                     best, best_page = v, page_url
                     break
+        if "english" not in res.flags and (en_url := english_link(final_url, links)) and robots.can_fetch(USER_AGENT, en_url):
+            time.sleep(delay)
+            try:
+                if snippet := english(extract(fetch(en_url, allow_private)[1])[0]):
+                    res.flags["english"] = snippet
+            except Exception:
+                pass  # the English page is a bonus; the Czech result stands
         res.verdict, res.page_url = best, best_page
     except BlockedURL as e:
         res.error = str(e)

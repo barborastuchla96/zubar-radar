@@ -90,6 +90,13 @@ PAGES = {
     "/kontakt": ("text/html", "<p>Tel. 123</p>"),
     "/robots.txt": ("text/plain", "User-agent: *\nDisallow: /tajne\n"),
     "/tajne": ("text/html", "<p>Nepřijímáme nové pacienty.</p>"),
+    # A site whose only "we speak English" is on its English page
+    "/index.html": ("text/html", '<html><head><link rel="alternate" hreflang="en" href="/en/"></head>'
+                     '<body><p>Zubní ordinace MUDr. Nováková</p><a href="/en/">EN</a></body></html>'),
+    "/en/": ("text/html", "<p>Dental practice. Our staff speak English and German.</p>"),
+    # English page that says nothing about the staff: no tag
+    "/cs/": ("text/html", '<body><p>Ordinace</p><a href="/en/translated">English</a></body>'),
+    "/en/translated": ("text/html", "<p>Dental practice. Opening hours Mon-Fri.</p>"),
 }
 
 
@@ -273,3 +280,53 @@ def test_insurers(text, codes):
 
 def test_self_pay_wins_over_insurer_names():
     assert not any(f.startswith("ins") for f in crawler.find_flags("Nemáme smlouvy se zdravotními pojišťovnami. Dříve VZP 111, OZP 207."))
+
+
+@pytest.mark.parametrize("links,expected", [
+    ([("/en/", "hreflang:en"), ("/kontakt", "Kontakt")], "https://zubar.cz/en/"),
+    ([("/english.html", "")], "https://zubar.cz/english.html"),
+    ([("/o-nas", "EN")], "https://zubar.cz/o-nas"),
+    ([("/?lang=en", "")], "https://zubar.cz/?lang=en"),
+    ([("/v-anglictine", "V angličtině")], "https://zubar.cz/v-anglictine"),
+    ([("https://translate.google.com/translate?u=zubar.cz", "EN")], None),   # other site
+    ([("/entry", ""), ("/kontakt", "Kontakt")], None),
+    ([("/de/", "hreflang:de")], None),
+])
+def test_english_link(links, expected):
+    assert crawler.english_link("https://zubar.cz/", links) == expected
+
+
+def test_hreflang_wins_over_a_guess():
+    links = [("/english-courses", ""), ("/en/", "hreflang:en")]
+    assert crawler.english_link("https://zubar.cz/", links) == "https://zubar.cz/en/"
+
+
+def test_extract_reads_hreflang_alternates():
+    _, links = crawler.extract('<head><link rel="alternate" hreflang="en-GB" href="/en/"></head><a href="/x">X</a>')
+    assert ("/en/", "hreflang:en-gb") in links
+
+
+def test_check_site_finds_english_on_the_english_page(site):
+    r = crawler.check_site(site + "/index.html", allow_private=True, delay=0)
+    assert r.error is None
+    assert "english" in r.flags and "speak English" in r.flags["english"]
+
+
+def test_an_english_page_alone_is_not_english_speaking(site):
+    r = crawler.check_site(site + "/cs/", allow_private=True, delay=0)
+    assert "english" not in r.flags
+
+
+@pytest.mark.parametrize("text,yes", [
+    ("Consultations in English are possible.", True),
+    ("We communicate in English.", True),
+    ("We don't speak English.", False),
+    ("English is not spoken here.", False),
+])
+def test_english_phrasings(text, yes):
+    assert bool(crawler.english(text)) is yes
+
+
+def test_no_english_page_for_a_doctor_on_a_portal():
+    assert crawler.english_link("http://www.gynekolog.cz/novak/", [("/en/", "hreflang:en")]) is None
+    assert crawler.english_link("https://zubar.cz/cs/", [("/en/", "hreflang:en")]) == "https://zubar.cz/en/"
