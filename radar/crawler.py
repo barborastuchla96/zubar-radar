@@ -127,8 +127,9 @@ INSURERS = {
     "213": r"\brbp\b|revirni bratrsk\w*",
 }
 _CODES = re.compile(r"\b(111|201|205|207|209|211|213)\b")
-_ALL_INSURERS = re.compile(r"\b(?:vsemi|vsech(?:ny)?) (?:zdravotnimi |zdravotnich |zdravotni )?pojistovn\w*")
-_NO_CONTRACT = re.compile(r"\b(?:nemame|nema|bez) smlouv\w*|\bnesmluvn\w*|\bkrome\b|\bmimo\b")
+_ALL_INSURERS = re.compile(r"\b(?:vsemi|vsech(?:ny)?) (?:zdravotnimi |zdravotnich |zdravotni )?(?:pojistovn\w*|zp\b)")
+_NO_CONTRACT = re.compile(r"\b(?:nemame|nema|bez) smlouv\w*|\bnesmluvn\w*"
+                          r"|\b(?:krome|mimo|s vyjimkou)\W+(?:\w+\W+){0,2}?(?:vzp|cpzp|ozp|rbp|vozp|zp ?mv|zps|111|2\d\d|pojistovn)")
 
 
 def insurers(raw_text: str) -> tuple[set[str], str | None]:
@@ -137,7 +138,7 @@ def insurers(raw_text: str) -> tuple[set[str], str | None]:
     text, src = _normalize_with_map(raw_text)
     found: set[str] = set()
     first = None
-    for m in re.finditer(r"pojistov\w*|smluvn\w*", text):
+    for m in re.finditer(r"pojistov\w*|smluvn\w*|smlouv\w*", text):
         a, b = max(0, m.start() - 120), min(len(text), m.end() + 160)
         window = text[a:b]
         if _NO_CONTRACT.search(window):
@@ -280,6 +281,9 @@ def classify(raw_text: str) -> Verdict:
 # --------------------------------------------------------------------------
 # HTML → text + links
 # --------------------------------------------------------------------------
+_LOGO = re.compile(r"\b(?:vzp|vozp|cpzp|ozp|zps|zp ?mv|zpmv|rbp)\b|pojistovn|revirni bratrsk|ministerstva vnitra|ceska prumyslova")
+
+
 class _Extractor(HTMLParser):
     BLOCK = {"p", "div", "li", "br", "h1", "h2", "h3", "h4", "h5", "h6", "tr", "section", "article", "header", "footer"}
 
@@ -304,6 +308,12 @@ class _Extractor(HTMLParser):
             a = dict(attrs)
             if "alternate" in (a.get("rel") or "").lower() and a.get("hreflang") and a.get("href"):
                 self.links.append((a["href"], f"hreflang:{a['hreflang'].lower()}"))
+        elif tag == "img" and not self._skip:
+            # "Smluvní pojišťovny:" followed by a row of logos: the logos' alt text names them.
+            a = dict(attrs)
+            label = " ".join(v for v in (a.get("alt"), a.get("title")) if v)
+            if label and _LOGO.search(normalize(label)):
+                self.parts.append(f" {label} ")
         elif tag == "meta":
             a = dict(attrs)
             if (a.get("name") or "").lower() == "description" and a.get("content"):
@@ -338,7 +348,7 @@ def extract(html: str) -> tuple[str, list[tuple[str, str]]]:
     return "".join(p.parts), p.links
 
 
-LINK_HINTS = ["pacient", "registrac", "objedn", "kontakt", "ordinac", "o-nas", "onas", "aktual", "novinky"]
+LINK_HINTS = ["pacient", "registrac", "objedn", "kontakt", "ordinac", "o-nas", "onas", "aktual", "novinky", "pojistov"]
 
 
 def pick_links(base_url: str, links: list[tuple[str, str]], limit: int = MAX_EXTRA_PAGES) -> list[str]:

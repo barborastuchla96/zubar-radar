@@ -360,3 +360,23 @@ def test_search_filter_labels_are_not_statements():
 ])
 def test_attributable(snippet, specs, ok):
     assert crawler.attributable(snippet, specs) is ok
+
+
+def test_insurers_common_phrasings():
+    from radar.crawler import insurers
+    every = {"111", "201", "205", "207", "209", "211", "213"}
+    # "mimo"/"kromě" nearby only negates when it names an insurer
+    assert insurers("Máme smlouvy se všemi zdravotními pojišťovnami. Mimo ordinační hodiny volejte 155.")[0] == every
+    assert insurers("Kromě pátku ordinujeme do 18:00. Spolupracujeme se všemi zdravotními pojišťovnami.")[0] == every
+    assert insurers("Máme smlouvy se všemi pojišťovnami kromě VZP.")[0] == set()
+    assert insurers("Smlouvy máme se všemi ZP.")[0] == every
+
+
+def test_insurer_logos_are_read():
+    from radar.crawler import _Extractor, insurers
+    e = _Extractor()
+    e.feed('<h3>Smluvní pojišťovny</h3><img src="a.png" alt="VZP"><img src="b.png" alt="OZP logo">'
+           '<img src="c.png" alt="Fotka čekárny">')
+    text = "".join(e.parts)
+    assert "čekárny" not in text
+    assert insurers(text)[0] == {"111", "207"}
